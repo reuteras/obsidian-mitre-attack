@@ -1,9 +1,5 @@
-from stix2 import Filter
-from stix2 import MemoryStore
-from pathlib import Path
 from . import ROOT
 
-import requests
 import os
 import json
 import uuid
@@ -32,7 +28,7 @@ class MarkdownGenerator():
                 content += f"\n\n## {tactic.id}\n"
                 content += f"\n{tactic.description}\n\n---\n"
                 
-                content += f"### References\n"
+                content += "### References\n"
                 for ref in tactic.references.keys():
                     content += f"- {ref}: {tactic.references[ref]}\n"
                 fd.write(content)
@@ -53,7 +49,7 @@ class MarkdownGenerator():
                 content += f"{technique.description}\n\n\n"
 
 
-                content += f"### Tactic\n"
+                content += "### Tactic\n"
                 for kill_chain in technique.kill_chain_phases:
                     if kill_chain['kill_chain_name'] == 'mitre-attack':
                         tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
@@ -61,31 +57,31 @@ class MarkdownGenerator():
                             for t in tactic:
                                 content += f"- [[{t.name}]] ({t.id})\n" 
 
-                content += f"\n### Platforms\n"
+                content += "\n### Platforms\n"
                 for platform in technique.platforms:
                     content += f"- {platform}\n"
 
-                content += f"\n### Permissions Required\n"
+                content += "\n### Permissions Required\n"
                 for permission in technique.permissions_required:
                     content += f"- {permission}\n"
 
-                content += f"\n### Mitigations\n"
+                content += "\n### Mitigations\n"
                 if technique.mitigations:
-                    content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
+                    content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for mitigation in technique.mitigations:
                         description = mitigation['description'].replace('\n', '<br />')
-                        content += f"| [[{mitigation['mitigation'].name}\|{mitigation['mitigation'].id}]] | {mitigation['mitigation'].name} | {description} |\n"
+                        content += f"| [[{mitigation['mitigation'].name}\\|{mitigation['mitigation'].id}]] | {mitigation['mitigation'].name} | {description} |\n"
 
                 if not technique.is_subtechnique:
-                    content += f"\n### Sub-techniques\n"
+                    content += "\n### Sub-techniques\n"
                     subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ]
                     if subtechniques:
-                        content += f"\n| ID | Name |\n| --- | --- |\n"
+                        content += "\n| ID | Name |\n| --- | --- |\n"
                     for subt in subtechniques:
-                        content += f"| [[{subt.name}\|{subt.id}]] | {subt.name} |\n"
+                        content += f"| [[{subt.name}\\|{subt.id}]] | {subt.name} |\n"
 
 
-                content += f"\n\n---\n### References\n\n"
+                content += "\n\n---\n### References\n\n"
                 for ref in technique.references.keys():
                     content += f"- {ref}: {technique.references[ref]}\n"
 
@@ -107,12 +103,12 @@ class MarkdownGenerator():
                 content += f"{mitigation.description}\n\n\n"
 
 
-                content += f"### Techniques Addressed by Mitigation\n"
+                content += "### Techniques Addressed by Mitigation\n"
                 if mitigation.mitigates:
-                    content += f"\n| ID | Name | Description |\n| --- | --- | --- |\n"
+                    content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for technique in mitigation.mitigates:
                         description = technique['description'].replace('\n', '<br />')
-                        content += f"| [[{technique['technique'].name}\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+                        content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
 
                 fd.write(content)
@@ -132,13 +128,13 @@ class MarkdownGenerator():
                 content += f"## {group.id}\n\n"
                 content += f"{group.description}\n\n\n"
 
-                content += f"### Techniques Used\n"
+                content += "### Techniques Used\n"
 
                 if group.techniques_used:
-                    content += f"\n| ID | Name | Use |\n| --- | --- | --- |\n"
+                    content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
                     for technique in group.techniques_used:
                         description = technique['description'].replace('\n', '<br />')
-                        content += f"| [[{technique['technique'].name}\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+                        content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
                 fd.write(content)
 
@@ -150,7 +146,6 @@ class MarkdownGenerator():
             }
 
         x = 0
-        width = 450
         columns = {
                     "Reconnaissance": 0,
                     "Resource Development": 500,
