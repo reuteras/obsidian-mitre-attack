@@ -6,13 +6,14 @@ import uuid
 
 class MarkdownGenerator():
 
-    def __init__(self, output_dir=None, tactics=[], techniques=[], mitigations=[], groups=[]):
+    def __init__(self, output_dir=None, software=[], tactics=[], techniques=[], mitigations=[], groups=[]):
         if output_dir:
             self.output_dir = os.path.join(ROOT, output_dir)
         self.tactics = tactics
         self.techniques = techniques
         self.mitigations = mitigations
         self.groups = groups
+        self.software = software
 
 
     def create_tactic_notes(self):
@@ -26,7 +27,7 @@ class MarkdownGenerator():
             with open(tactic_file, 'w') as fd:
                 content = f"---\nalias: {tactic.id}\n---"
                 content += f"\n\n## {tactic.id}\n"
-                content += f"\n{tactic.description}\n\n---\n"
+                content += f"\n{tactic.description}\n\n"
                 
                 content += "### References\n"
                 for ref in tactic.references.keys():
@@ -125,8 +126,16 @@ class MarkdownGenerator():
             with open(group_file, 'w') as fd:
                 content = f"---\nalias: {', '.join(group.aliases)}\n---\n\n"
 
-                content += f"## {group.id}\n\n"
+                content += f"## {group.name}\n\n"
                 content += f"{group.description}\n\n\n"
+
+                content += "```ad-info\n"
+                content += f"ID: {group.id}\n"
+                content += f"Contributors: {', '.join(group.contributors)}\n"
+                content += f"Version: {group.version}\n"
+                content += f"Created: {group.created}\n"
+                content += f"Last Modified: {group.modified}\n"
+                content += "```\n"
 
                 content += "### Techniques Used\n"
 
@@ -136,8 +145,64 @@ class MarkdownGenerator():
                         description = technique['description'].replace('\n', '<br />')
                         content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
+                content += "\n\n### References\n\n"
+
+                for reference in group.references:
+                    content += f"{reference}\n"
+
+                for ref in group.references.keys():
+                    content += f"- {ref}: {group.references[ref]}\n"
+
                 fd.write(content)
 
+
+    def create_software_notes(self):
+        software_dir = os.path.join(self.output_dir, "software")
+        if not os.path.exists(software_dir):
+            os.mkdir(software_dir)
+
+        for software in self.software:
+            software_file = os.path.join(software_dir, f"{software.name}.md")
+
+            with open(software_file, 'w') as fd:
+                content = f"---\nalias: {software.id}\n---\n\n"
+
+                content += f"## {software.name}\n\n"
+                content += f"{software.description}\n\n\n"
+
+                content += "```ad-info\n"
+                content += f"ID: {software.id}\n"
+                content += f"Type: {software.type}\n"
+                platforms =[ ', '.join(platform) for platform in software.platforms ]
+                content += f"Platforms: {''.join(platforms)}\n"
+                content += f"Contributors: {', '.join(software.contributors)}\n"
+                content += f"Version: {software.version}\n"
+                content += f"Created: {software.created}\n"
+                content += f"Last Modified: {software.modified}\n"
+                content += "```\n"
+
+                content += "### Techniques Used\n"
+                if software.techniques_used:
+                    content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
+                    for technique in software.techniques_used:
+                        description = technique['description'].replace('\n', '<br />')
+                        content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+
+                content += "\n### Groups That Use This Software\n"
+                try:
+                    if software.groups_using:
+                        content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
+                        for group in software.groups_using:
+                            description = group['description'].replace('\n', '<br />')
+                            content += f"| [[{group['group'].name}\\|{group['group'].id}]] | {group['group'].name} | {description} |\n"
+                except AttributeError:
+                    pass
+
+                content += "\n\n### References\n\n"
+                for ref in software.references.keys():
+                    content += f"- {ref}: {software.references[ref]}\n"
+
+                fd.write(content)
 
     def create_canvas(self, canvas_name, filtered_techniques):
         canvas = {

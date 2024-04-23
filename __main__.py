@@ -57,7 +57,8 @@ if __name__ == '__main__':
 
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-        markdown_generator = MarkdownGenerator(output_dir, parser.tactics, parser.techniques, parser.mitigations, parser.groups)
+        markdown_generator = MarkdownGenerator(output_dir, parser.software, parser.tactics, parser.techniques, parser.mitigations, parser.groups)
+        markdown_generator.create_software_notes()
         markdown_generator.create_tactic_notes()
         markdown_generator.create_technique_notes()
         markdown_generator.create_mitigation_notes()

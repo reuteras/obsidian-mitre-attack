@@ -43,6 +43,7 @@ class MITREObject():
 
         self._references[reference['name']] = reference['url']
 
+
 class MITRETactic(MITREObject):
     """
     Define a tactic (x-mitre-tactic)
@@ -120,7 +121,7 @@ class MITRETechnique(MITREObject):
 
     @groups.setter
     def groups(self, group:dict):
-        self.groups.append(group)
+        self._groups.append(group)
 
 
 class MITREMitigation(MITREObject):
@@ -190,3 +191,93 @@ class MITREGroup(MITREObject):
     @techniques_used.setter
     def techniques_used(self, technique_used:dict):
         self._techniques_used.append(technique_used)
+
+
+class MITRESoftware(MITREObject):
+    """
+    Define a software
+    """
+
+    def __init__(self, name):
+        MITREObject.__init__(self, name)
+        self._platforms = list()
+        self._aliases = list()
+        self._groups_using = list()
+        self._type = None
+        self._contributors = list()
+        self._version = list()
+        self._created = None
+        self._modified = None
+        self._techniques_used = list()
+
+    @property
+    def platforms(self):
+        return self._platforms
+
+    @platforms.setter
+    def platforms(self, platform):
+        self._platforms.append(platform)
+
+    @property
+    def aliases(self):
+        return self._aliases
+
+    @aliases.setter
+    def aliases(self, alias):
+        self._aliases = alias
+
+    @property
+    def techniques_used(self):
+        return self._techniques_used
+    
+    @techniques_used.setter
+    def techniques_used(self, technique_used:dict):
+        self._techniques_used.append(technique_used)
+
+    @property
+    def groups_using(self):
+        return self._groups_using
+
+    @groups_using.setter
+    def groups_using(self, group:dict):
+        self._groups_using.append(group)
+        
+    @property
+    def type(self):
+        return self._type
+    
+    @type.setter
+    def type(self, type):
+        self._type = type
+
+    @property
+    def contributors(self):
+        return self._contributors
+    
+    @contributors.setter
+    def contributors(self, contributors):
+        self._contributors = contributors
+
+    @property
+    def version(self):
+        return self._version
+    
+    @version.setter
+    def version(self, version):
+        self._version = version
+    
+    @property
+    def created(self):
+        return self._created
+    
+    @created.setter
+    def created(self, created):
+        self._created = created
+    
+    @property
+    def modified(self):
+        return self._modified
+    
+    @modified.setter
+    def modified(self, modified):
+        self._modified = modified
