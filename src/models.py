@@ -132,6 +132,10 @@ class MITREMitigation(MITREObject):
     def __init__(self, name):
         MITREObject.__init__(self, name)
         self._mitigates = list()
+        self._version = None
+        self._created = None
+        self._modified = None
+        self._external_references = list()
 
     @property
     def is_deprecated(self):
@@ -157,6 +161,38 @@ class MITREMitigation(MITREObject):
     def mitigates(self, mitigated_technique:dict):
         self._mitigates.append(mitigated_technique)
 
+    @property
+    def version(self):
+        return self._version
+    
+    @version.setter
+    def version(self, version):
+        self._version = version
+    
+    @property
+    def created(self):
+        return self._created
+    
+    @created.setter
+    def created(self, created):
+        self._created = created
+    
+    @property
+    def modified(self):
+        return self._modified
+    
+    @modified.setter
+    def modified(self, modified):
+        self._modified = modified
+
+    @property
+    def external_references(self):
+        return self._external_references
+    
+    @external_references.setter
+    def external_references(self, external_reference:dict):
+        self._external_references.append(external_reference)
+
 
 class MITREGroup(MITREObject):
     """
@@ -166,6 +202,9 @@ class MITREGroup(MITREObject):
     def __init__(self, name):
         MITREObject.__init__(self, name)
         self._aliases = list()
+        self._aliases_references = list()
+        self._external_references = list()
+        self._software_used = list()
         self._techniques_used = list()
 
     @property
@@ -183,6 +222,30 @@ class MITREGroup(MITREObject):
     @aliases.setter
     def aliases(self, alias):
         self._aliases = alias
+
+    @property
+    def aliases_references(self):
+        return self._aliases_references
+    
+    @aliases_references.setter
+    def aliases_references(self, alias_reference:dict):
+        self._aliases_references.append(alias_reference)
+
+    @property
+    def external_references(self):
+        return self._external_references
+    
+    @external_references.setter
+    def external_references(self, external_reference:dict):
+        self._external_references.append(external_reference)
+
+    @property
+    def software_used(self):
+        return self._software_used
+    
+    @software_used.setter
+    def software_used(self, software:dict):
+        self._software_used.append(software)
 
     @property
     def techniques_used(self):
@@ -205,10 +268,11 @@ class MITRESoftware(MITREObject):
         self._groups_using = list()
         self._type = None
         self._contributors = list()
-        self._version = list()
+        self._version = None
         self._created = None
         self._modified = None
         self._techniques_used = list()
+        self._external_references = list()
 
     @property
     def platforms(self):
@@ -281,3 +345,11 @@ class MITRESoftware(MITREObject):
     @modified.setter
     def modified(self, modified):
         self._modified = modified
+
+    @property
+    def external_references(self):
+        return self._external_references
+    
+    @external_references.setter
+    def external_references(self, reference:dict):
+        self._external_references.append(reference)

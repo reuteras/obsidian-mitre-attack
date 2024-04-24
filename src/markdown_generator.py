@@ -1,9 +1,22 @@
 from . import ROOT
 
 import os
+import re
 import json
 import uuid
 
+# Utility functions
+
+# Function to fix the description of a technique
+def fix_description(description_str):
+    def match_citation(match):
+        return '[^' + match.group(1).replace(" ", "_") + ']'
+    description = re.sub(r'\(Citation: ([^)]+?)\)', match_citation, description_str)
+    description = description.replace('\n', '<br />')
+    return description
+
+
+# Class to generate markdown notes
 class MarkdownGenerator():
 
     def __init__(self, output_dir=None, software=[], tactics=[], techniques=[], mitigations=[], groups=[]):
@@ -17,7 +30,7 @@ class MarkdownGenerator():
 
 
     def create_tactic_notes(self):
-        tactics_dir = os.path.join(self.output_dir, "tactics")
+        tactics_dir = os.path.join(self.output_dir, "Tactics")
         if not os.path.exists(tactics_dir):
             os.mkdir(tactics_dir)
 
@@ -27,7 +40,8 @@ class MarkdownGenerator():
             with open(tactic_file, 'w') as fd:
                 content = f"---\nalias: {tactic.id}\n---"
                 content += f"\n\n## {tactic.id}\n"
-                content += f"\n{tactic.description}\n\n"
+                tactic_description = fix_description(tactic.description)
+                content += f"\n{tactic_description}\n\n"
                 
                 content += "### References\n"
                 for ref in tactic.references.keys():
@@ -36,7 +50,7 @@ class MarkdownGenerator():
 
 
     def create_technique_notes(self):
-        techniques_dir = os.path.join(self.output_dir, "techniques")
+        techniques_dir = os.path.join(self.output_dir, "Techniques")
         if not os.path.exists(techniques_dir):
             os.mkdir(techniques_dir)
 
@@ -47,7 +61,8 @@ class MarkdownGenerator():
                 content = f"---\nalias: {technique.id}\n---\n\n"
 
                 content += f"## {technique.id}\n\n"
-                content += f"{technique.description}\n\n\n"
+                technique_description = fix_description(technique.description)
+                content += f"{technique_description}\n\n\n"
 
 
                 content += "### Tactic\n"
@@ -90,7 +105,7 @@ class MarkdownGenerator():
 
 
     def create_mitigation_notes(self):
-        mitigations_dir = os.path.join(self.output_dir, "mitigations")
+        mitigations_dir = os.path.join(self.output_dir, "Mitigations")
         if not os.path.exists(mitigations_dir):
             os.mkdir(mitigations_dir)
 
@@ -101,22 +116,46 @@ class MarkdownGenerator():
                 content = f"---\nalias: {mitigation.id}\n---\n\n"
 
                 content += f"## {mitigation.id}\n\n"
-                content += f"{mitigation.description}\n\n\n"
+                mitigation_description = fix_description(mitigation.description)
+                content += f"{mitigation_description}\n\n\n"
 
+                # Mitigation Information
+                content += "```ad-info\n"
+                content += f"ID: {mitigation.id}\n"
+                content += f"Version: {mitigation.version}\n"
+                content += f"Created: {mitigation.created}\n"
+                content += f"Last Modified: {mitigation.modified}\n"
+                content += "```\n"
 
+                # Techniques Addressed by Mitigation
                 content += "### Techniques Addressed by Mitigation\n"
                 if mitigation.mitigates:
                     content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for technique in mitigation.mitigates:
-                        description = technique['description'].replace('\n', '<br />')
+                        description = fix_description(technique['description'])
                         content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+
+                # References
+                content += "\n\n\n"
+                content += "### References\n\n"
+
+                for ref in mitigation.external_references:
+                    name = ref['name'].replace(' ', '_')
+                    if 'url' in ref:
+                        content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+                
+                if mitigation.external_references:
+                    for alias in mitigation.external_references:
+                        if 'url' in alias:
+                            name = alias['name'].replace(' ', '_')
+                            content += f"[^{name}]: [{alias['description']}]({alias['url']})\n"
 
 
                 fd.write(content)
 
 
     def create_group_notes(self):
-        groups_dir = os.path.join(self.output_dir, "groups")
+        groups_dir = os.path.join(self.output_dir, "Groups")
         if not os.path.exists(groups_dir):
             os.mkdir(groups_dir)
 
@@ -127,8 +166,10 @@ class MarkdownGenerator():
                 content = f"---\nalias: {', '.join(group.aliases)}\n---\n\n"
 
                 content += f"## {group.name}\n\n"
-                content += f"{group.description}\n\n\n"
+                group_description = fix_description(group.description)
+                content += f"{group_description}\n\n\n"
 
+                # Group Information
                 content += "```ad-info\n"
                 content += f"ID: {group.id}\n"
                 content += f"Contributors: {', '.join(group.contributors)}\n"
@@ -137,27 +178,50 @@ class MarkdownGenerator():
                 content += f"Last Modified: {group.modified}\n"
                 content += "```\n"
 
-                content += "### Techniques Used\n"
+                # Associated Group Descriptions
+                if group.aliases_references:
+                    content += "\n### Associated Group Descriptions\n"
+                    content += "\n| Name | Description |\n| --- | --- |\n"
+                    for alias in group.aliases_references:
+                        if 'url' not in alias:
+                            description = alias['description'].replace('\n', '<br />').replace('(Citation: ', '[^').replace(')', ']').replace(' ', '_')
+                            content += f"| {alias['name']} | {description} |\n"
 
+                # Techniques Used
                 if group.techniques_used:
+                    content += "### Techniques Used\n"
                     content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
                     for technique in group.techniques_used:
-                        description = technique['description'].replace('\n', '<br />')
+                        description = fix_description(technique['description'])
                         content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
-                content += "\n\n### References\n\n"
+                # Software Used
+                if group.software_used:
+                    content += "\n### Software Used\n"
+                    content += "\n| ID | Name |\n| --- | --- |\n"
+                    for software in group.software_used:
+                        content += f"| [[{software['name']}\\|{software['id']}]] | [[{software['name']}\\|{software['name']}]] |\n"
 
-                for reference in group.references:
-                    content += f"{reference}\n"
+                # References
+                content += "\n\n\n"
+                content += "### References\n\n"
 
-                for ref in group.references.keys():
-                    content += f"- {ref}: {group.references[ref]}\n"
+                for ref in group.external_references:
+                    name = ref['name'].replace(' ', '_')
+                    if 'url' in ref:
+                        content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+                
+                if group.aliases_references:
+                    for alias in group.aliases_references:
+                        if 'url' in alias:
+                            name = alias['name'].replace(' ', '_')
+                            content += f"[^{name}]: [{alias['description']}]({alias['url']})\n"
 
                 fd.write(content)
 
 
     def create_software_notes(self):
-        software_dir = os.path.join(self.output_dir, "software")
+        software_dir = os.path.join(self.output_dir, "Software")
         if not os.path.exists(software_dir):
             os.mkdir(software_dir)
 
@@ -168,8 +232,10 @@ class MarkdownGenerator():
                 content = f"---\nalias: {software.id}\n---\n\n"
 
                 content += f"## {software.name}\n\n"
-                content += f"{software.description}\n\n\n"
+                software_description = fix_description(software.description)
+                content += f"{software_description}\n\n\n"
 
+                # Software Information
                 content += "```ad-info\n"
                 content += f"ID: {software.id}\n"
                 content += f"Type: {software.type}\n"
@@ -181,28 +247,36 @@ class MarkdownGenerator():
                 content += f"Last Modified: {software.modified}\n"
                 content += "```\n"
 
+                # Techniques Used by Software
                 content += "### Techniques Used\n"
                 if software.techniques_used:
                     content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
                     for technique in software.techniques_used:
-                        description = technique['description'].replace('\n', '<br />')
+                        description = fix_description(technique['description'])
                         content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
+                # Groups That Use This Software
                 content += "\n### Groups That Use This Software\n"
                 try:
                     if software.groups_using:
                         content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
                         for group in software.groups_using:
-                            description = group['description'].replace('\n', '<br />')
+                            description = fix_description(group['description'])
                             content += f"| [[{group['group'].name}\\|{group['group'].id}]] | {group['group'].name} | {description} |\n"
                 except AttributeError:
                     pass
 
-                content += "\n\n### References\n\n"
-                for ref in software.references.keys():
-                    content += f"- {ref}: {software.references[ref]}\n"
+               # References
+                content += "\n\n\n"
+                content += "### References\n\n"
 
+                for ref in software.external_references:
+                    name = ref['name'].replace(' ', '_')
+                    if 'url' in ref:
+                        content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+ 
                 fd.write(content)
+
 
     def create_canvas(self, canvas_name, filtered_techniques):
         canvas = {

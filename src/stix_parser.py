@@ -3,6 +3,7 @@ from stix2 import MemoryStore
 import requests
 from .models import MITRETactic, MITRETechnique, MITREMitigation, MITREGroup, MITRESoftware
 
+
 class StixParser():
     """
     Get and parse STIX data creating Tactics and Techniques objects
@@ -101,6 +102,14 @@ class StixParser():
         # Extract mitigations
         mitigations_stix = self.src.query([ Filter('type', '=', 'course-of-action') ])
 
+        # Extract mitigates relationships
+        mitigates_stix = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates') ])
+
+        mitigates_list = list()
+
+        for mitigate in mitigates_stix:
+            mitigates_list.append(mitigate)
+
         self.mitigations = list()
 
         for mitigation in mitigations_stix:
@@ -109,6 +118,9 @@ class StixParser():
                 
                 mitigation_obj.internal_id = mitigation['id']
                 mitigation_obj.description = mitigation['description']
+                mitigation_obj.created = mitigation.get('created', '')
+                mitigation_obj.modified = mitigation.get('modified', '')
+                mitigation_obj.version = mitigation.get('x_mitre_version', [])
 
                 ext_refs = mitigation.get('external_references', [])
 
@@ -118,11 +130,36 @@ class StixParser():
                         
                 mitigation_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('source_ref', '=', mitigation_obj.internal_id) ])
 
+                added = []
+
                 for relationship in mitigation_relationships:
                     for technique in self.techniques:
                         if technique.internal_id == relationship['target_ref']:
                             mitigation_obj.mitigates = {'technique': technique, 'description': relationship.get('description', '') }
-#                            technique.mitigations = {'mitigation': mitigation_obj, 'description': relationship.get('description', '') }
+
+                        if 'external_references' in relationship:
+                            ext_refs = relationship.get('external_references', [])
+                            for ext_ref in ext_refs:
+                                if 'url' in ext_ref and 'description' in ext_ref:
+                                    item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                    if item not in added:
+                                        mitigation_obj.external_references = item
+                                        added.append(item)
+
+                    for mitigate in mitigates_list:
+                        if mitigate['id'] == relationship['target_ref']:
+                            external_id = ''
+                            ext_refs = mitigate.get('external_references', [])
+
+                            for ext_ref in ext_refs:
+                                if ext_ref['source_name'] == 'mitre-attack':
+                                    external_id = ext_ref['external_id']
+
+                            item = {'name': mitigate['name'], 'id': external_id}
+                            if item not in added:
+                                mitigation_obj.external_references = item
+                                added.append(item)
+
 
                 self.mitigations.append(mitigation_obj)
 
@@ -134,6 +171,14 @@ class StixParser():
 
         # Extract groups
         groups_stix = self.src.query([ Filter('type', '=', 'intrusion-set') ])
+
+        # Extract software
+        software_stix = self.src.query([ Filter('type', '=', 'malware')])
+
+        software_list = list()
+
+        for software in software_stix:
+            software_list.append(software)
 
         self.groups = list()
 
@@ -155,16 +200,49 @@ class StixParser():
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         group_obj.id = ext_ref['external_id']
-                        
-                    if 'url' in ext_ref:
-                        group_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
+                    elif 'url' in ext_ref:
+                        group_obj.aliases_references = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                    else:
+                        if ext_ref['source_name'] != group_obj.name:
+                            group_obj.aliases_references = {'name': ext_ref['source_name'], 'description': ext_ref['description']}
 
-                group_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
+                source_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
 
-                for relationship in group_relationships:
+                added = []
+                for relationship in source_relationships:
                     for technique in self.techniques:
                         if technique.internal_id == relationship['target_ref']:
                             group_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', '') }
+
+                    if 'external_references' in relationship:
+                        ext_refs = relationship.get('external_references', [])
+                        for ext_ref in ext_refs:
+                            if 'url' in ext_ref and 'description' in ext_ref:
+                                item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                if item not in added:
+                                    group_obj.external_references = item
+                                    added.append(item)
+
+                malware_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ], Filter('target_ref', 'contains', 'malware--'))
+                tool_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ], Filter('target_ref', 'contains', 'tool--'))
+                software_relationships = malware_relationships + tool_relationships
+
+                added = []
+
+                for relationship in software_relationships:
+                    for software in software_list:
+                        if software['id'] == relationship['target_ref']:
+                            external_id = ''
+                            ext_refs = group.get('external_references', [])
+
+                            for ext_ref in ext_refs:
+                                if ext_ref['source_name'] == 'mitre-attack':
+                                    external_id = ext_ref['external_id']
+
+                            item = {'name': software['name'], 'id': external_id}
+                            if item not in added:
+                                group_obj.software_used = {'name': software['name'], 'id': external_id}
+                                added.append(item)
 
                 self.groups.append(group_obj)
 
@@ -175,13 +253,17 @@ class StixParser():
         """
 
         # Extract software
-        software_stix = self.src.query([ Filter('type', '=', 'malware') ])
+        software_stix_malware = self.src.query([ Filter('type', '=', 'malware')])
+        software_stix_tool = self.src.query([ Filter('type', '=', 'tool')])
+
+        software_stix = software_stix_malware + software_stix_tool
 
         self.software = list()
 
         for software in software_stix:
             if software.get('x_mitre_deprecated', False) != 'true':
                 software_obj = MITRESoftware(software['name'])
+                added = []
 
                 software_obj.internal_id = software['id']
                 software_obj.type = software['type']
@@ -198,30 +280,30 @@ class StixParser():
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         software_obj.id = ext_ref['external_id']
-                
-                    if 'description' in ext_ref:
-                        description = ext_ref['description']
-                    else:
-                        description = ''
+                    elif 'url' in ext_ref:
+                        software_obj.external_references = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
 
-                    if 'url' in ext_ref:
-                        url = ext_ref['url']
-                        software_obj.references = {'name': ext_ref['source_name'], 'url': url, 'description': description}
+                source_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
 
-                software_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
-
-                for relationship in software_relationships:
+                for relationship in source_relationships:
                     for technique in self.techniques:
                         if technique.internal_id == relationship['target_ref']:
                             software_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', '') }
-    #                        technique.software = {'software': software_obj, 'description': relationship.get('description', '') }
 
-                group_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
-                
-                for relationship in group_relationships:
+                target_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
+
+                for relationship in target_relationships:
                     for group in self.groups:
                         if group.internal_id == relationship['source_ref']:
                             software_obj.groups_using = {'group': group, 'description': relationship.get('description', '') }
-    #                        group.software = {'software': software_obj, 'description': relationship.get('description', '') }
+
+                        if 'external_references' in relationship:
+                            ext_refs = relationship.get('external_references', [])
+                            for ext_ref in ext_refs:
+                                if 'url' in ext_ref and 'description' in ext_ref:
+                                    item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                    if item not in added:
+                                        software_obj.external_references = item
+                                        added.append(item)
 
                 self.software.append(software_obj)
