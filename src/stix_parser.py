@@ -278,10 +278,15 @@ class StixParser():
                 ext_refs = software.get('external_references', [])
 
                 for ext_ref in ext_refs:
+                    if software['id'] == "malware--e7a5229f-05eb-440e-b982-9a6d2b2b87c8":
+                        print(ext_ref)
                     if ext_ref['source_name'] == 'mitre-attack':
                         software_obj.id = ext_ref['external_id']
                     elif 'url' in ext_ref:
-                        software_obj.external_references = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                        item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                        if item not in added:
+                            software_obj.external_references = item
+                            added.append(item)
 
                 source_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
 
@@ -290,6 +295,16 @@ class StixParser():
                         if technique.internal_id == relationship['target_ref']:
                             software_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', '') }
 
+
+                    if 'external_references' in relationship:
+                        ext_refs = relationship.get('external_references', [])
+                        for ext_ref in ext_refs:
+                            if 'url' in ext_ref and 'description' in ext_ref:
+                                item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                if item not in added:
+                                    software_obj.external_references = item
+                                    added.append(item)
+
                 target_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
 
                 for relationship in target_relationships:
@@ -297,13 +312,13 @@ class StixParser():
                         if group.internal_id == relationship['source_ref']:
                             software_obj.groups_using = {'group': group, 'description': relationship.get('description', '') }
 
-                        if 'external_references' in relationship:
-                            ext_refs = relationship.get('external_references', [])
-                            for ext_ref in ext_refs:
-                                if 'url' in ext_ref and 'description' in ext_ref:
-                                    item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                    if item not in added:
-                                        software_obj.external_references = item
-                                        added.append(item)
+                    if 'external_references' in relationship:
+                        ext_refs = relationship.get('external_references', [])
+                        for ext_ref in ext_refs:
+                            if 'url' in ext_ref and 'description' in ext_ref:
+                                item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                if item not in added:
+                                    software_obj.external_references = item
+                                    added.append(item)
 
                 self.software.append(software_obj)
