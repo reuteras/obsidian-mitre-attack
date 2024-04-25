@@ -75,7 +75,12 @@ class MarkdownGenerator():
             os.mkdir(techniques_dir)
 
         for technique in self.techniques:
-            print(self.tactics)
+            if technique.is_subtechnique:
+                for t in self.tactics:
+                    if t.id in technique.id.split('.')[0]:
+                        print(t.name)
+            else:
+                print(technique.name)       
             tactic_folder = os.path.join(techniques_dir, technique.tactic)
             if not os.path.exists(tactic_folder):
                 os.mkdir(tactic_folder)

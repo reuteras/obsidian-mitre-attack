@@ -57,7 +57,6 @@ class MITRETactic(MITREObject):
         self._shortname = None
         self._external_references = list()
         self._techniques_used = list()
-        self._tactics = list()
     
     @property
     def version(self):
@@ -106,15 +105,6 @@ class MITRETactic(MITREObject):
     @techniques_used.setter
     def techniques_used(self, technique_used:dict):
         self._techniques_used.append(technique_used)
-
-    @property
-    def tactics(self):
-        return self._tactics
-    
-    @tactics.setter
-    def tactics(self, tactic:dict):
-        self._tactics.append(tactic)
-
 
 class MITRETechnique(MITREObject):
     """

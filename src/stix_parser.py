@@ -38,7 +38,6 @@ class StixParser():
 
         self.tactics = list()
 
-        tactic_list = []
         for tactic in tactics_stix:
             tactic_obj = MITRETactic(tactic['name'])
             # Extract external references, including the link to mitre
@@ -55,11 +54,6 @@ class StixParser():
             tactic_obj.modified = tactic.get('modified', '')
             tactic_obj.version = tactic.get('x_mitre_version', [])
             tactic_obj.shortname = tactic.get('x_mitre_shortname', '')
-
-            item = {'name': tactic['name'], 'shortname': tactic_obj.shortname}
-            if item not in tactic_list:
-                tactic_obj.tactics = item
-                tactic_list.append(item)
 
             source_relationships = self.src.query([ Filter('type', '=', 'attack-pattern')])
 
