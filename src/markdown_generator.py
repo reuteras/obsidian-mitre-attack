@@ -12,7 +12,6 @@ def fix_description(description_str):
     def match_citation(match):
         return '[^' + match.group(1).replace(" ", "_") + ']'
     description = re.sub(r'\(Citation: ([^)]+?)\)', match_citation, description_str)
-    description = description.replace('\n', '<br />')
     return description
 
 
@@ -43,9 +42,30 @@ class MarkdownGenerator():
                 tactic_description = fix_description(tactic.description)
                 content += f"\n{tactic_description}\n\n"
                 
-                content += "### References\n"
-                for ref in tactic.references.keys():
-                    content += f"- {ref}: {tactic.references[ref]}\n"
+                # Tactic Information
+                content += "```ad-info\n"
+                content += f"ID: {tactic.id}\n"
+                content += f"Created: {tactic.created}\n"
+                content += f"Last Modified: {tactic.modified}\n"
+                content += "```\n"
+
+                # Techniques Used
+                if tactic.techniques_used:
+                    content += "### Techniques Used\n"
+                    content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
+                    for technique in tactic.techniques_used:
+                        description = fix_description(technique['description'])
+                        description = description[0:description.find('\n')]
+                        content += f"| [[{technique['name']}\\|{technique['id']}]] | {technique['name']} | {description} |\n"
+
+                # External References
+                content += "\n\n\n"
+                content += "### External References\n\n"
+                for ref in tactic.external_references:
+                    name = ref['name'].replace(' ', '_')
+                    if 'url' in ref:
+                        content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+
                 fd.write(content)
 
 
@@ -55,7 +75,20 @@ class MarkdownGenerator():
             os.mkdir(techniques_dir)
 
         for technique in self.techniques:
-            technique_file = os.path.join(techniques_dir, f"{technique.name}.md")
+            print(self.tactics)
+            tactic_folder = os.path.join(techniques_dir, technique.tactic)
+            if not os.path.exists(tactic_folder):
+                os.mkdir(tactic_folder)
+            
+            if technique.is_subtechnique:
+                parent_technique = [ t for t in self.techniques if t.id in technique.id.split('.')[0]]
+                parent_technique = parent_technique[0].name
+                technique_name_folder = os.path.join(tactic_folder, parent_technique)
+            else:
+                technique_name_folder = os.path.join(tactic_folder, technique.name)
+            if not os.path.exists(technique_name_folder):
+                os.mkdir(technique_name_folder)
+            technique_file = os.path.join(technique_name_folder, f"{technique.name}.md")
 
             with open(technique_file, 'w') as fd:
                 content = f"---\nalias: {technique.id}\n---\n\n"
@@ -64,6 +97,16 @@ class MarkdownGenerator():
                 technique_description = fix_description(technique.description)
                 content += f"{technique_description}\n\n\n"
 
+                # Technique Information
+                content += "```ad-info\n"
+                content += f"ID: {technique.id}\n"
+                content += f"Sub-techniques: TODO - {technique.id}\n"
+                content += f"Data Sources: {', '.join(technique.data_sources)}\n"
+                content += f"Platforms: {', '.join(technique.platforms)}\n"
+                content += f"Version: {technique.version}\n"
+                content += f"Created: {technique.created}\n"
+                content += f"Last Modified: {technique.modified}\n"
+                content += "```\n"
 
                 content += "### Tactic\n"
                 for kill_chain in technique.kill_chain_phases:
@@ -95,7 +138,6 @@ class MarkdownGenerator():
                         content += "\n| ID | Name |\n| --- | --- |\n"
                     for subt in subtechniques:
                         content += f"| [[{subt.name}\\|{subt.id}]] | {subt.name} |\n"
-
 
                 content += "\n\n---\n### References\n\n"
                 for ref in technique.references.keys():
@@ -133,6 +175,7 @@ class MarkdownGenerator():
                     content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for technique in mitigation.mitigates:
                         description = fix_description(technique['description'])
+                        description = description.replace('\n', '<br />')
                         content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
                 # References
@@ -193,6 +236,7 @@ class MarkdownGenerator():
                     content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
                     for technique in group.techniques_used:
                         description = fix_description(technique['description'])
+                        description = description.replace('\n', '<br />')
                         content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
                 # Software Used
@@ -253,6 +297,7 @@ class MarkdownGenerator():
                     content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
                     for technique in software.techniques_used:
                         description = fix_description(technique['description'])
+                        description = description.replace('\n', '<br />')
                         content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
                 # Groups That Use This Software
@@ -262,6 +307,7 @@ class MarkdownGenerator():
                         content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
                         for group in software.groups_using:
                             description = fix_description(group['description'])
+                            description = description.replace('\n', '<br />')
                             content += f"| [[{group['group'].name}\\|{group['group'].id}]] | {group['group'].name} | {description} |\n"
                 except AttributeError:
                     pass

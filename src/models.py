@@ -51,6 +51,69 @@ class MITRETactic(MITREObject):
 
     def __init__(self, name):
         MITREObject.__init__(self, name)
+        self._version = None
+        self._created = None
+        self._modified = None
+        self._shortname = None
+        self._external_references = list()
+        self._techniques_used = list()
+        self._tactics = list()
+    
+    @property
+    def version(self):
+        return self._version
+    
+    @version.setter
+    def version(self, version):
+        self._version = version
+    
+    @property
+    def created(self):
+        return self._created
+    
+    @created.setter
+    def created(self, created):
+        self._created = created
+    
+    @property
+    def modified(self):
+        return self._modified
+    
+    @modified.setter
+    def modified(self, modified):
+        self._modified = modified
+    
+    @property
+    def shortname(self):
+        return self._shortname
+    
+    @shortname.setter
+    def shortname(self, shortname):
+        self._shortname = shortname
+
+    @property
+    def external_references(self):
+        return self._external_references
+    
+    @external_references.setter
+    def external_references(self, reference:dict):
+        self._external_references.append(reference)
+
+    @property
+    def techniques_used(self):
+        return self._techniques_used
+    
+    @techniques_used.setter
+    def techniques_used(self, technique_used:dict):
+        self._techniques_used.append(technique_used)
+
+    @property
+    def tactics(self):
+        return self._tactics
+    
+    @tactics.setter
+    def tactics(self, tactic:dict):
+        self._tactics.append(tactic)
 
 
 class MITRETechnique(MITREObject):
@@ -63,14 +126,67 @@ class MITRETechnique(MITREObject):
         self._kill_chain_phases = list()
         self._mitigations = list()
         self._groups = list()
+        self._version = None
+        self._created = None
+        self._modified = None
+        self._shortname = None
+        self._external_references = list()
+        self._description = None
+        self._is_subtechnique = False
+        self._platforms = list()
+        self._permissions_required = list()
+        self._techniques_used = list()
+        self._tactic = None
+        self._data_sources = list()
+        self._detection = None
+    
+    @property
+    def version(self):
+        return self._version
+    
+    @version.setter
+    def version(self, version):
+        self._version = version
+    
+    @property
+    def created(self):
+        return self._created
+    
+    @created.setter
+    def created(self, created):
+        self._created = created
+    
+    @property
+    def modified(self):
+        return self._modified
+    
+    @modified.setter
+    def modified(self, modified):
+        self._modified = modified
+    
+    @property
+    def shortname(self):
+        return self._shortname
+    
+    @shortname.setter
+    def shortname(self, shortname):
+        self._shortname = shortname
 
     @property
-    def internal_id(self):
-        return self._internal_id
+    def external_references(self):
+        return self._external_references
+    
+    @external_references.setter
+    def external_references(self, reference:dict):
+        self._external_references.append(reference)
 
-    @internal_id.setter
-    def internal_id(self, internal_id):
-        self._internal_id = internal_id
+    @property
+    def techniques_used(self):
+        return self._techniques_used
+    
+    @techniques_used.setter
+    def techniques_used(self, technique_used:dict):
+        self._techniques_used.append(technique_used)
 
     @property
     def kill_chain_phases(self):
@@ -122,6 +238,42 @@ class MITRETechnique(MITREObject):
     @groups.setter
     def groups(self, group:dict):
         self._groups.append(group)
+
+    @property
+    def tactic(self):
+        return self._tactic
+    
+    @tactic.setter
+    def tactic(self, tactic):
+        self._tactic = tactic
+    
+    @property
+    def data_sources(self):
+        return self._data_sources
+    
+    @data_sources.setter
+    def data_sources(self, data_source):
+        self._data_sources = data_source
+    
+    @property
+    def detection(self):
+        return self._detection
+    
+    @detection.setter
+    def detection(self, detection):
+        self._detection = detection
+    
+    @property
+    def description(self):
+        return self._description
+
+    @description.setter
+    def description(self, description):
+        self._description = description
+    
+    @property
+    def references(self):
+        return self._references
 
 
 class MITREMitigation(MITREObject):

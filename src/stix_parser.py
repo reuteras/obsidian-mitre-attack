@@ -38,6 +38,7 @@ class StixParser():
 
         self.tactics = list()
 
+        tactic_list = []
         for tactic in tactics_stix:
             tactic_obj = MITRETactic(tactic['name'])
             # Extract external references, including the link to mitre
@@ -50,6 +51,33 @@ class StixParser():
                 tactic_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
 
             tactic_obj.description = tactic['description']
+            tactic_obj.created = tactic.get('created', '')
+            tactic_obj.modified = tactic.get('modified', '')
+            tactic_obj.version = tactic.get('x_mitre_version', [])
+            tactic_obj.shortname = tactic.get('x_mitre_shortname', '')
+
+            item = {'name': tactic['name'], 'shortname': tactic_obj.shortname}
+            if item not in tactic_list:
+                tactic_obj.tactics = item
+                tactic_list.append(item)
+
+            source_relationships = self.src.query([ Filter('type', '=', 'attack-pattern')])
+
+            added = []
+            for relationship in source_relationships:
+                ext_refs = relationship.get('external_references', [])
+                kill_chain_phase = relationship.get('kill_chain_phases', [])
+                for ext_ref in ext_refs:
+                    if ext_ref['source_name'] == 'mitre-attack':
+                        id = ext_ref['external_id']
+                    elif 'url' in ext_ref and 'description' in ext_ref:
+                        item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                        if item not in added:
+                            tactic_obj.external_references = item
+                            added.append(item)
+                for phase in kill_chain_phase:
+                    if phase['phase_name'] == tactic_obj.shortname:
+                        tactic_obj.techniques_used = {'id': id, 'name': relationship['name'], 'description': relationship['description'] }
 
             self.tactics.append(tactic_obj)
 
@@ -73,12 +101,15 @@ class StixParser():
                 # Extract external references, including the link to mitre
                 ext_refs = tech.get('external_references', [])
 
+                added = []
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         technique_obj.id = ext_ref['external_id']
-                        
-                    if 'url' in ext_ref:
-                        technique_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
+                    elif 'url' in ext_ref and 'description' in ext_ref:
+                        item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                        if item not in added:
+                            technique_obj.external_references = item
+                            added.append(item)
 
                 kill_chain = tech.get('kill_chain_phases', [])
 
@@ -86,10 +117,16 @@ class StixParser():
                     technique_obj.kill_chain_phases = kill_phase
 
                 technique_obj.is_subtechnique = tech['x_mitre_is_subtechnique']
-
                 technique_obj.platforms = tech.get('x_mitre_platforms', [])
                 technique_obj.permissions_required = tech.get('x_mitre_permissions_required', [])
                 technique_obj.description = tech['description']
+                technique_obj.data_sources = tech.get('x_mitre_data_sources', [])
+                technique_obj.created = tech.get('created', '')
+                technique_obj.modified = tech.get('modified', '')
+                technique_obj.version = tech.get('x_mitre_version', [])
+                technique_obj.tactic = tech['kill_chain_phases'][0]['phase_name']
+                technique_obj.type = tech['type']
+                technique_obj.detection = tech.get('x_mitre_detection', '')
 
                 self.techniques.append(technique_obj)
 
@@ -278,8 +315,6 @@ class StixParser():
                 ext_refs = software.get('external_references', [])
 
                 for ext_ref in ext_refs:
-                    if software['id'] == "malware--e7a5229f-05eb-440e-b982-9a6d2b2b87c8":
-                        print(ext_ref)
                     if ext_ref['source_name'] == 'mitre-attack':
                         software_obj.id = ext_ref['external_id']
                     elif 'url' in ext_ref:
