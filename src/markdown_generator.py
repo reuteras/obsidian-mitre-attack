@@ -47,7 +47,7 @@ class MarkdownGenerator():
                 content += f"ID: {tactic.id}\n"
                 content += f"Created: {tactic.created}\n"
                 content += f"Last Modified: {tactic.modified}\n"
-                content += "```\n"
+                content += "```\n\n\n"
 
                 # Techniques Used
                 if tactic.techniques_used:
@@ -109,7 +109,7 @@ class MarkdownGenerator():
                 content += f"Version: {technique.version}\n"
                 content += f"Created: {technique.created}\n"
                 content += f"Last Modified: {technique.modified}\n"
-                content += "```\n"
+                content += "```\n\n\n"
 
                 content += "### Tactic\n"
                 for kill_chain in technique.kill_chain_phases:
@@ -119,7 +119,7 @@ class MarkdownGenerator():
                             for t in tactic:
                                 content += f"- [[{t.name}]] ({t.id})\n"
 
-                content += "\n### Mitigations\n"
+                content += "\n\n### Mitigations\n"
                 if technique.mitigations:
                     content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for mitigation in technique.mitigations:
@@ -127,7 +127,7 @@ class MarkdownGenerator():
                         content += f"| [[{mitigation['mitigation'].name}\\|{mitigation['mitigation'].id}]] | {mitigation['mitigation'].name} | {description} |\n"
 
                 if not technique.is_subtechnique:
-                    content += "\n### Sub-techniques\n"
+                    content += "\n\n### Sub-techniques\n"
                     subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ]
                     if subtechniques:
                         content += "\n| ID | Name |\n| --- | --- |\n"
@@ -167,7 +167,7 @@ class MarkdownGenerator():
                 content += f"Version: {mitigation.version}\n"
                 content += f"Created: {mitigation.created}\n"
                 content += f"Last Modified: {mitigation.modified}\n"
-                content += "```\n"
+                content += "```\n\n\n"
 
                 # Techniques Addressed by Mitigation
                 content += "### Techniques Addressed by Mitigation\n"
@@ -192,7 +192,6 @@ class MarkdownGenerator():
                         if 'url' in alias:
                             name = alias['name'].replace(' ', '_')
                             content += f"[^{name}]: [{alias['description']}]({alias['url']})\n"
-
 
                 fd.write(content)
 
@@ -222,7 +221,7 @@ class MarkdownGenerator():
                 content += f"Version: {group.version}\n"
                 content += f"Created: {group.created}\n"
                 content += f"Last Modified: {group.modified}\n"
-                content += "```\n"
+                content += "```\n\n\n"
 
                 # Associated Group Descriptions
                 if group.aliases_references:
@@ -244,7 +243,7 @@ class MarkdownGenerator():
 
                 # Software Used
                 if group.software_used:
-                    content += "\n### Software Used\n"
+                    content += "\n\n\n### Software Used\n"
                     content += "\n| ID | Name |\n| --- | --- |\n"
                     for software in group.software_used:
                         content += f"| [[{software['name']}\\|{software['id']}]] | [[{software['name']}\\|{software['name']}]] |\n"
@@ -295,7 +294,7 @@ class MarkdownGenerator():
                 content += f"Version: {software.version}\n"
                 content += f"Created: {software.created}\n"
                 content += f"Last Modified: {software.modified}\n"
-                content += "```\n"
+                content += "```\n\n\n"
 
                 # Techniques Used by Software
                 content += "### Techniques Used\n"
@@ -319,7 +318,7 @@ class MarkdownGenerator():
                     pass
 
                 # Used in the following Campaigns
-                content += "\n### Campaigns\n"
+                content += "\n\n### Campaigns\n"
                 if software.campaigns_using:
                     content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for campaign in software.campaigns_using:
@@ -362,7 +361,7 @@ class MarkdownGenerator():
                 content += f"Version: {campaign.version}\n"
                 content += f"Created: {campaign.created}\n"
                 content += f"Last Modified: {campaign.modified}\n"
-                content += "```\n"
+                content += "```\n\n\n"
 
                 # Groups That Use This Campaign
                 content += "\n### Groups\n"
@@ -374,7 +373,7 @@ class MarkdownGenerator():
                         content += f"| [[{group['group'].name}\\|{group['group'].id}]] | {group['group'].name} | {description} |\n"
 
                 # Techniques Used by Campaign
-                content += "### Techniques Used\n"
+                content += "\n\n\n### Techniques Used\n"
                 if campaign.techniques_used:
                     content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
                     for technique in campaign.techniques_used:
@@ -383,7 +382,7 @@ class MarkdownGenerator():
                         content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
                 # Software Used in Campaign
-                content += "\n### Software\n"
+                content += "\n\n\n### Software\n"
                 if campaign.software_used:
                     content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for software in campaign.software_used:

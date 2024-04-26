@@ -42,14 +42,6 @@ class StixParser():
 
         for tactic in tactics_stix:
             tactic_obj = MITRETactic(tactic['name'])
-            # Extract external references, including the link to mitre
-            ext_refs = tactic.get('external_references', [])
-
-            for ext_ref in ext_refs:
-                if ext_ref['source_name'] == 'mitre-attack':
-                    tactic_obj.id = ext_ref['external_id']
-
-                tactic_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
 
             tactic_obj.description = tactic['description']
             tactic_obj.created = tactic.get('created', '')
@@ -57,6 +49,16 @@ class StixParser():
             tactic_obj.version = tactic.get('x_mitre_version', [])
             tactic_obj.shortname = tactic.get('x_mitre_shortname', '')
 
+            # Extract external references, including the link to mitre
+            ext_refs = tactic.get('external_references', [])
+
+            for ext_ref in ext_refs:
+                if ext_ref['source_name'] == 'mitre-attack':
+                    tactic_obj.id = ext_ref['external_id']
+                elif 'url' in ext_ref and 'description' in ext_ref:
+                    tactic_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+
+            # Extract external references from relationships
             source_relationships = self.src.query([ Filter('type', '=', 'attack-pattern')])
 
             added = []
@@ -218,7 +220,6 @@ class StixParser():
                                 mitigation_obj.external_references = item
                                 added.append(item)
 
-
                 self.mitigations.append(mitigation_obj)
 
 
@@ -351,7 +352,6 @@ class StixParser():
                     for technique in self.techniques:
                         if technique.internal_id == relationship['target_ref']:
                             software_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', '') }
-
 
                     if 'external_references' in relationship:
                         ext_refs = relationship.get('external_references', [])
