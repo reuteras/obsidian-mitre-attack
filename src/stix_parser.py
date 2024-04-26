@@ -1,7 +1,7 @@
 from stix2 import Filter
 from stix2 import MemoryStore
 import requests
-from .models import MITRETactic, MITRETechnique, MITREMitigation, MITREGroup, MITRESoftware
+from .models import MITRETactic, MITRETechnique, MITREMitigation, MITREGroup, MITRESoftware, MITRECampaign
 
 
 class StixParser():
@@ -11,11 +11,12 @@ class StixParser():
     Domain should be 'enterprise-attack', 'mobile-attack', or 'ics-attack'. Branch should typically be master.
     """
 
-    def __init__(self, repo_url, domain):
+    def __init__(self, repo_url, domain, version='15.0'):
         self.url = repo_url
         self.domain = domain
+        self.version = version
 
-        stix_json = requests.get(f"{self.url}/{domain}/{domain}.json").json()
+        stix_json = requests.get(f"{self.url}/{domain}/{domain}-{version}.json").json()
 
         self.src = MemoryStore(stix_data=stix_json['objects'])
 
@@ -25,6 +26,7 @@ class StixParser():
         self._get_techniques()
         self._get_mitigations()
         self._get_groups()
+        self._get_campaigns()
         self._get_software()
 
 
@@ -81,21 +83,32 @@ class StixParser():
         Get and parse techniques from STIX data
         """
 
+        # Extract tactics to build relationship between techniques and tactics
+        tactics_stix = self.src.query([ Filter('type', '=', 'x-mitre-tactic') ])
+
+        shortname_name = dict()
+
+        for tactic in tactics_stix:
+            shortname_name[tactic['x_mitre_shortname']] = tactic['name']
+
         # Extract techniques
-        tech_stix = self.src.query([ Filter('type', '=', 'attack-pattern') ])
+        techniques_stix = self.src.query([ Filter('type', '=', 'attack-pattern') ])
 
         self.techniques = list()
 
-        for tech in tech_stix:
+        for tech in techniques_stix:
             if 'x_mitre_deprecated' not in tech or not tech['x_mitre_deprecated']:
                 technique_obj = MITRETechnique(tech['name'])
 
                 technique_obj.internal_id = tech['id']
 
-                # Extract external references, including the link to mitre
+                # Use added to track added external references
+                added = []
+
+                # Get external references
                 ext_refs = tech.get('external_references', [])
 
-                added = []
+                # Extract external references and set the technique id
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         technique_obj.id = ext_ref['external_id']
@@ -119,9 +132,23 @@ class StixParser():
                 technique_obj.modified = tech.get('modified', '')
                 technique_obj.version = tech.get('x_mitre_version', [])
                 technique_obj.tactic = tech['kill_chain_phases'][0]['phase_name']
-                technique_obj.type = tech['type']
                 technique_obj.detection = tech.get('x_mitre_detection', '')
+                technique_obj.tactic_name = shortname_name[technique_obj.tactic]
 
+                # Extract external references from relationships
+                source_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', technique_obj.internal_id) ])
+
+                added = []
+                for relationship in source_relationships:
+                    if 'external_references' in relationship:
+                        ext_refs = relationship.get('external_references', [])
+                        for ext_ref in ext_refs:
+                            if 'url' in ext_ref and 'description' in ext_ref:
+                                item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                if item not in added:
+                                    technique_obj.external_references = item
+                                    added.append(item)
+                            
                 self.techniques.append(technique_obj)
 
 
@@ -304,6 +331,7 @@ class StixParser():
                 software_obj.description = software.get('description', '')
                 software_obj.created = software.get('created', '')
                 software_obj.modified = software.get('modified', '')
+                software_obj.aliases = software.get('aliases', [])
 
                 # Extract external references, including the link to mitre
                 ext_refs = software.get('external_references', [])
@@ -350,4 +378,96 @@ class StixParser():
                                     software_obj.external_references = item
                                     added.append(item)
 
+                # Used in campaigns
+                source_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
+
+                for relationship in source_relationships:
+                    for campaign in self.campaigns:
+                        if campaign.internal_id == relationship['target_ref']:
+                            software_obj.campaigns_using = {'campaign': campaign, 'description': relationship.get('description', '') }
+
+                    if 'external_references' in relationship:
+                        ext_refs = relationship.get('external_references', [])
+                        for ext_ref in ext_refs:
+                            if 'url' in ext_ref and 'description' in ext_ref:
+                                item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                if item not in added:
+                                    software_obj.external_references = item
+                                    added.append(item)
+
                 self.software.append(software_obj)
+
+
+    def _get_campaigns(self):
+        """
+        Get and parse campaigns from STIX data
+        """
+
+        # Extract campaigns
+        campaigns_stix = self.src.query([ Filter('type', '=', 'campaign') ])
+        
+        self.campaigns = list()
+
+        for campaign in campaigns_stix:
+            if campaign.get('x_mitre_deprecated', False) != 'true':
+                campaign_obj = MITRECampaign(campaign['name'])
+
+                campaign_obj.internal_id = campaign['id']
+                campaign_obj.aliases = campaign.get('aliases', [])
+                campaign_obj.description = campaign.get('description', '')
+                campaign_obj.version = campaign.get('x_mitre_version', [])
+                campaign_obj.created = campaign.get('created', '')
+                campaign_obj.modified = campaign.get('modified', '')
+                campaign_obj.first_seen = campaign.get('first_seen', '')
+                campaign_obj.last_seen = campaign.get('last_seen', '')
+
+                # Get group(s) associated with the campaign
+                group_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_obj.internal_id) ])
+
+                for relationship in group_relationships:
+                    for group in self.groups:
+                        if group.internal_id == relationship['target_ref']:
+                            campaign_obj.groups = {'group': group, 'description': relationship.get('description', '') }
+
+                # Get software used in the campaign
+                software_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', campaign_obj.internal_id) ])
+                software_malware = self.src.query([ Filter('type', '=', 'malware')])
+                software_tool = self.src.query([ Filter('type', '=', 'tool')])
+                softwares = software_malware + software_tool
+
+                for relationship in software_relationships:
+                    if campaign_obj.internal_id == relationship['source_ref']:
+                        for software in softwares:
+                            if software['id'] == relationship['target_ref']:
+                                campaign_obj.software_used = {'software': software, 'description': relationship.get('description', '') }
+
+                # Extract external references, including the link to mitre
+                ext_refs = campaign.get('external_references', [])
+
+                for ext_ref in ext_refs:
+                    if ext_ref['source_name'] == 'mitre-attack':
+                        campaign_obj.id = ext_ref['external_id']
+                    elif 'url' in ext_ref:
+                        campaign_obj.aliases_references = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                    else:
+                        if ext_ref['source_name'] != campaign_obj.name:
+                            campaign_obj.aliases_references = {'name': ext_ref['source_name'], 'description': ext_ref['description']}
+
+                source_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', campaign_obj.internal_id) ])
+                
+                added = []
+                for relationship in source_relationships:
+                    for technique in self.techniques:
+                        if technique.internal_id == relationship['target_ref']:
+                            campaign_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', '') }
+
+                    if 'external_references' in relationship:
+                        ext_refs = relationship.get('external_references', [])
+                        for ext_ref in ext_refs:
+                            if 'url' in ext_ref and 'description' in ext_ref:
+                                item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                if item not in added:
+                                    campaign_obj.external_references = item
+                                    added.append(item)
+
+                self.campaigns.append(campaign_obj)

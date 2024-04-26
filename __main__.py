@@ -26,14 +26,23 @@ if __name__ == '__main__':
         if domain not in ('enterprise-attack', 'mobile-attack', 'ics-attack'):
             raise ValueError("The domain provided is not supported")
 
-    parser = StixParser(config['repository_url'], domain)
+    stix_data = StixParser(config['repository_url'], domain)
 
-    parser.get_data()
+    stix_data.get_data()
+
+    if args.output:
+        output_dir = args.output + '/' + domain.replace('-', ' ').capitalize()
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+    else:
+        print("Provide an output directory via the -o flag (e.g. -o /path/to/your/vault/notes)")
+        exit()
+
     if args.generate_hyperlinks:
         if args.path:
             if os.path.isfile(args.path) and args.path.endswith('.md'):
                 markdown_reader = MarkdownReader(args.path)
-                markdown_reader.create_hyperlinks(parser.techniques)
+                markdown_reader.create_hyperlinks(stix_data.techniques)
             else:
                 print("You have not provided a valid markdown file path")
         else:
@@ -43,27 +52,21 @@ if __name__ == '__main__':
             if os.path.isfile(args.path) and args.path.endswith('.md'):
                 markdown_reader = MarkdownReader(args.path)
                 found_techniques = markdown_reader.find_techniques()
-                markdown_generator = MarkdownGenerator(tactics=parser.tactics, techniques=parser.techniques, mitigations=parser.mitigations, groups=parser.groups)
+                markdown_generator = MarkdownGenerator(output_dir, stix_data.techniques, stix_data.groups, stix_data.tactics, stix_data.mitigations, stix_data.software, stix_data.campaigns)
                 markdown_generator.create_canvas(re.sub('.md$',"",args.path), found_techniques)
             else:
                 print("You have not provided a valid markdown file path")
         else:
             print("Provide a file path")
     else:
-        if args.output:
-            output_dir = args.output + '/' + domain.replace('-', ' ').capitalize()
-            if not os.path.exists(output_dir):
-                os.mkdir(output_dir)
-        else:
-            exit()
-
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-        markdown_generator = MarkdownGenerator(output_dir, parser.software, parser.tactics, parser.techniques, parser.mitigations, parser.groups)
+        markdown_generator = MarkdownGenerator(output_dir, stix_data.techniques, stix_data.groups, stix_data.tactics, stix_data.mitigations, stix_data.software, stix_data.campaigns)
         markdown_generator.create_software_notes()
         markdown_generator.create_tactic_notes()
         markdown_generator.create_technique_notes()
         markdown_generator.create_mitigation_notes()
         markdown_generator.create_group_notes()
+        markdown_generator.create_campaign_notes()
         
         create_graph_json(output_dir)
