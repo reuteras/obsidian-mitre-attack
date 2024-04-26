@@ -18,7 +18,7 @@ def fix_description(description_str):
 def convert_to_local_links(text):
     def match_link(match):
         return '[[' + match.group(1) + ']]'
-    return re.sub(r'\[[\`\]]*?)\]\((https://attack.mitre.org/[^\)]+?)\)', match_link, text)
+    return re.sub(r'\[[^\]]*?)\]\((https://attack.mitre.org/[^\)]+?)\)', match_link, text)
 
 # Class to generate markdown notes
 class MarkdownGenerator():
