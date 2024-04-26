@@ -41,7 +41,7 @@ class MarkdownGenerator():
                 content += f"\n\n## {tactic.id}\n"
                 tactic_description = fix_description(tactic.description)
                 content += f"\n{tactic_description}\n\n"
-                
+
                 # Tactic Information
                 content += "```ad-info\n"
                 content += f"ID: {tactic.id}\n"
@@ -78,7 +78,7 @@ class MarkdownGenerator():
             tactic_folder = os.path.join(techniques_dir, technique.tactic_name)
             if not os.path.exists(tactic_folder):
                 os.mkdir(tactic_folder)
-            
+
             if technique.is_subtechnique:
                 parent_technique = [ t for t in self.techniques if t.id in technique.id.split('.')[0]]
                 parent_technique = parent_technique[0].name
@@ -117,7 +117,7 @@ class MarkdownGenerator():
                         tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
                         if tactic:
                             for t in tactic:
-                                content += f"- [[{t.name}]] ({t.id})\n" 
+                                content += f"- [[{t.name}]] ({t.id})\n"
 
                 content += "\n### Mitigations\n"
                 if technique.mitigations:
@@ -142,7 +142,7 @@ class MarkdownGenerator():
                     name = ref['name'].replace(' ', '_')
                     if 'url' in ref:
                         content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
- 
+
                 fd.write(content)
 
 
@@ -186,7 +186,7 @@ class MarkdownGenerator():
                     name = ref['name'].replace(' ', '_')
                     if 'url' in ref:
                         content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
-                
+
                 if mitigation.external_references:
                     for alias in mitigation.external_references:
                         if 'url' in alias:
@@ -257,7 +257,7 @@ class MarkdownGenerator():
                     name = ref['name'].replace(' ', '_')
                     if 'url' in ref:
                         content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
-                
+
                 if group.aliases_references:
                     for alias in group.aliases_references:
                         if 'url' in alias:
@@ -335,7 +335,7 @@ class MarkdownGenerator():
                     name = ref['name'].replace(' ', '_')
                     if 'url' in ref:
                         content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
- 
+
                 fd.write(content)
 
 
@@ -361,9 +361,9 @@ class MarkdownGenerator():
                 content += f"Last Seen: {campaign.last_seen}\n"
                 content += f"Version: {campaign.version}\n"
                 content += f"Created: {campaign.created}\n"
-                content += f"Last Modified: {campaign.modified}\n"                
+                content += f"Last Modified: {campaign.modified}\n"
                 content += "```\n"
-            
+
                 # Groups That Use This Campaign
                 content += "\n### Groups\n"
                 if campaign.groups:
@@ -475,7 +475,7 @@ class MarkdownGenerator():
                                     }
                             y = y + height + 20
                             canvas['nodes'].append(subtech_node)
-                    
+
                     rows[tactic[0].name] = y
                     if y > max_height:
                         max_height = y
@@ -491,9 +491,7 @@ class MarkdownGenerator():
                         "height": max_height + 20
                     }
             canvas['nodes'].append(container_node)
-                        
-            
+
+
         with open(f"{canvas_name}.canvas", 'w') as fd:
             fd.write(json.dumps(canvas, indent=2))
-            
-

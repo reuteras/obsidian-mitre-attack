@@ -7,7 +7,7 @@ class MarkdownReader():
         with open(file_path, 'r') as fd:
             self.__content = fd.read()
 
-    
+
     def create_hyperlinks(self, techniques):
         #regex = "\b(?<!/)T[0-9]{4}(?:\.[0-9]{3})?(?!.*\])\b"
         regex = "(.)(T[0-9]{4}(?:\.[0-9]{3})?)(.{2})"

@@ -23,10 +23,12 @@ if __name__ == '__main__':
 
     if args.domain:
         domain = args.domain
-        if domain not in ('enterprise-attack', 'mobile-attack', 'ics-attack'):
-            raise ValueError("The domain provided is not supported")
+    else:
+        domain = config['domain']
+    if domain not in ('enterprise-attack', 'mobile-attack', 'ics-attack'):
+        raise ValueError("The domain provided is not supported")
 
-    stix_data = StixParser(config['repository_url'], domain)
+    stix_data = StixParser(config['repository_url'], domain, version=config['version'])
 
     stix_data.get_data()
 
@@ -59,6 +61,7 @@ if __name__ == '__main__':
         else:
             print("Provide a file path")
     else:
+        # Main functionality
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
         markdown_generator = MarkdownGenerator(output_dir, stix_data.techniques, stix_data.groups, stix_data.tactics, stix_data.mitigations, stix_data.software, stix_data.campaigns)
@@ -68,5 +71,5 @@ if __name__ == '__main__':
         markdown_generator.create_mitigation_notes()
         markdown_generator.create_group_notes()
         markdown_generator.create_campaign_notes()
-        
+
         create_graph_json(output_dir)

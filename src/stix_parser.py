@@ -7,7 +7,7 @@ from .models import MITRETactic, MITRETechnique, MITREMitigation, MITREGroup, MI
 class StixParser():
     """
     Get and parse STIX data creating Tactics and Techniques objects
-    Get the ATT&CK STIX data from MITRE/CTI GitHub repository. 
+    Get the ATT&CK STIX data from MITRE/CTI GitHub repository.
     Domain should be 'enterprise-attack', 'mobile-attack', or 'ics-attack'. Branch should typically be master.
     """
 
@@ -20,7 +20,7 @@ class StixParser():
 
         self.src = MemoryStore(stix_data=stix_json['objects'])
 
-    
+
     def get_data(self):
         self._get_tactics()
         self._get_techniques()
@@ -48,7 +48,7 @@ class StixParser():
             for ext_ref in ext_refs:
                 if ext_ref['source_name'] == 'mitre-attack':
                     tactic_obj.id = ext_ref['external_id']
-                
+
                 tactic_obj.references = {'name': ext_ref['source_name'], 'url': ext_ref['url']}
 
             tactic_obj.description = tactic['description']
@@ -148,7 +148,7 @@ class StixParser():
                                 if item not in added:
                                     technique_obj.external_references = item
                                     added.append(item)
-                            
+
                 self.techniques.append(technique_obj)
 
 
@@ -171,9 +171,9 @@ class StixParser():
         self.mitigations = list()
 
         for mitigation in mitigations_stix:
-            if not mitigation.get('x_mitre_deprecated', False): 
+            if not mitigation.get('x_mitre_deprecated', False):
                 mitigation_obj = MITREMitigation(mitigation['name'])
-                
+
                 mitigation_obj.internal_id = mitigation['id']
                 mitigation_obj.description = mitigation['description']
                 mitigation_obj.created = mitigation.get('created', '')
@@ -185,7 +185,7 @@ class StixParser():
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         mitigation_obj.id = ext_ref['external_id']
-                        
+
                 mitigation_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('source_ref', '=', mitigation_obj.internal_id) ])
 
                 added = []
@@ -405,7 +405,7 @@ class StixParser():
 
         # Extract campaigns
         campaigns_stix = self.src.query([ Filter('type', '=', 'campaign') ])
-        
+
         self.campaigns = list()
 
         for campaign in campaigns_stix:
@@ -454,7 +454,7 @@ class StixParser():
                             campaign_obj.aliases_references = {'name': ext_ref['source_name'], 'description': ext_ref['description']}
 
                 source_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', campaign_obj.internal_id) ])
-                
+
                 added = []
                 for relationship in source_relationships:
                     for technique in self.techniques:
