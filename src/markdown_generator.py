@@ -14,6 +14,11 @@ def fix_description(description_str):
     description = re.sub(r'\(Citation: ([^)]+?)\)', match_citation, description_str)
     return description
 
+# Function to convert to local links
+def convert_to_local_links(text):
+    def match_link(match):
+        return f"[[{match.group(1)}]]"
+    return re.sub(r'\[(.*?)\]\((https://attack.mitre.org/[^\)]*?)\)', match_link, text)
 
 # Class to generate markdown notes
 class MarkdownGenerator():
@@ -66,6 +71,7 @@ class MarkdownGenerator():
                     if 'url' in ref:
                         content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
 
+                content = convert_to_local_links(content)
                 fd.write(content)
 
 
@@ -143,6 +149,7 @@ class MarkdownGenerator():
                     if 'url' in ref:
                         content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
 
+                content = convert_to_local_links(content)
                 fd.write(content)
 
 
@@ -193,6 +200,7 @@ class MarkdownGenerator():
                             name = alias['name'].replace(' ', '_')
                             content += f"[^{name}]: [{alias['description']}]({alias['url']})\n"
 
+                content = convert_to_local_links(content)
                 fd.write(content)
 
 
@@ -263,6 +271,7 @@ class MarkdownGenerator():
                             name = alias['name'].replace(' ', '_')
                             content += f"[^{name}]: [{alias['description']}]({alias['url']})\n"
 
+                content = convert_to_local_links(content)
                 fd.write(content)
 
 
@@ -335,6 +344,7 @@ class MarkdownGenerator():
                     if 'url' in ref:
                         content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
 
+                content = convert_to_local_links(content)
                 fd.write(content)
 
 
@@ -403,6 +413,7 @@ class MarkdownGenerator():
                     if 'url' in ref:
                         content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
 
+                content = convert_to_local_links(content)
                 fd.write(content)
 
 
