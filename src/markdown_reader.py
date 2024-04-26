@@ -10,7 +10,7 @@ class MarkdownReader():
 
     def create_hyperlinks(self, techniques):
         #regex = "\b(?<!/)T[0-9]{4}(?:\.[0-9]{3})?(?!.*\])\b"
-        regex = "(.)(T[0-9]{4}(?:\.[0-9]{3})?)(.{2})"
+        regex = "(.)(T[0-9]{4}(?:.[0-9]{3})?)(.{2})"
 
         def replace_with_hyperlink(match):
             prefix = match.group(1)
@@ -24,7 +24,7 @@ class MarkdownReader():
                 print(f"creating an internal hyperlink for {string}")
                 technique_name = [ technique.name for technique in techniques if technique.id == string ]
                 if technique_name:
-                    return f" [[{technique_name[0]}\|{string}]] "
+                    return f" [[{technique_name[0]}\\|{string}]] "
 
         self.__content = re.sub(regex, replace_with_hyperlink, self.__content)
 
@@ -33,7 +33,7 @@ class MarkdownReader():
 
 
     def find_techniques(self):
-        regex = "T[0-9]{4}(?:\.[0-9]{3})?"
+        regex = "T[0-9]{4}(?:.[0-9]{3})?"
 
         found_techniques = re.findall(regex, self.__content)
 
