@@ -6,7 +6,7 @@ import os
 import yaml
 
 if __name__ == '__main__':
-    domains = ['enterprise-attack', 'mobile-attack', 'pre-attack']
+    domains = ['enterprise-attack', 'mobile-attack', 'ics-attack']
     parser = argparse.ArgumentParser(description='Download MITRE ATT&CK STIX data and parse it to Obsidian markdown notes')
 
     parser.add_argument('--path', help="Filepath to the markdown note file")
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     for domain in domains:
-        stix_data = StixParser(config['repository_url'], domain, version=config['version'], campaigns=args.campaigns)
+        stix_data = StixParser(config['repository_url'], domain, version=config['version'])
         stix_data.get_data()
 
         output_dir = args.output + '/' + domain.replace('-', ' ').capitalize()
