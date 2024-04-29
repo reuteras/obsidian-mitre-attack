@@ -27,7 +27,7 @@ if __name__ == '__main__':
         stix_data = StixParser(config['repository_url'], domain, version=config['version'])
         stix_data.get_data()
 
-        output_dir = args.output + '/' + domain.replace('-', ' ').capitalize()
+        output_dir = args.output + '/' + domain.replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
         markdown_generator = MarkdownGenerator(output_dir, stix_data.techniques, stix_data.groups, stix_data.tactics, stix_data.mitigations, stix_data.software, stix_data.campaigns)
