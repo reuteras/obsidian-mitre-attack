@@ -250,8 +250,10 @@ class StixParser():
         groups_stix = self.src.query([ Filter('type', '=', 'intrusion-set') ])
 
         # Extract software
-        software_stix = self.src.query([ Filter('type', '=', 'malware')])
+        software_malware_stix = self.src.query([ Filter('type', '=', 'malware')])
+        software_tool_stix = self.src.query([ Filter('type', '=', 'tool')])
 
+        software_stix = software_malware_stix + software_tool_stix
         software_list = list()
 
         for software in software_stix:
@@ -280,7 +282,10 @@ class StixParser():
                     if ext_ref['source_name'] == 'mitre-attack':
                         group_obj.id = ext_ref['external_id']
                     elif 'url' in ext_ref:
-                        group_obj.aliases_references = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                        item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                        if item not in added:
+                            group_obj.external_references = item
+                            added.append(item)
                     else:
                         if ext_ref['source_name'] != group_obj.name:
                             group_obj.aliases_references = {'name': ext_ref['source_name'], 'description': ext_ref['description']}
@@ -301,9 +306,7 @@ class StixParser():
                                     group_obj.external_references = item
                                     added.append(item)
 
-                malware_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ], Filter('target_ref', 'contains', 'malware--'))
-                tool_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ], Filter('target_ref', 'contains', 'tool--'))
-                software_relationships = malware_relationships + tool_relationships
+                software_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
 
                 for relationship in software_relationships:
                     for software in software_list:
@@ -434,6 +437,7 @@ class StixParser():
             if ('x_mitre_deprecated' not in campaign or not campaign['x_mitre_deprecated']) and ('revoked' not in campaign or not campaign['revoked']):
                 campaign_obj = MITRECampaign(campaign['name'])
                 added = []
+                groups_added = []
 
                 # Add attributes to the campaign object
                 campaign_obj.internal_id = campaign['id']
@@ -467,7 +471,10 @@ class StixParser():
                 for relationship in group_relationships:
                     for group in self.groups:
                         if group.internal_id == relationship['target_ref']:
-                            campaign_obj.groups = {'group': group, 'description': relationship.get('description', '') }
+                            item = {'group': group, 'description': relationship.get('description', '') }
+                            if item not in groups_added:
+                                campaign_obj.groups = item
+                                groups_added.append(item)
 
                 # Get software used in the campaign
                 software_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', campaign_obj.internal_id) ])
@@ -489,11 +496,15 @@ class StixParser():
                 software_tool = software_tool_enterprise + software_tool_mobile + software_tool_ics
                 softwares = software_malware + software_tool
 
+                software_added = []
                 for relationship in software_relationships:
                     if campaign_obj.internal_id == relationship['source_ref']:
                         for software in softwares:
                             if software['id'] == relationship['target_ref']:
-                                campaign_obj.software_used = {'software': software, 'description': relationship.get('description', '') }
+                                item = {'software': software, 'description': relationship.get('description', '') }
+                                if item not in software_added:
+                                    campaign_obj.software_used = item
+                                    software_added.append(item)
 
                 source_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id) ])
                 source_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id) ])
