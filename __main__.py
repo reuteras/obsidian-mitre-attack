@@ -13,6 +13,7 @@ if __name__ == '__main__':
 
     parser.add_argument('-d', '--domain', help="Domain should be 'enterprise-attack', 'mobile-attack' or 'ics-attack'", default='enterprise-attack')
     parser.add_argument('-o', '--output', help="Output directory in which the notes will be saved. It should be placed inside a Obsidian vault.")
+    parser.add_argument('-c', '--campaigns', help="Include campaigns in the output (will download all domains)", action='store_true')
     parser.add_argument('--generate-hyperlinks', help="Generate techniques hyperlinks in a markdown note file", action="store_true")
     parser.add_argument('--generate-matrix', help="Create ATT&CK matrix starting from a markdown note file", action="store_true")
     parser.add_argument('--path', help="Filepath to the markdown note file")
@@ -22,6 +23,9 @@ if __name__ == '__main__':
     with open('config.yml', 'r') as fd:
         config = yaml.safe_load(fd)
 
+    if args.campaigns and args.domain:
+        raise ValueError("You cannot use the -c/--campaigns flag with a specific domain")
+
     if args.domain:
         domain = args.domain
     else:
@@ -29,7 +33,7 @@ if __name__ == '__main__':
     if domain not in ('enterprise-attack', 'mobile-attack', 'ics-attack'):
         raise ValueError("The domain provided is not supported")
 
-    stix_data = StixParser(config['repository_url'], domain, version=config['version'])
+    stix_data = StixParser(config['repository_url'], domain, version=config['version'], campaigns=args.campaigns)
 
     stix_data.get_data()
 
