@@ -41,7 +41,14 @@ class MarkdownGenerator():
             tactic_file = os.path.join(tactics_dir, f"{tactic.name}.md")
 
             with open(tactic_file, 'w') as fd:
-                content = f"---\nalias: {tactic.id}\n---"
+                content = "---\naliases:\n"
+                content += f"  - {tactic.id}\n"
+                content += f"  - {tactic.name} ({tactic.id})\n"
+                content += f"  - {tactic.id} ({tactic.name})\n"
+                content += "tags:\n"
+                content += "  - tactic\n"
+                content += "---"
+
                 content += f"\n\n## {tactic.id}\n"
                 tactic_description = fix_description(tactic.description)
                 content += f"\n{tactic_description}\n\n"
@@ -96,7 +103,19 @@ class MarkdownGenerator():
             technique_file = os.path.join(technique_name_folder, f"{technique.name}.md")
 
             with open(technique_file, 'w') as fd:
-                content = f"---\nalias: {technique.id}\n---\n\n"
+                content = "---\naliases:\n"
+                content += f"  - {technique.id}\n"
+                content += f"  - {technique.name} ({technique.id})\n"
+                content += f"  - {technique.id} ({technique.name})\n"
+                content += "tags:\n"
+                content += "  - technique\n"
+                if technique.platforms:
+                    content += "  - "
+                    content += f"{'\n  - '.join(technique.platforms)}"
+                    content += "\n"
+                if technique.supports_remote:
+                    content += "  - supports_remote\n"
+                content += "---\n\n"
 
                 content += f"## {technique.id}\n\n"
                 technique_description = fix_description(technique.description)
@@ -111,7 +130,14 @@ class MarkdownGenerator():
                     content += f"Sub-techniques: {', '.join([ subt.id for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ])}\n"
                 content += f"Data Sources: {', '.join(technique.data_sources)}\n"
                 content += f"Platforms: {', '.join(technique.platforms)}\n"
-                content += f"Permissions Required: {', '.join(technique.permissions_required)}\n"
+                if technique.permissions_required:
+                    content += f"Permissions Required: {', '.join(technique.permissions_required)}\n"
+                if technique.effective_permissions:
+                    content += f"Effective Permissions: {', '.join(technique.effective_permissions)}\n"
+                if technique.defense_bypassed:
+                    content += f"Defense Bypassed: {', '.join(technique.defense_bypassed)}\n"
+                if technique.supports_remote:
+                    content += "Remote Support: Yes\n"
                 content += f"Version: {technique.version}\n"
                 content += f"Created: {technique.created}\n"
                 content += f"Last Modified: {technique.modified}\n"
@@ -123,7 +149,7 @@ class MarkdownGenerator():
                         tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
                         if tactic:
                             for t in tactic:
-                                content += f"- [[{t.name}]] ({t.id})\n"
+                                content += f"  - [[{t.name}]] ({t.id})\n"
 
                 content += "\n\n### Mitigations\n"
                 if technique.mitigations:
@@ -163,7 +189,13 @@ class MarkdownGenerator():
             mitigation_file = os.path.join(mitigations_dir, f"{mitigation.name}.md")
 
             with open(mitigation_file, 'w') as fd:
-                content = f"---\nalias: {mitigation.id}\n---\n\n"
+                content = "---\naliases:\n"
+                content += f"  - {mitigation.id}\n"
+                content += f"  - {mitigation.name} ({mitigation.id})\n" 
+                content += f"  - {mitigation.id} ({mitigation.name})\n" 
+                content += "tags:\n"
+                content += "  - mitigation\n"
+                content += "---\n\n"
 
                 content += f"## {mitigation.id}\n\n"
                 mitigation_description = fix_description(mitigation.description)
@@ -219,7 +251,10 @@ class MarkdownGenerator():
             group_file = os.path.join(groups_dir, f"{group.name}.md")
 
             with open(group_file, 'w') as fd:
-                content = f"---\nalias: {', '.join(group.aliases)}\n---\n\n"
+                content = f"---\naliases:\n  - {'\n  - '.join(group.aliases)}\n"
+                content += "tags:\n"
+                content += "  - group\n"
+                content += "---\n\n"
 
                 content += f"## {group.name}\n\n"
                 group_description = fix_description(group.description)
@@ -295,7 +330,18 @@ class MarkdownGenerator():
             software_file = os.path.join(software_dir, f"{software.name}.md")
 
             with open(software_file, 'w') as fd:
-                content = f"---\nalias: {software.id}\n---\n\n"
+                content = f"---\naliases:\n  - {software.id}\n"
+                content += f"  - {software.name} ({software.id})\n"
+                content += f"  - {software.id} ({software.name})\n"  
+                content += "tags:\n"
+                content += "  - software\n"
+                content += f"  - {software.type}\n"
+                if software.platforms:
+                    platforms = [ '\n  - '.join(platform) for platform in software.platforms ]
+                    content += "  - "
+                    content += f"{'\n'.join(platforms)}"
+                content += "\n---\n\n"
+
 
                 content += f"## {software.name}\n\n"
                 software_description = fix_description(software.description)
@@ -373,7 +419,9 @@ class MarkdownGenerator():
             campaign_file = os.path.join(campaigns_dir, f"{campaign.name}.md")
 
             with open(campaign_file, 'w') as fd:
-                content = f"---\nalias: {campaign.id}\n---\n\n"
+                content = "---\naliases:\n"
+                content += f"  - {campaign.id}\n"
+                content += "---\n\n"
 
                 content += f"## {campaign.name}\n\n"
                 campaign_description = fix_description(campaign.description)

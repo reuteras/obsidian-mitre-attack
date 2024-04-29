@@ -8,6 +8,7 @@ class MITREObject():
         self._name = name.replace('/', '／')
         self._references = dict()
         self._internal_id = None
+        self._domain = None
 
     @property
     def name(self):
@@ -51,6 +52,14 @@ class MITREObject():
     @internal_id.setter
     def internal_id(self, internal_id):
         self._internal_id = internal_id
+    
+    @property
+    def domain(self):
+        return self._domain
+    
+    @domain.setter
+    def domain(self, domain):
+        self._domain = domain
 
 
 class MITRETactic(MITREObject):
@@ -135,11 +144,14 @@ class MITRETechnique(MITREObject):
         self._is_subtechnique = False
         self._platforms = list()
         self._permissions_required = list()
+        self._effective_permissions = list()
+        self._defense_bypassed = list()
         self._techniques_used = list()
         self._tactic = None
         self._data_sources = list()
         self._detection = None
         self._tactic_name = None
+        self._supports_remote = False
 
     @property
     def version(self):
@@ -279,6 +291,30 @@ class MITRETechnique(MITREObject):
     @tactic_name.setter
     def tactic_name(self, tactic_name):
         self._tactic_name = tactic_name
+
+    @property
+    def defense_bypassed(self):
+        return self._defense_bypassed
+    
+    @defense_bypassed.setter
+    def defense_bypassed(self, defense_bypassed):
+        self._defense_bypassed = defense_bypassed
+
+    @property
+    def effective_permissions(self):
+        return self._effective_permissions
+    
+    @effective_permissions.setter
+    def effective_permissions(self, effective_permissions):
+        self._effective_permissions = effective_permissions
+    
+    @property
+    def supports_remote(self):
+        return self._supports_remote
+    
+    @supports_remote.setter
+    def supports_remote(self, supports_remote):
+        self._supports_remote = supports_remote
 
 
 class MITREMitigation(MITREObject):
