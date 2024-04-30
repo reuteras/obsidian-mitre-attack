@@ -27,16 +27,17 @@ if __name__ == '__main__':
 
     for domain in domains:
         stix_data.get_domain_data(domain)
+        # Only run one time. Could be for any domain
         if domain == 'enterprise-attack':
             stix_data.get_cti_data()
 
-        output_dir = args.output + '/' + domain.replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
+        output_dir = args.output
         if not os.path.exists(output_dir):
             os.mkdir(output_dir)
         markdown_generator = MarkdownGenerator(output_dir, stix_data.techniques, stix_data.groups, stix_data.tactics, stix_data.mitigations, stix_data.software, stix_data.campaigns)
-        markdown_generator.create_tactic_notes()
-        markdown_generator.create_technique_notes()
-        markdown_generator.create_mitigation_notes()
+        markdown_generator.create_tactic_notes(domain.replace('-', ' ').capitalize().replace('Ics ', 'ICS '))
+        markdown_generator.create_technique_notes(domain.replace('-', ' ').capitalize().replace('Ics ', 'ICS '))
+        markdown_generator.create_mitigation_notes(domain.replace('-', ' ').capitalize().replace('Ics ', 'ICS '))
 
         # Only run one time. Could be for any domain
         if domain == 'enterprise-attack':

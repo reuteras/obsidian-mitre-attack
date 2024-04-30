@@ -32,8 +32,11 @@ class MarkdownGenerator():
 
 
     # Function to create markdown notes for tactics
-    def create_tactic_notes(self):
-        tactics_dir = os.path.join(self.output_dir, "Tactics")
+    def create_tactic_notes(self, domain):
+        base_dir = os.path.join(self.output_dir, "Tactics")
+        if not os.path.exists(base_dir):
+            os.mkdir(base_dir)
+        tactics_dir = os.path.join(base_dir, domain)
         if not os.path.exists(tactics_dir):
             os.mkdir(tactics_dir)
 
@@ -57,8 +60,8 @@ class MarkdownGenerator():
                 # Tactic Information
                 content += "```ad-info\n"
                 content += f"ID: {tactic.id}\n"
-                content += f"Created: {tactic.created}\n"
-                content += f"Last Modified: {tactic.modified}\n"
+                content += f"Created: {str(tactic.created).split(' ')[0]}\n"
+                content += f"Last Modified: {str(tactic.modified).split(' ')[0]}\n"
                 content += "```\n\n\n"
 
                 # Techniques Used
@@ -83,8 +86,11 @@ class MarkdownGenerator():
 
 
     # Function to create markdown notes for techniques
-    def create_technique_notes(self):
-        techniques_dir = os.path.join(self.output_dir, "Techniques")
+    def create_technique_notes(self, domain):
+        base_dir = os.path.join(self.output_dir, "Techniques")
+        if not os.path.exists(base_dir):
+            os.mkdir(base_dir)
+        techniques_dir = os.path.join(base_dir, domain)
         if not os.path.exists(techniques_dir):
             os.mkdir(techniques_dir)
 
@@ -111,10 +117,11 @@ class MarkdownGenerator():
                 content += f"  - {technique.id} ({technique.name})\n"
                 content += "tags:\n"
                 content += "  - technique\n"
-                if technique.platforms:
-                    content += "  - "
-                    content += f"{'\n  - '.join(technique.platforms)}"
-                    content += "\n"
+                if technique.platforms and 'None' not in technique.platforms:
+                    for platform in technique.platforms:
+                        if platform:
+                            content += f"  - {platform.replace(' ', '_')}\n"
+
                 if technique.supports_remote:
                     content += "  - supports_remote\n"
                 content += "---\n\n"
@@ -131,7 +138,8 @@ class MarkdownGenerator():
                 else:
                     content += f"Sub-techniques: {', '.join([ subt.id for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ])}\n"
                 content += f"Data Sources: {', '.join(technique.data_sources)}\n"
-                content += f"Platforms: {', '.join(technique.platforms)}\n"
+                if technique.platforms and 'None' not in technique.platforms:
+                    content += f"Platforms: {', '.join(technique.platforms)}\n"
                 if technique.permissions_required:
                     content += f"Permissions Required: {', '.join(technique.permissions_required)}\n"
                 if technique.effective_permissions:
@@ -141,8 +149,8 @@ class MarkdownGenerator():
                 if technique.supports_remote:
                     content += "Remote Support: Yes\n"
                 content += f"Version: {technique.version}\n"
-                content += f"Created: {technique.created}\n"
-                content += f"Last Modified: {technique.modified}\n"
+                content += f"Created: {str(technique.created).split(' ')[0]}\n"
+                content += f"Last Modified: {str(technique.modified).split(' ')[0]}\n"
                 content += "```\n\n\n"
 
                 content += "### Tactic\n"
@@ -182,8 +190,14 @@ class MarkdownGenerator():
 
 
     # Function to create markdown notes for mitigations
-    def create_mitigation_notes(self):
-        mitigations_dir = os.path.join(self.output_dir, "Mitigations")
+    def create_mitigation_notes(self, domain):
+        base_dir = os.path.join(self.output_dir, "Defenses")
+        if not os.path.exists(base_dir):
+            os.mkdir(base_dir)
+        defenses_dir = os.path.join(base_dir, "Mitigations")
+        if not os.path.exists(defenses_dir):
+            os.mkdir(defenses_dir)
+        mitigations_dir = os.path.join(defenses_dir, domain)
         if not os.path.exists(mitigations_dir):
             os.mkdir(mitigations_dir)
 
@@ -208,8 +222,8 @@ class MarkdownGenerator():
                 content += "```ad-info\n"
                 content += f"ID: {mitigation.id}\n"
                 content += f"Version: {mitigation.version}\n"
-                content += f"Created: {mitigation.created}\n"
-                content += f"Last Modified: {mitigation.modified}\n"
+                content += f"Created: {str(mitigation.created).split(' ')[0]}\n"
+                content += f"Last Modified: {str(mitigation.modified).split(' ')[0]}\n"
                 content += "```\n\n\n"
 
                 # Techniques Addressed by Mitigation
@@ -240,8 +254,7 @@ class MarkdownGenerator():
 
     # Function to create markdown notes for groups in CTI folder
     def create_group_notes(self):
-        base_dir = os.path.join(self.output_dir, "..")
-        cti_dir = os.path.join(base_dir, "CTI")
+        cti_dir = os.path.join(self.output_dir, "CTI")
         if not os.path.exists(cti_dir):
             os.mkdir(cti_dir)
         groups_dir = os.path.join(cti_dir, "Groups")
@@ -270,8 +283,8 @@ class MarkdownGenerator():
                 if group.contributors:
                     content += f"Contributors: {', '.join(group.contributors)}\n"
                 content += f"Version: {group.version}\n"
-                content += f"Created: {group.created}\n"
-                content += f"Last Modified: {group.modified}\n"
+                content += f"Created: {str(group.created).split(' ')[0]}\n"
+                content += f"Last Modified: {str(group.modified).split(' ')[0]}\n"
                 content += "```\n\n\n"
 
                 # Associated group descriptions
@@ -320,8 +333,7 @@ class MarkdownGenerator():
 
     # Function to create markdown notes for software in CTI folder
     def create_software_notes(self):
-        base_dir = os.path.join(self.output_dir, "..")
-        cti_dir = os.path.join(base_dir, "CTI")
+        cti_dir = os.path.join(self.output_dir, "CTI")
         if not os.path.exists(cti_dir):
             os.mkdir(cti_dir)
         software_dir = os.path.join(cti_dir, "Software")
@@ -340,9 +352,9 @@ class MarkdownGenerator():
                 content += "  - software\n"
                 content += f"  - {software.type}\n"
                 if software.platforms:
-                    platforms = [ '\n  - '.join(platform) for platform in software.platforms ]
-                    content += "  - "
-                    content += f"{'\n'.join(platforms)}"
+                    for platform in software.platforms:
+                        if platform:
+                            content += f"  - {platform[0].replace(' ', '_')}\n"
                 content += "\n---\n\n"
 
                 content += f"## {software.name}\n\n"
@@ -360,8 +372,8 @@ class MarkdownGenerator():
                 if software.contributors:
                     content += f"Contributors: {', '.join(software.contributors)}\n"
                 content += f"Version: {software.version}\n"
-                content += f"Created: {software.created}\n"
-                content += f"Last Modified: {software.modified}\n"
+                content += f"Created: {str(software.created).split(' ')[0]}\n"
+                content += f"Last Modified: {str(software.modified).split(' ')[0]}\n"
                 content += "```\n\n\n"
 
                 # Techniques used by software
@@ -408,8 +420,7 @@ class MarkdownGenerator():
 
     # Function to create markdown notes for campaigns in CTI folder
     def create_campaign_notes(self):
-        base_dir = os.path.join(self.output_dir, "..")
-        cti_dir = os.path.join(base_dir, "CTI")
+        cti_dir = os.path.join(self.output_dir, "CTI")
         if not os.path.exists(cti_dir):
             os.mkdir(cti_dir)
         campaigns_dir = os.path.join(cti_dir, "Campaigns")
@@ -432,11 +443,11 @@ class MarkdownGenerator():
                 # Campaign information
                 content += "```ad-info\n"
                 content += f"ID: {campaign.id}\n"
-                content += f"First Seen: {campaign.first_seen}\n"
-                content += f"Last Seen: {campaign.last_seen}\n"
+                content += f"First Seen: {str(campaign.first_seen).split(' ')[0]}\n"
+                content += f"Last Seen: {str(campaign.last_seen).split(' ')[0]}\n"
                 content += f"Version: {campaign.version}\n"
-                content += f"Created: {campaign.created}\n"
-                content += f"Last Modified: {campaign.modified}\n"
+                content += f"Created: {str(campaign.created).split(' ')[0]}\n"
+                content += f"Last Modified: {str(campaign.modified).split(' ')[0]}\n"
                 content += "```\n"
 
                 # Groups that use this campaign
