@@ -152,6 +152,10 @@ class MITRETechnique(MITREObject):
         self._detection = None
         self._tactic_name = None
         self._supports_remote = False
+        self._system_requirements = None # Not implemented yet
+        self._contributors = list() # Not implemented yet
+        self._procedure_examples = list() # Not implemented yet
+        self._detection = None # Not implemented yet
 
     @property
     def version(self):
@@ -315,6 +319,38 @@ class MITRETechnique(MITREObject):
     @supports_remote.setter
     def supports_remote(self, supports_remote):
         self._supports_remote = supports_remote
+    
+    @property
+    def system_requirements(self):
+        return self._system_requirements
+    
+    @system_requirements.setter
+    def system_requirements(self, system_requirements):
+        self._system_requirements = system_requirements
+    
+    @property
+    def contributors(self):
+        return self._contributors
+    
+    @contributors.setter
+    def contributors(self, contributors):
+        self._contributors = contributors
+    
+    @property
+    def procedure_examples(self):
+        return self._procedure_examples
+    
+    @procedure_examples.setter
+    def procedure_examples(self, procedure_examples):
+        self._procedure_examples = procedure_examples
+    
+    @property
+    def detection(self):
+        return self._detection
+    
+    @detection.setter
+    def detection(self, detection):
+        self._detection = detection
 
 
 class MITREMitigation(MITREObject):
@@ -391,6 +427,7 @@ class MITREGroup(MITREObject):
         self._external_references = list()
         self._software_used = list()
         self._techniques_used = list()
+        self._contributors = None # Not implemented yet
 
     @property
     def aliases(self):
@@ -431,6 +468,14 @@ class MITREGroup(MITREObject):
     @techniques_used.setter
     def techniques_used(self, technique_used:dict):
         self._techniques_used.append(technique_used)
+    
+    @property
+    def contributors(self):
+        return self._contributors
+    
+    @contributors.setter
+    def contributors(self, contributors):
+        self._contributors = contributors
 
 
 class MITRESoftware(MITREObject):
