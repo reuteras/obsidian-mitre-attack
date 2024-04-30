@@ -11,9 +11,8 @@ class StixParser():
     Domain should be 'enterprise-attack', 'mobile-attack', or 'ics-attack'. Branch should typically be master.
     """
 
-    def __init__(self, repo_url, domain, version='15.0'):
+    def __init__(self, repo_url, version='15.0'):
         self.url = repo_url
-        self.domain = domain
         self.version = version
 
         stix_json = requests.get(f"{self.url}/enterprise-attack/enterprise-attack-{version}.json").json()
@@ -25,6 +24,11 @@ class StixParser():
         stix_json = requests.get(f"{self.url}/ics-attack/ics-attack-{version}.json").json()
         self.ics_attack = MemoryStore(stix_data=stix_json['objects'])
 
+
+    # Build data structures from STIX data
+    def get_domain_data(self, domain):
+        self.domain = domain
+
         if domain == 'enterprise-attack':
             self.src = self.enterprise_attack
         elif domain == 'mobile-attack':
@@ -32,12 +36,12 @@ class StixParser():
         elif domain == 'ics-attack':
             self.src = self.ics_attack
 
-
-    # Build data structures from STIX data
-    def get_data(self):
         self._get_tactics()
         self._get_techniques()
         self._get_mitigations()
+
+
+    def get_cti_data(self):
         self._get_groups()
         self._get_campaigns()
         self._get_software()
@@ -247,13 +251,20 @@ class StixParser():
         """
 
         # Extract groups
-        groups_stix = self.src.query([ Filter('type', '=', 'intrusion-set') ])
+        groups_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'intrusion-set') ])
+        groups_mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'intrusion-set') ])
+        groups_ics_stix = self.ics_attack.query([ Filter('type', '=', 'intrusion-set') ])
+        groups_stix = groups_enterprise_stix + groups_mobile_stix + groups_ics_stix
 
         # Extract software
-        software_malware_stix = self.src.query([ Filter('type', '=', 'malware')])
-        software_tool_stix = self.src.query([ Filter('type', '=', 'tool')])
+        software_enterprise_malware_stix = self.enterprise_attack.query([ Filter('type', '=', 'malware')])
+        software_enterprise_tool_stix = self.enterprise_attack.query([ Filter('type', '=', 'tool')])
+        software_mobile_malware_stix = self.mobile_attack.query([ Filter('type', '=', 'malware')])
+        software_mobile_tool_stix = self.mobile_attack.query([ Filter('type', '=', 'tool')])
+        software_ics_malware_stix = self.ics_attack.query([ Filter('type', '=', 'malware')])
+        software_ics_tool_stix = self.ics_attack.query([ Filter('type', '=', 'tool')])
 
-        software_stix = software_malware_stix + software_tool_stix
+        software_stix = software_enterprise_malware_stix + software_enterprise_tool_stix + software_mobile_malware_stix + software_mobile_tool_stix + software_ics_malware_stix + software_ics_tool_stix
         software_list = list()
 
         for software in software_stix:
@@ -290,7 +301,11 @@ class StixParser():
                         if ext_ref['source_name'] != group_obj.name:
                             group_obj.aliases_references = {'name': ext_ref['source_name'], 'description': ext_ref['description']}
 
-                source_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
+                source_enterprise_relationships = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
+                source_mobile_relationships = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
+                source_ics_relationships = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
+
+                source_relationships = source_enterprise_relationships + source_mobile_relationships + source_ics_relationships
 
                 for relationship in source_relationships:
                     for technique in self.techniques:
@@ -306,7 +321,11 @@ class StixParser():
                                     group_obj.external_references = item
                                     added.append(item)
 
-                software_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
+                software_enterprise_relationships = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
+                software_mobile_relationships = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
+                software_ics_relationships = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
+
+                software_relationships = software_enterprise_relationships + software_mobile_relationships + software_ics_relationships
 
                 for relationship in software_relationships:
                     for software in software_list:
@@ -320,7 +339,7 @@ class StixParser():
 
                             item = {'name': software['name'], 'id': external_id}
                             if item not in added:
-                                group_obj.software_used = {'name': software['name'], 'id': external_id}
+                                group_obj.software_used = {'name': software['name'], 'id': external_id, 'description': relationship.get('description', '') }
                                 added.append(item)
 
                 self.groups.append(group_obj)
@@ -332,10 +351,14 @@ class StixParser():
         """
 
         # Extract software
-        software_stix_malware = self.src.query([ Filter('type', '=', 'malware')])
-        software_stix_tool = self.src.query([ Filter('type', '=', 'tool')])
+        software_enterprise_malware_stix = self.enterprise_attack.query([ Filter('type', '=', 'malware')])
+        software_enterprise_tool_stix = self.enterprise_attack.query([ Filter('type', '=', 'tool')])
+        software_mobile_malware_stix = self.mobile_attack.query([ Filter('type', '=', 'malware')])
+        software_mobile_tool_stix = self.mobile_attack.query([ Filter('type', '=', 'tool')])
+        software_ics_malware_stix = self.ics_attack.query([ Filter('type', '=', 'malware')])
+        software_ics_tool_stix = self.ics_attack.query([ Filter('type', '=', 'tool')])
 
-        software_stix = software_stix_malware + software_stix_tool
+        software_stix = software_enterprise_malware_stix + software_enterprise_tool_stix + software_mobile_malware_stix + software_mobile_tool_stix + software_ics_malware_stix + software_ics_tool_stix
 
         self.software = list()
 
@@ -367,8 +390,11 @@ class StixParser():
                             software_obj.external_references = item
                             added.append(item)
 
-                source_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
+                source_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
+                source_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
+                source_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
 
+                source_relationships = source_relationships_enterprise + source_relationships_mobile + source_relationships_ics
                 for relationship in source_relationships:
                     for technique in self.techniques:
                         if technique.internal_id == relationship['target_ref']:
@@ -383,7 +409,11 @@ class StixParser():
                                     software_obj.external_references = item
                                     added.append(item)
 
-                target_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
+                target_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
+                target_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
+                target_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
+
+                target_relationships = target_relationships_enterprise + target_relationships_mobile + target_relationships_ics
 
                 for relationship in target_relationships:
                     for group in self.groups:
@@ -400,7 +430,11 @@ class StixParser():
                                     added.append(item)
 
                 # Used in campaigns
-                source_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
+                source_relationships_enterprise = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
+                source_relationships_mobile = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
+                source_relationships_ics = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
+
+                source_relationships = source_relationships_enterprise + source_relationships_mobile + source_relationships_ics
 
                 for relationship in source_relationships:
                     for campaign in self.campaigns:
