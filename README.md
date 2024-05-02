@@ -4,12 +4,31 @@ This is a changed version of the original repository [vincenzocaputo/obsidian-mi
 
 ## TODO
 
-- Add relevant tags.
+- Add more relevant tags and consider prepending tags with **attack** or use **attack/<tag>**.
+- Add other metadata? Att&ck ID, etc.
 - Add [Data sources](https://attack.mitre.org/datasources/)
 - Add [Assets](https://attack.mitre.org/assets/)
-- Should top level pages be added to each category or are they not needed when used in Obsidian?
+- Should top level pages be added to each category or are they not needed when ATT&CK is used in Obsidian?
+- Check for unused code and remove it. Since speed is not the main concern (runs one time) it has not been top priority.
 
-Below is a slightly updated version of the original README.md file.
+Missing in the current implementation:
+
+- Groups
+  - _Software used_ don't have techniques
+- Mitigations
+  - First version done.
+- Campaigns
+  - First version done.
+- Software
+  - First version done.
+- Tactics
+  - First version done.
+- Techniques
+ - No links to data sources since they are not implemented yet.
+
+## Original README.md
+
+Below is a slightly updated version of the original README.md file. Updates are relating to changed functionality. Original README.md can be found [here](https://github.com/vincenzocaputo/obsidian-mitre-attack).
 
 This repository implements a Python script that parses the MITRE ATT&CK knowledge base into a markdown format, making it readable and browsable using the Obsidian note-taking app.
 The ATT&CK data is retrieved from the MITRE GitHub repository (https://github.com/mitre-attack/attack-stix-data) that contains the dataset represented in STIX 2.1 JSON collection. The main idea behind this project is to make the MITRE ATT&CK knowledge base easily accessible and seamlessly integrable into Obsidian, along with reports or your personal notes. Utilizing Obsidian's features such as hyperlinks, tags, graph view, and more can greatly support threat intelligence analysis and investigations.

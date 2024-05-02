@@ -154,8 +154,9 @@ class MITRETechnique(MITREObject):
         self._supports_remote = False
         self._system_requirements = None # Not implemented yet
         self._contributors = list() # Not implemented yet
-        self._procedure_examples = list() # Not implemented yet
-        self._detection = None # Not implemented yet
+        self._procedure_examples = list()
+        self._detections = list()
+        self._mitigations = list()
 
     @property
     def version(self):
@@ -351,6 +352,22 @@ class MITRETechnique(MITREObject):
     @detection.setter
     def detection(self, detection):
         self._detection = detection
+    
+    @property
+    def mitigations(self):
+        return self._mitigations
+    
+    @mitigations.setter
+    def mitigations(self, mitigation:dict):
+        self._mitigations.append(mitigation)
+    
+    @property
+    def detections(self):
+        return self._detections
+    
+    @detections.setter
+    def detections(self, detection:dict):
+        self._detections.append(detection)
 
 
 class MITREMitigation(MITREObject):

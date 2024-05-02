@@ -12,11 +12,16 @@ def fix_description(description_str):
     description = re.sub(r'\(Citation: ([^)]+?)\)', match_citation, description_str)
     return description
 
+
 # Function to convert to local links
 def convert_to_local_links(text):
     def match_link(match):
         return '[[' + match.group(1).replace('/', '／') + ']]'
     return re.sub(r'\[([^\]]*?)\]\((https://attack.mitre.org/[^\)]+?)\)', match_link, text)
+
+
+def remove_references(text):
+    return re.sub(r'\[\^[^\]]+?\]', '', text)
 
 # Class to generate markdown notes
 class MarkdownGenerator():
@@ -58,11 +63,10 @@ class MarkdownGenerator():
                 content += f"\n{tactic_description}\n\n"
 
                 # Tactic Information
-                content += "```ad-info\n"
-                content += f"ID: {tactic.id}\n"
-                content += f"Created: {str(tactic.created).split(' ')[0]}\n"
-                content += f"Last Modified: {str(tactic.modified).split(' ')[0]}\n"
-                content += "```\n\n\n"
+                content += "> [!info]\n"
+                content += f"> ID: {tactic.id}\n"
+                content += f"> Created: {str(tactic.created).split(' ')[0]}\n"
+                content += f"> Last Modified: {str(tactic.modified).split(' ')[0]}\n\n\n"
 
                 # Techniques Used
                 if tactic.techniques_used:
@@ -71,15 +75,8 @@ class MarkdownGenerator():
                     for technique in tactic.techniques_used:
                         description = fix_description(technique['description'])
                         description = description[0:description.find('\n')]
+                        description = remove_references(description)
                         content += f"| [[{technique['name']}\\|{technique['id']}]] | {technique['name']} | {description} |\n"
-
-                # External References
-                content += "\n\n\n"
-                content += "### External References\n\n"
-                for ref in tactic.external_references:
-                    name = ref['name'].replace(' ', '_')
-                    if 'url' in ref:
-                        content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
 
                 content = convert_to_local_links(content)
                 fd.write(content)
@@ -126,57 +123,69 @@ class MarkdownGenerator():
                     content += "  - supports_remote\n"
                 content += "---\n\n"
 
-                content += f"## {technique.id}\n\n"
+                content += f"## {technique.name}\n\n"
                 technique_description = fix_description(technique.description)
                 content += f"{technique_description}\n\n\n"
 
                 # Information for the technique
-                content += "```ad-info\n"
-                content += f"ID: {technique.id}\n"
+                content += "> [!info]\n"
+                content += f"> ID: {technique.id}\n"
                 if technique.is_subtechnique:
-                    content += f"Sub-technique of: {technique.id.split('.')[0]}\n"
+                    content += f"> Sub-technique of: {technique.id.split('.')[0]}\n"
                 else:
-                    content += f"Sub-techniques: {', '.join([ subt.id for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ])}\n"
-                content += f"Data Sources: {', '.join(technique.data_sources)}\n"
-                if technique.platforms and 'None' not in technique.platforms:
-                    content += f"Platforms: {', '.join(technique.platforms)}\n"
-                if technique.permissions_required:
-                    content += f"Permissions Required: {', '.join(technique.permissions_required)}\n"
-                if technique.effective_permissions:
-                    content += f"Effective Permissions: {', '.join(technique.effective_permissions)}\n"
-                if technique.defense_bypassed:
-                    content += f"Defense Bypassed: {', '.join(technique.defense_bypassed)}\n"
-                if technique.supports_remote:
-                    content += "Remote Support: Yes\n"
-                content += f"Version: {technique.version}\n"
-                content += f"Created: {str(technique.created).split(' ')[0]}\n"
-                content += f"Last Modified: {str(technique.modified).split(' ')[0]}\n"
-                content += "```\n\n\n"
-
-                content += "### Tactic\n"
+                    content += "> Sub-techniques: "
+                    tech_first = True
+                    for subt in self.techniques:
+                        if subt.is_subtechnique and technique.id in subt.id:
+                            if tech_first:
+                                content += f"[[{subt.name}\\|{subt.id}]]"
+                                tech_first = False
+                            else:
+                                content += f", [[{subt.name}\\|{subt.id}]]"
+                    content += "\n"
+                first = True
                 for kill_chain in technique.kill_chain_phases:
                     if kill_chain['kill_chain_name'] == 'mitre-attack':
-                        tactic = [ t for t in self.tactics if t.name.lower().replace(' ', '-') == kill_chain['phase_name'].lower() ]
-                        if tactic:
-                            for t in tactic:
-                                content += f"  - [[{t.name}]] ({t.id})\n"
+                        tactic = kill_chain['phase_name'].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
+                        if first:
+                            content += "> Tactics: "
+                            content += f"[[{tactic}\\|{tactic}]]"
+                            first = False
+                        else:
+                            content += f", [[{tactic}\\|{tactic}]]"
+                if not first:
+                    content += "\n"
+                if technique.platforms and 'None' not in technique.platforms:
+                    content += f"> Platforms: {', '.join(technique.platforms)}\n"
+                if technique.permissions_required:
+                    content += f"> Permissions Required: {', '.join(technique.permissions_required)}\n"
+                if technique.effective_permissions:
+                    content += f"> Effective Permissions: {', '.join(technique.effective_permissions)}\n"
+                if technique.defense_bypassed:
+                    content += f"> Defense Bypassed: {', '.join(technique.defense_bypassed)}\n"
+                if technique.supports_remote:
+                    content += "> Remote Support: Yes\n"
+                content += f"> Version: {technique.version}\n"
+                content += f"> Created: {str(technique.created).split(' ')[0]}\n"
+                content += f"> Last Modified: {str(technique.modified).split(' ')[0]}\n\n\n"
 
                 # Mitigations for the technique
-                content += "\n\n### Mitigations\n"
                 if technique.mitigations:
+                    content += "\n\n### Mitigations\n"
                     content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
                     for mitigation in technique.mitigations:
-                        description = mitigation['description'].replace('\n', '<br />')
-                        content += f"| [[{mitigation['mitigation'].name}\\|{mitigation['mitigation'].id}]] | {mitigation['mitigation'].name} | {description} |\n"
+                        description = fix_description(mitigation['description'])
+                        description = description.replace('\n', '<br />')
+                        content += f"| [[{mitigation['name']}\\|{mitigation['id']}]] | [[{mitigation['name']}\\|{mitigation['name']}]] | {description} |\n"
 
-                # List of sub-techniques if the technique is not a sub-technique
-                if not technique.is_subtechnique:
-                    content += "\n\n### Sub-techniques\n"
-                    subtechniques = [ subt for subt in self.techniques if subt.is_subtechnique and technique.id in subt.id ]
-                    if subtechniques:
-                        content += "\n| ID | Name |\n| --- | --- |\n"
-                    for subt in subtechniques:
-                        content += f"| [[{subt.name}\\|{subt.id}]] | {subt.name} |\n"
+                # Detection
+                if technique.detections:
+                    content += "\n\n### Detection\n"
+                    content += "\n| ID | Data Source | Data Source Type | Detects |\n| --- | --- | --- | --- |\n"
+                    for detection in technique.detections:
+                        description = fix_description(detection['description'])
+                        description = description.replace('\n', '<br />')
+                        content += f"| {detection['id']} | {detection['data_source']} | {detection['name']} | {description} |\n"
 
                 # References
                 content += "\n\n### References\n\n"
@@ -219,21 +228,21 @@ class MarkdownGenerator():
                 content += f"{mitigation_description}\n\n\n"
 
                 # Mitigation Information
-                content += "```ad-info\n"
-                content += f"ID: {mitigation.id}\n"
-                content += f"Version: {mitigation.version}\n"
-                content += f"Created: {str(mitigation.created).split(' ')[0]}\n"
-                content += f"Last Modified: {str(mitigation.modified).split(' ')[0]}\n"
-                content += "```\n\n\n"
+                content += "> [!info]\n"
+                content += f"> ID: {mitigation.id}\n"
+                content += f"> Version: {mitigation.version}\n"
+                content += f"> Created: {str(mitigation.created).split(' ')[0]}\n"
+                content += f"> Last Modified: {str(mitigation.modified).split(' ')[0]}\n\n\n"
 
                 # Techniques Addressed by Mitigation
                 content += "### Techniques Addressed by Mitigation\n"
                 if mitigation.mitigates:
-                    content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
+                    content += "\n| Domain | ID | Name | Description |\n| --- | --- | --- | --- |\n"
                     for technique in mitigation.mitigates:
+                        domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
                         description = fix_description(technique['description'])
                         description = description.replace('\n', '<br />')
-                        content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+                        content += f"| {domain} | [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
                 # References
                 content += "\n\n### References\n\n"
@@ -276,16 +285,15 @@ class MarkdownGenerator():
                 content += f"{group_description}\n\n\n"
 
                 # Group information
-                content += "```ad-info\n"
-                content += f"ID: {group.id}\n"
+                content += "> [!info]\n"
+                content += f"> ID: {group.id}\n"
                 if group.aliases:
-                    content += f"Associated Groups: {', '.join(group.aliases)}\n"
+                    content += f"> Associated Groups: {', '.join(group.aliases)}\n"
                 if group.contributors:
-                    content += f"Contributors: {', '.join(group.contributors)}\n"
-                content += f"Version: {group.version}\n"
-                content += f"Created: {str(group.created).split(' ')[0]}\n"
-                content += f"Last Modified: {str(group.modified).split(' ')[0]}\n"
-                content += "```\n\n\n"
+                    content += f"> Contributors: {', '.join(group.contributors)}\n"
+                content += f"> Version: {group.version}\n"
+                content += f"> Created: {str(group.created).split(' ')[0]}\n"
+                content += f"> Last Modified: {str(group.modified).split(' ')[0]}\n\n\n"
 
                 # Associated group descriptions
                 if group.aliases_references:
@@ -300,11 +308,12 @@ class MarkdownGenerator():
                 # Techniques used by group
                 if group.techniques_used:
                     content += "\n### Techniques Used\n"
-                    content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
+                    content += "\n| Domain | ID | Name | Use |\n| --- | --- | --- | --- |\n"
                     for technique in group.techniques_used:
+                        domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')  
                         description = fix_description(technique['description'])
                         description = description.replace('\n', '<br />')
-                        content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+                        content += f"| {domain} | [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
                 # Software used by group
                 if group.software_used:
@@ -351,7 +360,7 @@ class MarkdownGenerator():
                 content += "tags:\n"
                 content += "  - software\n"
                 content += f"  - {software.type}\n"
-                if software.platforms:
+                if software.platforms and software.platforms != '':
                     for platform in software.platforms:
                         if platform:
                             content += f"  - {platform[0].replace(' ', '_')}\n"
@@ -362,28 +371,34 @@ class MarkdownGenerator():
                 content += f"{software_description}\n\n\n"
 
                 # Software information
-                content += "```ad-info\n"
-                content += f"ID: {software.id}\n"
-                content += f"Type: {software.type}\n"
-                platforms =[ ', '.join(platform) for platform in software.platforms ]
-                content += f"Platforms: {''.join(platforms)}\n"
+                content += "> [!info]\n"
+                content += f"> ID: {software.id}\n"
+                content += f"> Type: {software.type}\n"
+                if software.platforms and software.platforms != [[]]:
+                    platforms =[ ', '.join(platform) for platform in software.platforms ]
+                    content += f"> Platforms: {''.join(platforms)}\n"
                 if software.aliases:
-                    content += f"Associated Software: {', '.join(software.aliases)}\n"
+                    content += f"> Associated Software: {', '.join(software.aliases)}\n"
                 if software.contributors:
-                    content += f"Contributors: {', '.join(software.contributors)}\n"
-                content += f"Version: {software.version}\n"
-                content += f"Created: {str(software.created).split(' ')[0]}\n"
-                content += f"Last Modified: {str(software.modified).split(' ')[0]}\n"
-                content += "```\n\n\n"
+                    content += f"> Contributors: {', '.join(software.contributors)}\n"
+                content += f"> Version: {software.version}\n"
+                content += f"> Created: {str(software.created).split(' ')[0]}\n"
+                content += f"> Last Modified: {str(software.modified).split(' ')[0]}\n\n\n"
 
                 # Techniques used by software
                 content += "### Techniques Used\n"
                 if software.techniques_used:
-                    content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
+                    content += "\n| Domain | ID | Name | Use |\n| --- | --- | --- | --- |\n"
                     for technique in software.techniques_used:
+                        domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')  
                         description = fix_description(technique['description'])
                         description = description.replace('\n', '<br />')
-                        content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+                        ext_refs = technique['technique'].get('external_references', '')
+                        external_id = ''
+                        for ref in ext_refs:
+                            if ref['source_name'] == 'mitre-attack':
+                                external_id = ref['external_id']
+                        content += f"| {domain} | [[{technique['technique'].name}\\|{external_id}]] | {technique['technique'].name} | {description} |\n"
 
                 # Groups that use this software
                 try:
@@ -441,19 +456,18 @@ class MarkdownGenerator():
                 content += f"{campaign_description}\n\n\n"
 
                 # Campaign information
-                content += "```ad-info\n"
-                content += f"ID: {campaign.id}\n"
-                content += f"First Seen: {str(campaign.first_seen).split(' ')[0]}\n"
-                content += f"Last Seen: {str(campaign.last_seen).split(' ')[0]}\n"
-                content += f"Version: {campaign.version}\n"
-                content += f"Created: {str(campaign.created).split(' ')[0]}\n"
-                content += f"Last Modified: {str(campaign.modified).split(' ')[0]}\n"
-                content += "```\n"
+                content += "> [!info]\n"
+                content += f"> ID: {campaign.id}\n"
+                content += f"> First Seen: {str(campaign.first_seen).split(' ')[0]}\n"
+                content += f"> Last Seen: {str(campaign.last_seen).split(' ')[0]}\n"
+                content += f"> Version: {campaign.version}\n"
+                content += f"> Created: {str(campaign.created).split(' ')[0]}\n"
+                content += f"> Last Modified: {str(campaign.modified).split(' ')[0]}\n\n\n"
 
                 # Groups that use this campaign
                 if campaign.groups:
                     content += "\n### Groups\n"
-                    content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
+                    content += "\n| ID | Name | Use |\n| --- | --- | --- | --- |\n"
                     for group in campaign.groups:
                         description = fix_description(group['description'])
                         description = description.replace('\n', '<br />')
@@ -462,11 +476,12 @@ class MarkdownGenerator():
                 # Techniques used by campaign
                 if campaign.techniques_used:
                     content += "\n\n### Techniques Used\n"
-                    content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
+                    content += "\n| Domain | ID | Name | Use |\n| --- | --- | --- | --- |\n"
                     for technique in campaign.techniques_used:
+                        domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
                         description = fix_description(technique['description'])
                         description = description.replace('\n', '<br />')
-                        content += f"| [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+                        content += f"| {domain} | [[{technique['technique'].name}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
 
                 # Software used in campaign
                 if campaign.software_used:
