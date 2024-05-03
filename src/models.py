@@ -327,7 +327,7 @@ class MITRETechnique(MITREObject):
     
     @system_requirements.setter
     def system_requirements(self, system_requirements):
-        self._system_requirements = system_requirements
+        self._system_requirements.append(system_requirements)
     
     @property
     def contributors(self):
@@ -335,7 +335,7 @@ class MITRETechnique(MITREObject):
     
     @contributors.setter
     def contributors(self, contributors):
-        self._contributors = contributors
+        self._contributors.append(contributors)
     
     @property
     def procedure_examples(self):
@@ -343,7 +343,7 @@ class MITRETechnique(MITREObject):
     
     @procedure_examples.setter
     def procedure_examples(self, procedure_examples):
-        self._procedure_examples = procedure_examples
+        self._procedure_examples.append(procedure_examples)
     
     @property
     def detection(self):

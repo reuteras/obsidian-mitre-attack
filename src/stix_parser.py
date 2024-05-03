@@ -53,7 +53,7 @@ class StixParser():
         """
 
         # Extract tactics
-        tactics_stix = self.src.query([ Filter('type', '=', 'x-mitre-tactic') ])
+        tactics_stix = self.src.query([ Filter('type', '=', 'x-mitre-tactic')])
         self.tactics = list()
 
         for tactic in tactics_stix:
@@ -80,7 +80,7 @@ class StixParser():
                             added.append(item)
 
                 # Extract external references from relationships
-                source_relationships = self.src.query([ Filter('type', '=', 'attack-pattern')])
+                source_relationships = self.src.query([Filter('type', '=', 'attack-pattern')])
 
                 for relationship in source_relationships:
                     ext_refs = relationship.get('external_references', [])
@@ -106,13 +106,13 @@ class StixParser():
         """
 
         # Extract techniques
-        techniques_stix = self.src.query([ Filter('type', '=', 'attack-pattern') ])
+        techniques_stix = self.src.query([Filter('type', '=', 'attack-pattern')])
         added = []
 
         self.techniques = list()
 
         # Extract tactics to build relationship between techniques and tactics
-        tactics_stix = self.src.query([ Filter('type', '=', 'x-mitre-tactic') ])
+        tactics_stix = self.src.query([Filter('type', '=', 'x-mitre-tactic')])
 
         shortname_name = dict()
 
@@ -157,10 +157,43 @@ class StixParser():
                             added.append(item)
 
                 # Procedure examples
-                procedure_examples = self.src.query([ Filter('type', '=', 'course-of-action'), Filter('id', '=', technique_obj.internal_id) ])
+                procedure_examples_stix = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', technique_obj.internal_id) ])
+
+                group_stix = self.src.query([ Filter('type', '=', 'intrusion-set')])
+                campaign_stix = self.src.query([ Filter('type', '=', 'campaign')])
+                malware_stix = self.src.query([ Filter('type', '=', 'malware')])
+                tool_stix = self.src.query([ Filter('type', '=', 'tool')])
+
+                source_stix = group_stix + campaign_stix + malware_stix + tool_stix
+
+                for relation in procedure_examples_stix:
+                    if 'external_references' in relation:
+                        ext_refs = relation.get('external_references', [])
+                        for ext_ref in ext_refs:
+                            if 'url' in ext_ref and 'description' in ext_ref:
+                                item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                if item not in added:
+                                    technique_obj.external_references = item
+                                    added.append(item)
+                    
+                    for source in source_stix:
+                        if source['id'] == relation['source_ref']:
+                            if ( 'x_mitre_deprecated' not in source or not source['x_mitre_deprecated']) and ('revoked' not in source or not source['revoked']):
+                                source_id = ''
+                                ext_refs = source.get('external_references', [])
+                                for ext_ref in ext_refs:
+                                    if ext_ref['source_name'] == 'mitre-attack':
+                                        source_id = ext_ref['external_id']
+                                    elif 'url' in ext_ref and 'description' in ext_ref:
+                                        item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                        if item not in added:
+                                            technique_obj.external_references = item
+                                            added.append(item)
+
+                                technique_obj.procedure_examples = {'name': source['name'], 'id': source_id, 'description': relation.get('description', '')}
 
                 # Mitigations
-                mitigations_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('target_ref', '=', technique_obj.internal_id) ])
+                mitigations_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('target_ref', '=', technique_obj.internal_id)])
 
                 for relation in mitigations_relationships:
                     ext_refs = relation.get('external_references', [])
@@ -170,7 +203,7 @@ class StixParser():
                             if item not in added:
                                 technique_obj.external_references = item
                                 added.append(item)
-                    mitigation = self.src.query([ Filter('type', '=', 'course-of-action'), Filter('id', '=', relation['source_ref']) ])[0]
+                    mitigation = self.src.query([ Filter('type', '=', 'course-of-action'), Filter('id', '=', relation['source_ref'])])[0]
                     ext_refs = mitigation.get('external_references', [])
                     for ext_ref in ext_refs:
                         if ext_ref['source_name'] == 'mitre-attack':
@@ -182,13 +215,13 @@ class StixParser():
                         added.append(item)
 
                 ### Detection
-                detections_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'detects'), Filter('target_ref', '=', technique_obj.internal_id) ])
+                detections_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'detects'), Filter('target_ref', '=', technique_obj.internal_id)])
 
                 for relation in detections_relationships:
-                    data_component = self.src.query([ Filter('type', '=', 'x-mitre-data-component'), Filter('id', '=', relation['source_ref']) ])[0]
+                    data_component = self.src.query([ Filter('type', '=', 'x-mitre-data-component'), Filter('id', '=', relation['source_ref'])])[0]
                     data_component_name = data_component.get('name', '')
                     data_component_source_ref = data_component.get('x_mitre_data_source_ref', '')
-                    data_source = self.src.query([ Filter('type', '=', 'x-mitre-data-source'), Filter('id', '=', data_component_source_ref) ])[0]
+                    data_source = self.src.query([ Filter('type', '=', 'x-mitre-data-source'), Filter('id', '=', data_component_source_ref)])[0]
                     data_source_name = data_source.get('name', '')
                     ext_refs = data_source.get('external_references', [])
                     for ext_ref in ext_refs:
@@ -213,10 +246,10 @@ class StixParser():
         """
 
         # Extract mitigations
-        mitigations_stix = self.src.query([ Filter('type', '=', 'course-of-action') ])
+        mitigations_stix = self.src.query([ Filter('type', '=', 'course-of-action')])
 
         # Extract mitigates relationships
-        mitigates_stix = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates') ])
+        mitigates_stix = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
 
         mitigates_list = list()
 
@@ -250,7 +283,7 @@ class StixParser():
                             mitigation_obj.external_references = item
                             added.append(item)
 
-                mitigation_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('source_ref', '=', mitigation_obj.internal_id) ])
+                mitigation_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('source_ref', '=', mitigation_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
 
                 for relationship in mitigation_relationships:
                     for technique in self.techniques:
@@ -289,18 +322,18 @@ class StixParser():
         """
 
         # Extract groups
-        groups_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'intrusion-set') ])
-        groups_mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'intrusion-set') ])
-        groups_ics_stix = self.ics_attack.query([ Filter('type', '=', 'intrusion-set') ])
+        groups_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'intrusion-set'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        groups_mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'intrusion-set'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        groups_ics_stix = self.ics_attack.query([ Filter('type', '=', 'intrusion-set'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
         groups_stix = groups_enterprise_stix + groups_mobile_stix + groups_ics_stix
 
         # Extract software
-        software_enterprise_malware_stix = self.enterprise_attack.query([ Filter('type', '=', 'malware')])
-        software_enterprise_tool_stix = self.enterprise_attack.query([ Filter('type', '=', 'tool')])
-        software_mobile_malware_stix = self.mobile_attack.query([ Filter('type', '=', 'malware')])
-        software_mobile_tool_stix = self.mobile_attack.query([ Filter('type', '=', 'tool')])
-        software_ics_malware_stix = self.ics_attack.query([ Filter('type', '=', 'malware')])
-        software_ics_tool_stix = self.ics_attack.query([ Filter('type', '=', 'tool')])
+        software_enterprise_malware_stix = self.enterprise_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        software_enterprise_tool_stix = self.enterprise_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        software_mobile_malware_stix = self.mobile_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        software_mobile_tool_stix = self.mobile_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        software_ics_malware_stix = self.ics_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        software_ics_tool_stix = self.ics_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
 
         software_stix = software_enterprise_malware_stix + software_enterprise_tool_stix + software_mobile_malware_stix + software_mobile_tool_stix + software_ics_malware_stix + software_ics_tool_stix
         software_list = list()
@@ -339,9 +372,9 @@ class StixParser():
                         if ext_ref['source_name'] != group_obj.name:
                             group_obj.aliases_references = {'name': ext_ref['source_name'], 'description': ext_ref['description']}
 
-                source_enterprise_relationships = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
-                source_mobile_relationships = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
-                source_ics_relationships = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
+                source_enterprise_relationships = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id)])
+                source_mobile_relationships = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id)])
+                source_ics_relationships = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id)])
 
                 source_relationships = source_enterprise_relationships + source_mobile_relationships + source_ics_relationships
 
@@ -359,9 +392,9 @@ class StixParser():
                                     group_obj.external_references = item
                                     added.append(item)
 
-                software_enterprise_relationships = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
-                software_mobile_relationships = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
-                software_ics_relationships = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id) ])
+                software_enterprise_relationships = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id)])
+                software_mobile_relationships = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id)])
+                software_ics_relationships = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id)])
 
                 software_relationships = software_enterprise_relationships + software_mobile_relationships + software_ics_relationships
 
@@ -389,12 +422,12 @@ class StixParser():
         """
 
         # Extract software
-        software_enterprise_malware_stix = self.enterprise_attack.query([ Filter('type', '=', 'malware')])
-        software_enterprise_tool_stix = self.enterprise_attack.query([ Filter('type', '=', 'tool')])
-        software_mobile_malware_stix = self.mobile_attack.query([ Filter('type', '=', 'malware')])
-        software_mobile_tool_stix = self.mobile_attack.query([ Filter('type', '=', 'tool')])
-        software_ics_malware_stix = self.ics_attack.query([ Filter('type', '=', 'malware')])
-        software_ics_tool_stix = self.ics_attack.query([ Filter('type', '=', 'tool')])
+        software_enterprise_malware_stix = self.enterprise_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        software_enterprise_tool_stix = self.enterprise_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        software_mobile_malware_stix = self.mobile_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        software_mobile_tool_stix = self.mobile_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        software_ics_malware_stix = self.ics_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        software_ics_tool_stix = self.ics_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
 
         software_stix = software_enterprise_malware_stix + software_enterprise_tool_stix + software_mobile_malware_stix + software_mobile_tool_stix + software_ics_malware_stix + software_ics_tool_stix
 
@@ -428,13 +461,13 @@ class StixParser():
                             software_obj.external_references = item
                             added.append(item)
 
-                source_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
-                source_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
-                source_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
+                source_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id)])
+                source_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id)])
+                source_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id)])
 
-                techniques_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'attack-pattern') ])
-                techniques_mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'attack-pattern') ])
-                techniques_ics_stix = self.ics_attack.query([ Filter('type', '=', 'attack-pattern') ])
+                techniques_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'attack-pattern')])
+                techniques_mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'attack-pattern')])
+                techniques_ics_stix = self.ics_attack.query([ Filter('type', '=', 'attack-pattern')])
 
                 techniques_stix = techniques_enterprise_stix + techniques_mobile_stix + techniques_ics_stix
 
@@ -454,9 +487,9 @@ class StixParser():
                                     software_obj.external_references = item
                                     added.append(item)
 
-                target_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
-                target_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
-                target_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id) ])
+                target_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
+                target_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
+                target_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
 
                 target_relationships = target_relationships_enterprise + target_relationships_mobile + target_relationships_ics
 
@@ -475,9 +508,9 @@ class StixParser():
                                     added.append(item)
 
                 # Used in campaigns
-                source_relationships_enterprise = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
-                source_relationships_mobile = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
-                source_relationships_ics = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id) ])
+                source_relationships_enterprise = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id)])
+                source_relationships_mobile = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id)])
+                source_relationships_ics = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id)])
 
                 source_relationships = source_relationships_enterprise + source_relationships_mobile + source_relationships_ics
 
@@ -504,9 +537,9 @@ class StixParser():
         """
 
         # Extract campaigns
-        enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'campaign') ])
-        mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'campaign') ])
-        ics_stix = self.ics_attack.query([ Filter('type', '=', 'campaign') ])
+        enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'campaign'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'campaign'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        ics_stix = self.ics_attack.query([ Filter('type', '=', 'campaign'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
 
         campaigns_stix = enterprise_stix + mobile_stix + ics_stix
 
@@ -541,9 +574,9 @@ class StixParser():
                             added.append(item)
 
                 # Get group(s) associated with the campaign
-                group_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_obj.internal_id) ])
-                group_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_obj.internal_id) ])
-                group_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_obj.internal_id) ])
+                group_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+                group_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+                group_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
 
                 group_relationships = group_relationships_enterprise + group_relationships_mobile + group_relationships_ics
 
@@ -555,21 +588,21 @@ class StixParser():
                                 groups_added.append(group.internal_id)
 
                 # Get software used in the campaign
-                software_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', campaign_obj.internal_id) ])
-                software_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', campaign_obj.internal_id) ])
-                software_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', campaign_obj.internal_id) ])
+                software_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', campaign_obj.internal_id)])
+                software_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', campaign_obj.internal_id)])
+                software_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', campaign_obj.internal_id)])
                 
                 software_relationships = software_relationships_enterprise + software_relationships_mobile + software_relationships_ics
 
-                software_malware_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'malware')])
-                software_malware_mobile = self.mobile_attack.query([ Filter('type', '=', 'malware')])
-                software_malware_ics = self.ics_attack.query([ Filter('type', '=', 'malware')])
+                software_malware_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+                software_malware_mobile = self.mobile_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+                software_malware_ics = self.ics_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
     
                 software_malware = software_malware_enterprise + software_malware_mobile + software_malware_ics
                 
-                software_tool_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'tool')])
-                software_tool_mobile = self.mobile_attack.query([ Filter('type', '=', 'tool')])
-                software_tool_ics = self.ics_attack.query([ Filter('type', '=', 'tool')])
+                software_tool_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+                software_tool_mobile = self.mobile_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+                software_tool_ics = self.ics_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
 
                 software_tool = software_tool_enterprise + software_tool_mobile + software_tool_ics
                 softwares = software_malware + software_tool
@@ -584,9 +617,9 @@ class StixParser():
                                     campaign_obj.software_used = item
                                     software_added.append(item)
 
-                source_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id) ])
-                source_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id) ])
-                source_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id) ])
+                source_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+                source_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+                source_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
 
                 source_relationships = source_relationships_enterprise + source_relationships_mobile + source_relationships_ics
 

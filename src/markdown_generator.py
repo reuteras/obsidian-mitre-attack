@@ -122,6 +122,32 @@ class MarkdownGenerator():
                 if technique.supports_remote:
                     content += "  - supports_remote\n"
                 content += "---\n\n"
+                
+                if technique.is_subtechnique:
+                    first = True
+                    for subt in self.techniques:
+                        if first:
+                            content += "## Other sub-techniques of TODO\n\n" # TODO
+                            content += "| ID | Name |\n| --- | --- |\n"
+                            first = False
+                        if subt.is_subtechnique and technique.id == subt.id.split('.')[0]:
+                            if subt.id == technique.id:
+                                content += f"| {subt.id} | {subt.name} |\n"
+                            else: 
+                                content += f"| [[{subt.name}\\|{subt.id}]] | [[{subt.name}\\|{subt.name}]] |\n"
+                    content += "\n\n"
+                else:
+                    first = True
+                    for subt in self.techniques:
+                        if first:
+                            subs = "### Sub-techniques\n\n"
+                            subs += "| ID | Name |\n| --- | --- |\n"
+                            first = False
+                        if subt.is_subtechnique and technique.id == subt.id.split('.')[0]:
+                            subs += f"| [[{subt.name}\\|{subt.id}]] | {subt.name} |\n"
+                    subs += "\n\n"
+                    if subs != "\n\n":
+                        content += subs
 
                 content += f"## {technique.name}\n\n"
                 technique_description = fix_description(technique.description)
@@ -169,14 +195,28 @@ class MarkdownGenerator():
                 content += f"> Created: {str(technique.created).split(' ')[0]}\n"
                 content += f"> Last Modified: {str(technique.modified).split(' ')[0]}\n\n\n"
 
+                # Procedure Examples
+                content += "### Procedure Examples\n"
+                content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
+                for example in technique.procedure_examples:
+                    description = fix_description(example['description'])
+                    description = description.replace('\n', '<br />')
+                    content += f"| [[{example['name']}\\|{example['id']}]] | [[{example['name']}\\|{example['name']}]] | {description} |\n"
+
                 # Mitigations for the technique
                 if technique.mitigations:
-                    content += "\n\n### Mitigations\n"
-                    content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
+                    content += "\n### Mitigations\n"
+                    mitigation_first = True
                     for mitigation in technique.mitigations:
-                        description = fix_description(mitigation['description'])
-                        description = description.replace('\n', '<br />')
-                        content += f"| [[{mitigation['name']}\\|{mitigation['id']}]] | [[{mitigation['name']}\\|{mitigation['name']}]] | {description} |\n"
+                        if mitigation['id'] == technique.id:
+                            content += "\nThis type of attack technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features.\n"
+                        else:
+                            if mitigation_first:
+                                content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
+                                mitigation_first = False
+                            description = fix_description(mitigation['description'])
+                            description = description.replace('\n', '<br />')
+                            content += f"| [[{mitigation['name']}\\|{mitigation['id']}]] | [[{mitigation['name']}\\|{mitigation['name']}]] | {description} |\n"
 
                 # Detection
                 if technique.detections:
@@ -467,7 +507,7 @@ class MarkdownGenerator():
                 # Groups that use this campaign
                 if campaign.groups:
                     content += "\n### Groups\n"
-                    content += "\n| ID | Name | Use |\n| --- | --- | --- | --- |\n"
+                    content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
                     for group in campaign.groups:
                         description = fix_description(group['description'])
                         description = description.replace('\n', '<br />')
