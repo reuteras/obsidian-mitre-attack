@@ -1,6 +1,6 @@
 # obsidian-mitre-attack
 
-This is a changed version of the original repository [vincenzocaputo/obsidian-mitre-attack](https://github.com/vincenzocaputo/obsidian-mitre-attack). Some functions have been removed (create canvas) and some have been added (generating software and campaigns). 
+This is a changed version of the original repository [vincenzocaputo/obsidian-mitre-attack](https://github.com/vincenzocaputo/obsidian-mitre-attack). Some functions have been removed (create canvas) and some have been added (generating software and campaigns).
 
 ## TODO
 

@@ -1,3 +1,6 @@
+"""
+MITRE ATT&CK Framework Models
+"""
 
 class MITREObject():
     """
@@ -5,10 +8,10 @@ class MITREObject():
     """
 
     def __init__(self, name):
-        self._name = name.replace('/', '／')
+        self._name = name.replace('/', '／')    # Name of the object
         self._references = dict()
-        self._internal_id = None
-        self._domain = None
+        self._internal_id = None                # Internal ID from MITRE ATT&CK
+        self._domain = None                     # ATT&CK Domain (enterprise, mobile or ICS)
 
     @property
     def name(self):
@@ -43,7 +46,7 @@ class MITREObject():
         if 'name' not in reference or 'url' not in reference:
             raise ValueError("The parameter provided is not supported")
 
-        self._references[reference['name']] = reference['url']
+        self._references[reference['name'].replace('/', '／')] = reference['url']
 
     @property
     def internal_id(self):
@@ -52,11 +55,11 @@ class MITREObject():
     @internal_id.setter
     def internal_id(self, internal_id):
         self._internal_id = internal_id
-    
+
     @property
     def domain(self):
         return self._domain
-    
+
     @domain.setter
     def domain(self, domain):
         self._domain = domain
@@ -135,13 +138,16 @@ class MITRETechnique(MITREObject):
         self._kill_chain_phases = list()
         self._mitigations = list()
         self._groups = list()
-        self._version = None
-        self._created = None
-        self._modified = None
+        self._version = None                    # Version of the object, e.g. 1.0
+        self._created = None                    # Date of creation, datetime object
+        self._modified = None                   # Date of last modification, datetime object
         self._shortname = None
-        self._external_references = list()
-        self._description = None
-        self._is_subtechnique = False
+        self._external_references = list()      # External references, list of dictionaries
+        self._description = None                # Description of the object, string
+        self._parent_name = None                # Parent technique name, string
+        self._is_subtechnique = False           # Boolean value to indicate if the object is a subtechnique
+        self._subtechniques = list()            # List of subtechniques
+        self._main_id = None                    # Main technique ID. Same as id for techniques, and parent id for subtechniques
         self._platforms = list()
         self._permissions_required = list()
         self._effective_permissions = list()
@@ -151,6 +157,7 @@ class MITRETechnique(MITREObject):
         self._data_sources = list()
         self._detection = None
         self._tactic_name = None
+        self._tactic_id = None
         self._supports_remote = False
         self._system_requirements = None # Not implemented yet
         self._contributors = list() # Not implemented yet
@@ -188,7 +195,7 @@ class MITRETechnique(MITREObject):
 
     @shortname.setter
     def shortname(self, shortname):
-        self._shortname = shortname
+        self._shortname = shortname.replace('/', '／')
 
     @property
     def external_references(self):
@@ -295,12 +302,20 @@ class MITRETechnique(MITREObject):
 
     @tactic_name.setter
     def tactic_name(self, tactic_name):
-        self._tactic_name = tactic_name
+        self._tactic_name = tactic_name.replace('/', '／')
+
+    @property
+    def tactic_id(self):
+        return self._tactic_id
+
+    @tactic_id.setter
+    def tactic_id(self, tactic_id):
+        self._tactic_id = tactic_id
 
     @property
     def defense_bypassed(self):
         return self._defense_bypassed
-    
+
     @defense_bypassed.setter
     def defense_bypassed(self, defense_bypassed):
         self._defense_bypassed = defense_bypassed
@@ -308,66 +323,90 @@ class MITRETechnique(MITREObject):
     @property
     def effective_permissions(self):
         return self._effective_permissions
-    
+
     @effective_permissions.setter
     def effective_permissions(self, effective_permissions):
         self._effective_permissions = effective_permissions
-    
+
     @property
     def supports_remote(self):
         return self._supports_remote
-    
+
     @supports_remote.setter
     def supports_remote(self, supports_remote):
         self._supports_remote = supports_remote
-    
+
     @property
     def system_requirements(self):
         return self._system_requirements
-    
+
     @system_requirements.setter
     def system_requirements(self, system_requirements):
         self._system_requirements.append(system_requirements)
-    
+
     @property
     def contributors(self):
         return self._contributors
-    
+
     @contributors.setter
     def contributors(self, contributors):
         self._contributors.append(contributors)
-    
+
     @property
     def procedure_examples(self):
         return self._procedure_examples
-    
+
     @procedure_examples.setter
     def procedure_examples(self, procedure_examples):
         self._procedure_examples.append(procedure_examples)
-    
+
     @property
     def detection(self):
         return self._detection
-    
+
     @detection.setter
     def detection(self, detection):
         self._detection = detection
-    
+
     @property
     def mitigations(self):
         return self._mitigations
-    
+
     @mitigations.setter
     def mitigations(self, mitigation:dict):
         self._mitigations.append(mitigation)
-    
+
     @property
     def detections(self):
         return self._detections
-    
+
     @detections.setter
     def detections(self, detection:dict):
         self._detections.append(detection)
+
+    @property
+    def subtechniques(self):
+        return self._subtechniques
+
+    @subtechniques.setter
+    def subtechniques(self, subtechnique):
+        self._subtechniques.append(subtechnique)
+
+    @property
+    def main_id(self):
+        return self._main_id
+
+    @main_id.setter
+    def main_id(self, main_id):
+        self._main_id = main_id
+
+    @property
+    def parent_name(self):
+        return self._parent_name
+
+    @parent_name.setter
+    def parent_name(self, parent_name):
+        self._parent_name = parent_name.replace('/', '／')
 
 
 class MITREMitigation(MITREObject):
@@ -485,11 +524,11 @@ class MITREGroup(MITREObject):
     @techniques_used.setter
     def techniques_used(self, technique_used:dict):
         self._techniques_used.append(technique_used)
-    
+
     @property
     def contributors(self):
         return self._contributors
-    
+
     @contributors.setter
     def contributors(self, contributors):
         self._contributors = contributors

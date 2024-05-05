@@ -17,7 +17,7 @@ class StixParser():
 
         stix_json = requests.get(f"{self.url}/enterprise-attack/enterprise-attack-{version}.json").json()
         self.enterprise_attack = MemoryStore(stix_data=stix_json['objects'])
-        
+
         stix_json = requests.get(f"{self.url}/mobile-attack/mobile-attack-{version}.json").json()
         self.mobile_attack = MemoryStore(stix_data=stix_json['objects'])
 
@@ -80,22 +80,23 @@ class StixParser():
                             added.append(item)
 
                 # Extract external references from relationships
-                source_relationships = self.src.query([Filter('type', '=', 'attack-pattern')])
+                techniques_stix = self.src.query([Filter('type', '=', 'attack-pattern')])
 
-                for relationship in source_relationships:
-                    ext_refs = relationship.get('external_references', [])
-                    kill_chain_phase = relationship.get('kill_chain_phases', [])
-                    for ext_ref in ext_refs:
-                        if ext_ref['source_name'] == 'mitre-attack':
-                            id = ext_ref['external_id']
-                        elif 'url' in ext_ref and 'description' in ext_ref:
-                            item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                            if item not in added:
-                                tactic_obj.external_references = item
-                                added.append(item)
-                    for phase in kill_chain_phase:
-                        if phase['phase_name'] == tactic_obj.shortname:
-                            tactic_obj.techniques_used = {'id': id, 'name': relationship['name'], 'description': relationship['description'] }
+                for technique in techniques_stix:
+                    if ('x_mitre_deprecated' not in technique or not technique['x_mitre_deprecated']) and ('revoked' not in technique or not technique['revoked']):
+                        kill_chain_phase = technique.get('kill_chain_phases', [])
+                        for phase in kill_chain_phase:
+                            if phase['phase_name'] == tactic_obj.shortname:
+                                ext_refs = technique.get('external_references', [])
+                                for ext_ref in ext_refs:
+                                    if ext_ref['source_name'] == 'mitre-attack':
+                                        id = ext_ref['external_id']
+                                    elif 'url' in ext_ref and 'description' in ext_ref:
+                                        item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                        if item not in added:
+                                            tactic_obj.external_references = item
+                                            added.append(item)
+                                tactic_obj.techniques_used = {'id': id, 'name': technique['name'].replace('/', '／'), 'description': technique['description'] }
 
                 self.tactics.append(tactic_obj)
 
@@ -115,9 +116,16 @@ class StixParser():
         tactics_stix = self.src.query([Filter('type', '=', 'x-mitre-tactic')])
 
         shortname_name = dict()
+        shortname_id = dict()
 
         for tactic in tactics_stix:
+            ext_refs = tactic.get('external_references', [])
+            for ext_ref in ext_refs:
+                if ext_ref['source_name'] == 'mitre-attack':
+                    tactic_id = ext_ref['external_id']
+                    break
             shortname_name[tactic['x_mitre_shortname']] = tactic['name']
+            shortname_id[tactic['x_mitre_shortname']] = tactic_id
 
         for tech in techniques_stix:
             if ('x_mitre_deprecated' not in tech or not tech['x_mitre_deprecated']) and ('revoked' not in tech or not tech['revoked']):
@@ -139,6 +147,7 @@ class StixParser():
                 technique_obj.tactic = tech['kill_chain_phases'][0]['phase_name']
                 technique_obj.detection = tech.get('x_mitre_detection', '')
                 technique_obj.tactic_name = shortname_name[technique_obj.tactic]
+                technique_obj.tactic_id = shortname_id[technique_obj.tactic]
                 technique_obj.supports_remote = tech.get('x_mitre_remote_support', False)
 
                 kill_chain = tech.get('kill_chain_phases', [])
@@ -155,6 +164,11 @@ class StixParser():
                         if item not in added:
                             technique_obj.external_references = item
                             added.append(item)
+
+                if technique_obj.is_subtechnique:
+                    technique_obj.main_id = technique_obj.id.split('.')[0]
+                else:
+                    technique_obj.main_id = technique_obj.id
 
                 # Procedure examples
                 procedure_examples_stix = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', technique_obj.internal_id) ])
@@ -175,7 +189,7 @@ class StixParser():
                                 if item not in added:
                                     technique_obj.external_references = item
                                     added.append(item)
-                    
+
                     for source in source_stix:
                         if source['id'] == relation['source_ref']:
                             if ( 'x_mitre_deprecated' not in source or not source['x_mitre_deprecated']) and ('revoked' not in source or not source['revoked']):
@@ -209,12 +223,12 @@ class StixParser():
                         if ext_ref['source_name'] == 'mitre-attack':
                             mitigation_id = ext_ref['external_id']
                     description = relation.get('description', '')
-                    item = {'name': mitigation.get('name') , 'description': description, 'id': mitigation_id,}
-                    if item not in added:
+                    item = {'name': mitigation.get('name').replace('/', '／') , 'description': description, 'id': mitigation_id,}
+                    if item not in added and ('x_mitre_deprecated' not in mitigation or not mitigation['x_mitre_deprecated']) and ('revoked' not in mitigation or not mitigation['revoked']):
                         technique_obj.mitigations = item
                         added.append(item)
 
-                ### Detection
+                # Detection
                 detections_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'detects'), Filter('target_ref', '=', technique_obj.internal_id)])
 
                 for relation in detections_relationships:
@@ -237,6 +251,29 @@ class StixParser():
                         technique_obj.detections = item
                         added.append(item)
 
+                # Subtechniques
+                subtechniques = self.src.query([ Filter('type', '=', 'attack-pattern'), Filter('x_mitre_is_subtechnique', '=', True)])
+                for subtechnique in subtechniques:
+                    if ('x_mitre_deprecated' not in subtechnique or not subtechnique['x_mitre_deprecated']) and ('revoked' not in subtechnique or not subtechnique['revoked']):
+                        ext_refs = subtechnique.get('external_references', [])
+                        for ext_ref in ext_refs:
+                            if ext_ref['source_name'] == 'mitre-attack':
+                                sub_id = ext_ref['external_id']
+                        if sub_id.split('.')[0] == technique_obj.main_id:
+                            technique_obj.subtechniques.append({'id': sub_id, 'name': subtechnique['name'].replace('/', '／')})
+
+                # Parent name
+                if technique_obj.is_subtechnique:
+                    parent_techniques = self.src.query([ Filter('type', '=', 'attack-pattern'), Filter('x_mitre_is_subtechnique', '=', False)])
+                    for parent_technique in parent_techniques:
+                        ext_refs = parent_technique.get('external_references', [])
+                        for ext_ref in ext_refs:
+                            if ext_ref['source_name'] == 'mitre-attack':
+                                parent_id = ext_ref['external_id']
+                        if parent_id == technique_obj.main_id:
+                            technique_obj.parent_name = parent_technique['name']
+                            break
+                
                 self.techniques.append(technique_obj)
 
 
@@ -249,7 +286,7 @@ class StixParser():
         mitigations_stix = self.src.query([ Filter('type', '=', 'course-of-action')])
 
         # Extract mitigates relationships
-        mitigates_stix = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        mitigates_stix = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates')])
 
         mitigates_list = list()
 
@@ -283,7 +320,7 @@ class StixParser():
                             mitigation_obj.external_references = item
                             added.append(item)
 
-                mitigation_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('source_ref', '=', mitigation_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+                mitigation_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('source_ref', '=', mitigation_obj.internal_id)])
 
                 for relationship in mitigation_relationships:
                     for technique in self.techniques:
@@ -322,18 +359,18 @@ class StixParser():
         """
 
         # Extract groups
-        groups_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'intrusion-set'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        groups_mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'intrusion-set'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        groups_ics_stix = self.ics_attack.query([ Filter('type', '=', 'intrusion-set'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        groups_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'intrusion-set')])
+        groups_mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'intrusion-set')])
+        groups_ics_stix = self.ics_attack.query([ Filter('type', '=', 'intrusion-set')])
         groups_stix = groups_enterprise_stix + groups_mobile_stix + groups_ics_stix
 
         # Extract software
-        software_enterprise_malware_stix = self.enterprise_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        software_enterprise_tool_stix = self.enterprise_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        software_mobile_malware_stix = self.mobile_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        software_mobile_tool_stix = self.mobile_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        software_ics_malware_stix = self.ics_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        software_ics_tool_stix = self.ics_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        software_enterprise_malware_stix = self.enterprise_attack.query([ Filter('type', '=', 'malware')])
+        software_enterprise_tool_stix = self.enterprise_attack.query([ Filter('type', '=', 'tool')])
+        software_mobile_malware_stix = self.mobile_attack.query([ Filter('type', '=', 'malware')])
+        software_mobile_tool_stix = self.mobile_attack.query([ Filter('type', '=', 'tool')])
+        software_ics_malware_stix = self.ics_attack.query([ Filter('type', '=', 'malware')])
+        software_ics_tool_stix = self.ics_attack.query([ Filter('type', '=', 'tool')])
 
         software_stix = software_enterprise_malware_stix + software_enterprise_tool_stix + software_mobile_malware_stix + software_mobile_tool_stix + software_ics_malware_stix + software_ics_tool_stix
         software_list = list()
@@ -400,17 +437,17 @@ class StixParser():
 
                 for relationship in software_relationships:
                     for software in software_list:
-                        if software['id'] == relationship['target_ref']:
+                        if software['id'] == relationship['target_ref'] and ('x_mitre_deprecated' not in software or not software['x_mitre_deprecated']) and ('revoked' not in software or not software['revoked']):
                             external_id = ''
-                            ext_refs = group.get('external_references', [])
+                            ext_refs = software.get('external_references', [])
 
                             for ext_ref in ext_refs:
                                 if ext_ref['source_name'] == 'mitre-attack':
                                     external_id = ext_ref['external_id']
 
-                            item = {'name': software['name'], 'id': external_id}
+                            item = {'name': software['name'], 'id': external_id, 'description': relationship.get('description', '') }
                             if item not in added:
-                                group_obj.software_used = {'name': software['name'], 'id': external_id, 'description': relationship.get('description', '') }
+                                group_obj.software_used = item
                                 added.append(item)
 
                 self.groups.append(group_obj)
@@ -422,12 +459,12 @@ class StixParser():
         """
 
         # Extract software
-        software_enterprise_malware_stix = self.enterprise_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        software_enterprise_tool_stix = self.enterprise_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        software_mobile_malware_stix = self.mobile_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        software_mobile_tool_stix = self.mobile_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        software_ics_malware_stix = self.ics_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        software_ics_tool_stix = self.ics_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        software_enterprise_malware_stix = self.enterprise_attack.query([ Filter('type', '=', 'malware')])
+        software_enterprise_tool_stix = self.enterprise_attack.query([ Filter('type', '=', 'tool')])
+        software_mobile_malware_stix = self.mobile_attack.query([ Filter('type', '=', 'malware')])
+        software_mobile_tool_stix = self.mobile_attack.query([ Filter('type', '=', 'tool')])
+        software_ics_malware_stix = self.ics_attack.query([ Filter('type', '=', 'malware')])
+        software_ics_tool_stix = self.ics_attack.query([ Filter('type', '=', 'tool')])
 
         software_stix = software_enterprise_malware_stix + software_enterprise_tool_stix + software_mobile_malware_stix + software_mobile_tool_stix + software_ics_malware_stix + software_ics_tool_stix
 
@@ -474,8 +511,8 @@ class StixParser():
                 source_relationships = source_relationships_enterprise + source_relationships_mobile + source_relationships_ics
                 for relationship in source_relationships:
                     for technique in techniques_stix:
-                        if technique['id'] == relationship['target_ref']:
-                            if 'x_mitre_deprecated' not in technique or not technique['x_mitre_deprecated']:
+                        if technique['id'] == relationship['target_ref'] and ('x_mitre_deprecated' not in software or not software['x_mitre_deprecated']) and ('revoked' not in software or not software['revoked']):
+                            if ('x_mitre_deprecated' not in technique or not technique['x_mitre_deprecated']) and ('revoked' not in technique or not technique['revoked']):
                                 software_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', ''), 'domain': technique.get('x_mitre_domains', [])}
 
                     if 'external_references' in relationship:
@@ -508,25 +545,25 @@ class StixParser():
                                     added.append(item)
 
                 # Used in campaigns
-                source_relationships_enterprise = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id)])
-                source_relationships_mobile = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id)])
-                source_relationships_ics = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id)])
+                source_relationships_enterprise = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
+                source_relationships_mobile = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
+                source_relationships_ics = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
 
                 source_relationships = source_relationships_enterprise + source_relationships_mobile + source_relationships_ics
 
                 for relationship in source_relationships:
-                    for campaign in self.campaigns:
-                        if campaign.internal_id == relationship['target_ref']:
-                            software_obj.campaigns_using = {'campaign': campaign, 'description': relationship.get('description', '') }
-
-                    if 'external_references' in relationship:
+                    if relationship['target_ref'].startswith('campaign--'):
                         ext_refs = relationship.get('external_references', [])
                         for ext_ref in ext_refs:
+                            if ext_ref['source_name'] == 'mitre-attack':
+                                campaign_id = ext_ref['external_id']
                             if 'url' in ext_ref and 'description' in ext_ref:
                                 item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
                                 if item not in added:
                                     software_obj.external_references = item
                                     added.append(item)
+                        software_obj.campaigns_using = {'campaign_id': campaign_id, 'campaign_name': relationship.get('name', ''), 'description': relationship.get('description', '') }
+
 
                 self.software.append(software_obj)
 
@@ -537,9 +574,9 @@ class StixParser():
         """
 
         # Extract campaigns
-        enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'campaign'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'campaign'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-        ics_stix = self.ics_attack.query([ Filter('type', '=', 'campaign'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+        enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'campaign')])
+        mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'campaign')])
+        ics_stix = self.ics_attack.query([ Filter('type', '=', 'campaign')])
 
         campaigns_stix = enterprise_stix + mobile_stix + ics_stix
 
@@ -574,9 +611,9 @@ class StixParser():
                             added.append(item)
 
                 # Get group(s) associated with the campaign
-                group_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-                group_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-                group_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+                group_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_obj.internal_id)])
+                group_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_obj.internal_id)])
+                group_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_obj.internal_id)])
 
                 group_relationships = group_relationships_enterprise + group_relationships_mobile + group_relationships_ics
 
@@ -591,18 +628,18 @@ class StixParser():
                 software_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', campaign_obj.internal_id)])
                 software_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', campaign_obj.internal_id)])
                 software_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', campaign_obj.internal_id)])
-                
+
                 software_relationships = software_relationships_enterprise + software_relationships_mobile + software_relationships_ics
 
-                software_malware_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-                software_malware_mobile = self.mobile_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-                software_malware_ics = self.ics_attack.query([ Filter('type', '=', 'malware'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-    
+                software_malware_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'malware')])
+                software_malware_mobile = self.mobile_attack.query([ Filter('type', '=', 'malware')])
+                software_malware_ics = self.ics_attack.query([ Filter('type', '=', 'malware')])
+
                 software_malware = software_malware_enterprise + software_malware_mobile + software_malware_ics
-                
-                software_tool_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-                software_tool_mobile = self.mobile_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-                software_tool_ics = self.ics_attack.query([ Filter('type', '=', 'tool'), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+
+                software_tool_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'tool')])
+                software_tool_mobile = self.mobile_attack.query([ Filter('type', '=', 'tool')])
+                software_tool_ics = self.ics_attack.query([ Filter('type', '=', 'tool')])
 
                 software_tool = software_tool_enterprise + software_tool_mobile + software_tool_ics
                 softwares = software_malware + software_tool
@@ -617,16 +654,22 @@ class StixParser():
                                     campaign_obj.software_used = item
                                     software_added.append(item)
 
-                source_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-                source_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
-                source_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id), Filter('x_mitre_deprecated', '!=', True), Filter('revoked', '!=', True)])
+                source_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id)])
+                source_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id)])
+                source_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('source_ref', '=', campaign_obj.internal_id)])
 
                 source_relationships = source_relationships_enterprise + source_relationships_mobile + source_relationships_ics
 
+                techniques_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'attack-pattern')])
+                techniques_mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'attack-pattern')])
+                techniques_ics_stix = self.ics_attack.query([ Filter('type', '=', 'attack-pattern')])
+
+                techniques_stix = techniques_enterprise_stix + techniques_mobile_stix + techniques_ics_stix
+
                 for relationship in source_relationships:
-                    for technique in self.techniques:
-                        if technique.internal_id == relationship['target_ref']:
-                            campaign_obj.techniques_used = {'technique': technique, 'description': relationship.get('description', ''), 'domain': relationship.get('x_mitre_domains', [])}
+                    for technique in techniques_stix:
+                        if technique['id'] == relationship['target_ref']:
+                            campaign_obj.techniques_used = {'technique_name': technique['name'], 'technique_id': technique['id'], 'description': relationship.get('description', ''), 'domain': relationship.get('x_mitre_domains', '')}
 
                     if 'external_references' in relationship:
                         ext_refs = relationship.get('external_references', [])
