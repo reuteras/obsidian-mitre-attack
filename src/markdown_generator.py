@@ -536,8 +536,8 @@ class MarkdownGenerator():
                     content += "\n\n### Techniques Used\n"
                     content += "\n| Domain | ID | Name | Use |\n| --- | --- | --- | --- |\n"
                     for technique in sorted(campaign.techniques_used, key=lambda x: x['technique_id']):
-                        domain = technique.domain.replace('-', ' ').capitalize().replace('Ics', 'ICS')
-                        description = fix_description(technique.description)
+                        domain = technique['domain'].replace('-', ' ').capitalize().replace('Ics', 'ICS')
+                        description = fix_description(technique['description'])
                         description = description.replace('\n', '<br />')
                         content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"
 
