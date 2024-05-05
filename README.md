@@ -20,7 +20,7 @@ Missing in the current implementation:
 - Campaigns
   - First version done.
 - Software
-  - First version done.
+  - Fix groups that are on more then one line in the table.
 - Tactics
   - First version done.
 - Techniques
