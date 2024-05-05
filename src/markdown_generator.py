@@ -455,25 +455,22 @@ class MarkdownGenerator():
                         content += f"| {domain} | [[{technique['technique'].name.replace('/', '／')} - {external_id}\\|{external_id}]] | {technique['technique'].name} | {description} |\n"
 
                 # Groups that use this software
-                try:
-                    if software.groups_using:
+                if software.groups_using:
                         content += "\n### Groups That Use This Software\n"
                         content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
-                        for group in sorted(software.groups_using, key=lambda x: x['group'].id):
+                        for group in sorted(software.groups_using, key=lambda x: x['group_id']):
                             description = fix_description(group['description'])
                             description = description.replace('\n', '<br />')
-                            content += f"| [[{group['group'].name}\\|{group['group'].id}]] | {group['group'].name} | {description} |\n"
-                except AttributeError:
-                    pass
+                            content += f"| [[{group['group_name']}\\|{group['group_id']}]] | {group['group_name']} | {description} |\n"
 
                 # Software have been used in the following campaigns
                 if software.campaigns_using:
                     content += "\n\n### Campaigns\n"
                     content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
-                    for campaign in sorted(software.campaigns_using, key=lambda x: x.campaign_id):
-                        description = fix_description(campaign.description)
+                    for campaign in sorted(software.campaigns_using, key=lambda x: x['campaign_id']):
+                        description = fix_description(campaign['description'])
                         description = description.replace('\n', '<br />')
-                        content += f"| [[{campaign.campaign_name}\\|{campaign.campaign_id}]] | {campaign.campaign_name} | {description} |\n"
+                        content += f"| [[{campaign['campaign_name']}\\|{campaign['campaign_id']}]] | {campaign['campaign_name']} | {description} |\n"
 
                 content = convert_to_local_links(content)
 
@@ -536,7 +533,7 @@ class MarkdownGenerator():
                     content += "\n\n### Techniques Used\n"
                     content += "\n| Domain | ID | Name | Use |\n| --- | --- | --- | --- |\n"
                     for technique in sorted(campaign.techniques_used, key=lambda x: x['technique_id']):
-                        domain = technique['domain'].replace('-', ' ').capitalize().replace('Ics', 'ICS')
+                        domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics', 'ICS')
                         description = fix_description(technique['description'])
                         description = description.replace('\n', '<br />')
                         content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"
