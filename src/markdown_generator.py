@@ -326,8 +326,10 @@ class MarkdownGenerator():
 
             # Create markdown file for current group
             with open(group_file, 'w') as fd:
-                content = f"---\naliases:\n  - {'\n  - '.join(group.aliases)}\n"
-                content += "tags:\n"
+                content = "---\naliases:\n"
+                for alias in group.aliases:
+                    content += f"  - {alias}\n"
+                content += "\ntags:\n"
                 content += "  - group\n"
                 content += "  - mitre_attack\n"
                 content += "---\n\n"
