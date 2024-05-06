@@ -66,7 +66,7 @@ class MarkdownGenerator():
                 content += "tags:\n"
                 content += "  - tactic\n"
                 content += "  - mitre_attack\n"
-                content += f"  - {domain}\n"
+                content += f"  - {tactic.domain}\n"
                 content += "---"
 
                 content += f"\n\n## {tactic.id}\n"
@@ -125,7 +125,7 @@ class MarkdownGenerator():
                 content += "tags:\n"
                 content += "  - technique\n"
                 content += "  - mitre_attack\n"
-                content += f"  - {domain}\n"
+                content += f"  - {technique.domain}\n"
                 if technique.platforms and 'None' not in technique.platforms:
                     for platform in technique.platforms:
                         if platform:
@@ -203,7 +203,7 @@ class MarkdownGenerator():
                 if technique.procedure_examples:
                     content += "### Procedure Examples\n"
                     content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
-                    for example in technique.procedure_examples:
+                    for example in sorted(technique.procedure_examples, key=lambda x: x['id']):
                         description = fix_description(example['description'])
                         description = description.replace('\n', '<br />')
                         content += f"| [[{example['name'].replace('/', '／')}\\|{example['id']}]] | [[{example['name'].replace('/', '／')}\\|{example['name'].replace('/', '／')}]] | {description} |\n"
@@ -224,11 +224,12 @@ class MarkdownGenerator():
                             content += f"| [[{mitigation['name']} - {mitigation['id']}\\|{mitigation['id']}]] | [[{mitigation['name']} - {mitigation['id']}\\|{mitigation['name']}]] | {description} |\n"
                 else:
                     content += "\nThis type of attack technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features.\n"
+
                 # Detection
                 if technique.detections:
                     content += "\n\n### Detection\n"
                     content += "\n| ID | Data Source | Data Source Type | Detects |\n| --- | --- | --- | --- |\n"
-                    for detection in technique.detections:
+                    for detection in sorted(technique.detections, key=lambda x: x['id']):
                         description = fix_description(detection['description'])
                         description = description.replace('\n', '<br />')
                         content += f"| {detection['id']} | {detection['data_source']} | {detection['name']} | {description} |\n"
@@ -270,7 +271,7 @@ class MarkdownGenerator():
                 content += "tags:\n"
                 content += "  - mitigation\n"
                 content += "  - mitre_attack\n"
-                content += f"  - {domain}\n"
+                content += f"  - {mitigation.domain}\n"
                 content += "---\n\n"
 
                 content += f"## {mitigation.id}\n\n"
