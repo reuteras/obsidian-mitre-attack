@@ -28,8 +28,8 @@ Missing in the current implementation:
 
 Current time to run the scripts and the different parts in verbose mode:
 
-```
-2024-05-07 09:16:29 - Getting STIX data from https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master for version 15.1
+```bash
+2024-05-07 09:16:29 - Getting STIX data from raw.githubusercontent.com/mitre-attack/attack-stix-data/master for version 15.1
 2024-05-07 09:17:48 - STIX data loaded successfully
 2024-05-07 09:17:48 - Getting tactics data for enterprise-attack domain
 2024-05-07 09:17:48 - Getting techniques data for enterprise-attack domain
@@ -50,7 +50,8 @@ Current time to run the scripts and the different parts in verbose mode:
 Below is a slightly updated version of the original README.md file. Updates are relating to changed functionality. Original README.md can be found [here](https://github.com/vincenzocaputo/obsidian-mitre-attack).
 
 This repository implements a Python script that parses the MITRE ATT&CK knowledge base into a markdown format, making it readable and browsable using the Obsidian note-taking app.
-The ATT&CK data is retrieved from the MITRE GitHub repository (https://github.com/mitre-attack/attack-stix-data) that contains the dataset represented in STIX 2.1 JSON collection. The main idea behind this project is to make the MITRE ATT&CK knowledge base easily accessible and seamlessly integrable into Obsidian, along with reports or your personal notes. Utilizing Obsidian's features such as hyperlinks, tags, graph view, and more can greatly support threat intelligence analysis and investigations.
+The ATT&CK data is retrieved from the MITRE GitHub repository (https://github.com/mitre-attack/attack-stix-data) that contains the dataset represented in STIX 2.1 JSON collection.
+The main idea behind this project is to make the MITRE ATT&CK knowledge base easily accessible and seamlessly integrable into Obsidian, along with reports or your personal notes. Utilizing Obsidian's features such as hyperlinks, tags, graph view, and more can greatly support threat intelligence analysis and investigations.
 
 ## Quick Start
 
@@ -58,19 +59,19 @@ The ATT&CK data is retrieved from the MITRE GitHub repository (https://github.co
 
 Clone this repository
 
-```
+```bash
 git clone https://github.com/vincenzocaputo/obsidian-mitre-attack.git
 ```
 Create a Python virtual environment
 
-```
+```bash
 cd obsidian-mitre-attack
 python3 -m venv venv
 source venv/bin/activate
 ```
 
 Install Python module dependencies
-```
+```bash
 python3 -m pip install -r requirements.txt
 ```
 
@@ -78,13 +79,13 @@ python3 -m pip install -r requirements.txt
 
 Run the application specifying the output directory path (i.e.: your obsidian vault)
 
-```
+```bash
 python3 . -o obsidian_vault_path
 ```
 
 ### Options
 
-```
+```bash
 usage: . [-h] [--path PATH] [-o OUTPUT]
 
 Download MITRE ATT&CK STIX data and parse it to Obsidian markdown notes
