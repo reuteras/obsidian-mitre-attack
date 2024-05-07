@@ -27,6 +27,9 @@ jobs:
       - name: Create output
         run: python3 . -o output
 
+      - name: Create dist directory
+        run: mkdir dist
+
       - name: Create zip
         run: zip -r dist/release.zip output
 
