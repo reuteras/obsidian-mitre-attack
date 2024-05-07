@@ -373,10 +373,10 @@ class MarkdownGenerator():
                 # Software used by group
                 if group.software_used:
                     content += "\n\n\n### Software Used\n"
-                    content += "\n| ID | Name | References |\n| --- | --- | --- |\n"
+                    content += "\n| ID | Name | References | Techniques |\n| --- | --- | --- | --- |\n"
                     for software in sorted(group.software_used, key=lambda x: x['id']):
                         description = fix_description(software['description'])
-                        content += f"| [[{software['name']}\\|{software['id']}]] | [[{software['name']}\\|{software['name']}]] | {description} |\n"
+                        content += f"| [[{software['name']}\\|{software['id']}]] | [[{software['name']}\\|{software['name']}]] | {description} | {software['software_techniques']} |\n"
 
                 content = convert_to_local_links(content)
 
@@ -539,7 +539,7 @@ class MarkdownGenerator():
                         domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics', 'ICS')
                         description = fix_description(technique['description'])
                         description = description.replace('\n', '<br />')
-                        content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"
+                        content += f"| {domain} | [[{technique['technique_name'].replace('/', '／')} - {technique['technique_id']}\\|{technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"
 
                 # Software used in campaign
                 if campaign.software_used:

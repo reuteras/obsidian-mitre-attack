@@ -3,6 +3,7 @@ from stix2 import MemoryStore
 import requests
 from .models import MITRETactic, MITRETechnique, MITREMitigation, MITREGroup, MITRESoftware, MITRECampaign
 
+from time import gmtime, strftime
 
 class StixParser():
     """
@@ -11,10 +12,12 @@ class StixParser():
     Domain should be 'enterprise-attack', 'mobile-attack', or 'ics-attack'. Branch should typically be master.
     """
 
-    def __init__(self, repo_url, version='15.0'):
+    def __init__(self, repo_url, version='15.0', verbose=False):
         self.url = repo_url
         self.version = version
+        self.verbose = verbose
 
+        self.verbose_log(f"Getting STIX data from {self.url} for version {self.version}")
         stix_json = requests.get(f"{self.url}/enterprise-attack/enterprise-attack-{version}.json").json()
         self.enterprise_attack = MemoryStore(stix_data=stix_json['objects'])
 
@@ -23,11 +26,19 @@ class StixParser():
 
         stix_json = requests.get(f"{self.url}/ics-attack/ics-attack-{version}.json").json()
         self.ics_attack = MemoryStore(stix_data=stix_json['objects'])
+        self.verbose_log("STIX data loaded successfully")
+
+
+    def verbose_log(self, message):
+        if self.verbose:
+            print(f'{strftime("%Y-%m-%d %H:%M:%S", gmtime())} - {message}')
 
 
     # Build data structures from STIX data
     def get_domain_data(self, domain):
-
+        """
+        Get and parse tactics, techniques, and mitigations from STIX data
+        """
         if domain == 'enterprise-attack':
             self.src = self.enterprise_attack
         elif domain == 'mobile-attack':
@@ -35,14 +46,23 @@ class StixParser():
         elif domain == 'ics-attack':
             self.src = self.ics_attack
 
+        self.verbose_log(f"Getting tactics data for {domain} domain")
         self._get_tactics(domain)
+        self.verbose_log(f"Getting techniques data for {domain} domain")
         self._get_techniques(domain)
+        self.verbose_log(f"Getting mitigations data for {domain} domain")
         self._get_mitigations(domain)
 
 
     def get_cti_data(self):
+        """
+        Get and parse groups, software, and campaigns from STIX data
+        """
+        self.verbose_log("Getting groups data")
         self._get_groups()
+        self.verbose_log("Getting campaigns data")
         self._get_campaigns()
+        self.verbose_log("Getting software data")
         self._get_software()
 
 
@@ -446,8 +466,34 @@ class StixParser():
                             for ext_ref in ext_refs:
                                 if ext_ref['source_name'] == 'mitre-attack':
                                     external_id = ext_ref['external_id']
-
-                            item = {'name': software['name'], 'id': external_id, 'description': relationship.get('description', '') }
+                            
+                            # Get technique name used by software
+                            source_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software['id']), Filter('target_ref', 'contains', 'attack-pattern')])
+                            markdown_links = ''
+                            for relationship in source_relationships:
+                                technique_relationship = self.src.query([ Filter('type', '=', 'attack-pattern'), Filter('id', '=', relationship['target_ref']), Filter('x_mitre_deprecated', '=', False), Filter('revoked', '=', False) ])
+                                if technique_relationship:
+                                    technique_name = technique_relationship[0]['name']
+                                    technique_id = ''
+                                    for ext_ref in technique_relationship[0].get('external_references', []):
+                                        if ext_ref['source_name'] == 'mitre-attack':
+                                            technique_id = ext_ref['external_id']
+                                    if technique_relationship[0]['x_mitre_is_subtechnique']:
+                                        technique_parent_id = technique_id.split('.')[0]
+                                        technique_parent_name = self.src.query([ Filter('type', '=', 'attack-pattern'), Filter('external_references.external_id', '=', technique_parent_id)])[0]['name']
+                                    else:
+                                        technique_parent_id = ''
+                                        technique_parent_name = ''
+                                    if technique_parent_name:
+                                        markdown_link = f'[[{technique_parent_name.replace("/", "／")} - {technique_parent_id}\\|{technique_parent_name.replace("/", "／")}]]: [[{technique_name.replace("/", "／")} - {technique_id}\\|{technique_name.replace("/", "／")}]]'
+                                    else:
+                                        markdown_link = f'[[{technique_name.replace("/", "／")} - {technique_id}\\|{technique_name.replace("/", "／")}]]'
+                                    
+                                    if markdown_links:
+                                        markdown_links += ', ' + markdown_link
+                                    else:
+                                        markdown_links = markdown_link
+                            item = {'name': software['name'], 'id': external_id, 'description': relationship.get('description', ''), 'software_techniques': markdown_links}
                             if item not in added:
                                 group_obj.software_used = item
                                 added.append(item)
@@ -529,48 +575,6 @@ class StixParser():
                                             added.append(item)
                             break
 
-                # Groups using the software
-                target_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
-                target_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
-                target_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
-
-                target_relationships = target_relationships_enterprise + target_relationships_mobile + target_relationships_ics
-
-                group_added = []
-                for relationship in target_relationships:
-                    if relationship['source_ref'].startswith('intrusion-set') and ('x_mitre_deprecated' not in relationship or not relationship['x_mitre_deprecated']) and ('revoked' not in relationship or not relationship['revoked']):
-                        group_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'intrusion-set'), Filter('id', '=', relationship['source_ref'])])
-                        group_mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'intrusion-set'), Filter('id', '=', relationship['source_ref'])])
-                        group_ics_stix = self.ics_attack.query([ Filter('type', '=', 'intrusion-set'), Filter('id', '=', relationship['source_ref'])])
-
-                        group_stix = group_enterprise_stix + group_mobile_stix + group_ics_stix
-
-                        group_id = ''
-                        for groupinfo in group_stix:
-                            if 'external_references' in groupinfo:
-                                ext_refs = groupinfo.get('external_references', [])
-                                for ext_ref in ext_refs:
-                                    if 'mitre-attack' in ext_ref['source_name']:
-                                        group_id = ext_ref['external_id']
-                                    if 'url' in ext_ref and 'description' in ext_ref:
-                                        item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if item not in added:
-                                            software_obj.external_references = item
-                                            added.append(item)
-                            if 'external_references' in relationship:
-                                ext_refs = relationship.get('external_references', [])
-                                for ext_ref in ext_refs:
-                                    if 'url' in ext_ref and 'description' in ext_ref:
-                                        item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if item not in added:
-                                            software_obj.external_references = item
-                                            added.append(item)
-                            
-                            item = {'group_id': group_id, 'group_name': groupinfo['name'], 'description': relationship.get('description', '')}
-                            if item not in group_added:
-                                software_obj.groups_using = item
-                                group_added.append(item)
-
                 # Software has been used in these campaigns
                 source_relationships_enterprise = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
                 source_relationships_mobile = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
@@ -604,10 +608,77 @@ class StixParser():
                                         if item not in added:
                                             software_obj.external_references = item
                                             added.append(item)
-                                item = {'campaign_id': campaign_id, 'campaign_name': campaign.get('name', ''), 'description': relationship.get('description', '') }
+                                item = {'campaign_id': campaign_id, 'campaign_name': campaign.get('name', ''), 'description': relationship.get('description', ''), 'campaign_internal_id': campaign['id']}
                                 if item not in added:
                                     software_obj.campaigns_using = item
                                     added.append(item)
+
+                # Groups using the software
+                target_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
+                target_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
+                target_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
+
+                target_relationships = target_relationships_enterprise + target_relationships_mobile + target_relationships_ics
+
+                group_added = []
+                for relationship in target_relationships:
+                    if relationship['source_ref'].startswith('intrusion-set') and ('x_mitre_deprecated' not in relationship or not relationship['x_mitre_deprecated']) and ('revoked' not in relationship or not relationship['revoked']):
+                        group_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'intrusion-set'), Filter('id', '=', relationship['source_ref'])])
+                        group_mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'intrusion-set'), Filter('id', '=', relationship['source_ref'])])
+                        group_ics_stix = self.ics_attack.query([ Filter('type', '=', 'intrusion-set'), Filter('id', '=', relationship['source_ref'])])
+
+                        group_stix = group_enterprise_stix + group_mobile_stix + group_ics_stix
+
+                        group_id = ''
+                        descriptions = ''
+                        for groupinfo in group_stix:
+                            if 'external_references' in groupinfo:
+                                ext_refs = groupinfo.get('external_references', [])
+                                for ext_ref in ext_refs:
+                                    if 'mitre-attack' in ext_ref['source_name']:
+                                        group_id = ext_ref['external_id']
+                                    if 'url' in ext_ref and 'description' in ext_ref:
+                                        item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                        if item not in added:
+                                            software_obj.external_references = item
+                                            added.append(item)
+                            if 'external_references' in relationship:
+                                ext_refs = relationship.get('external_references', [])
+                                for ext_ref in ext_refs:
+                                    if 'url' in ext_ref and 'description' in ext_ref:
+                                        item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                        if item not in added:
+                                            software_obj.external_references = item
+                                            added.append(item)
+                            
+                            for campaign in software_obj.campaigns_using:
+                                campaign_id = campaign['campaign_internal_id']
+                                campaign_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_id), Filter('target_ref', '=', groupinfo['id'])])
+                                campaign_mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_id), Filter('target_ref', '=', groupinfo['id'])])
+                                campaign_ics_stix = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_id), Filter('target_ref', '=', groupinfo['id'])])
+
+                                campaigns_stix = campaign_enterprise_stix + campaign_mobile_stix + campaign_ics_stix
+                                for campaign in campaigns_stix:
+                                    if ('x_mitre_deprecated' not in campaign or not campaign['x_mitre_deprecated']) and ('revoked' not in campaign or not campaign['revoked']):
+                                        for ext_ref in campaign.get('external_references', []):
+                                            if 'url' in ext_ref and 'description' in ext_ref:
+                                                item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                                if item not in added:
+                                                    software_obj.external_references = item
+                                                    added.append(item)
+                                        description = campaign.get('description', '')
+                                        if description not in descriptions:
+                                            descriptions += description
+
+                            description = relationship.get('description', '')
+
+                            if description not in descriptions:
+                                descriptions += description
+
+                        item = {'group_id': group_id, 'group_name': groupinfo['name'], 'description': descriptions}
+                        if item not in group_added:
+                            software_obj.groups_using = item
+                            group_added.append(item)
 
                 self.software.append(software_obj)
 

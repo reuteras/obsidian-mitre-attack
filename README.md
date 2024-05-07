@@ -14,17 +14,36 @@ This is a changed version of the original repository [vincenzocaputo/obsidian-mi
 Missing in the current implementation:
 
 - Groups
-  - _Software used_ don't have techniques
+  - First version done.
 - Mitigations
   - First version done.
 - Campaigns
   - First version done.
 - Software
-  - Fix groups that are on more then one line in the table.
+  - First version done.
 - Tactics
   - First version done.
 - Techniques
- - No links to data sources since they are not implemented yet.
+  - No links to data sources since they are not implemented yet.
+
+Current time to run the scripts and the different parts in verbose mode:
+
+```
+2024-05-07 09:16:29 - Getting STIX data from https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master for version 15.1
+2024-05-07 09:17:48 - STIX data loaded successfully
+2024-05-07 09:17:48 - Getting tactics data for enterprise-attack domain
+2024-05-07 09:17:48 - Getting techniques data for enterprise-attack domain
+2024-05-07 09:21:48 - Getting mitigations data for enterprise-attack domain
+2024-05-07 09:21:50 - Getting groups data
+2024-05-07 09:33:20 - Getting campaigns data
+2024-05-07 09:33:27 - Getting software data
+2024-05-07 09:37:52 - Getting tactics data for mobile-attack domain
+2024-05-07 09:37:52 - Getting techniques data for mobile-attack domain
+2024-05-07 09:37:56 - Getting mitigations data for mobile-attack domain
+2024-05-07 09:37:56 - Getting tactics data for ics-attack domain
+2024-05-07 09:37:56 - Getting techniques data for ics-attack domain
+2024-05-07 09:37:59 - Getting mitigations data for ics-attack domain
+```
 
 ## Original README.md
 

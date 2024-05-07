@@ -23,7 +23,7 @@ if __name__ == '__main__':
     # Main functionality
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    stix_data = StixParser(config['repository_url'], version=config['version'])
+    stix_data = StixParser(config['repository_url'], version=config['version'], verbose=config['verbose'])
 
     for domain in domains:
         stix_data.get_domain_data(domain)
