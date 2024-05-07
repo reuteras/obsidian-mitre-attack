@@ -1,16 +1,15 @@
 from time import gmtime, strftime
-import requests
 
-from stix2 import Filter
-from stix2 import MemoryStore
+import requests
+from stix2 import Filter, MemoryStore
 
 from .models import (
+    MITRECampaign,
+    MITREGroup,
+    MITREMitigation,
+    MITRESoftware,
     MITRETactic,
     MITRETechnique,
-    MITREMitigation,
-    MITREGroup,
-    MITRESoftware,
-    MITRECampaign,
 )
 
 
