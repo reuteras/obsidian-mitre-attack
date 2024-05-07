@@ -39,7 +39,7 @@ class StixParser():
 
     def verbose_log(self, message):
         if self.verbose:
-            print(f'{strftime("%Y-%m-%d %H:%M:%S", gmtime())} - {message}')
+            print(f'{strftime("%Y-%m-%d %H:%M:%S", gmtime())} - {message}', flush=True)
 
 
     # Build data structures from STIX data
