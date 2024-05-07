@@ -1,7 +1,7 @@
-from . import ROOT
-
 import os
 import re
+
+from . import ROOT
 
 # Utility functions
 

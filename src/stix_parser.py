@@ -1,9 +1,18 @@
+from time import gmtime, strftime
+import requests
+
 from stix2 import Filter
 from stix2 import MemoryStore
-import requests
-from .models import MITRETactic, MITRETechnique, MITREMitigation, MITREGroup, MITRESoftware, MITRECampaign
 
-from time import gmtime, strftime
+from .models import (
+    MITRETactic,
+    MITRETechnique,
+    MITREMitigation,
+    MITREGroup,
+    MITRESoftware,
+    MITRECampaign,
+)
+
 
 class StixParser():
     """
@@ -294,7 +303,7 @@ class StixParser():
                         if parent_id == technique_obj.main_id:
                             technique_obj.parent_name = parent_technique['name']
                             break
-                
+
                 self.techniques.append(technique_obj)
 
 
@@ -466,7 +475,7 @@ class StixParser():
                             for ext_ref in ext_refs:
                                 if ext_ref['source_name'] == 'mitre-attack':
                                     external_id = ext_ref['external_id']
-                            
+
                             # Get technique name used by software
                             source_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software['id']), Filter('target_ref', 'contains', 'attack-pattern')])
                             markdown_links = ''
@@ -488,7 +497,7 @@ class StixParser():
                                         markdown_link = f'[[{technique_parent_name.replace("/", "／")} - {technique_parent_id}\\|{technique_parent_name.replace("/", "／")}]]: [[{technique_name.replace("/", "／")} - {technique_id}\\|{technique_name.replace("/", "／")}]]'
                                     else:
                                         markdown_link = f'[[{technique_name.replace("/", "／")} - {technique_id}\\|{technique_name.replace("/", "／")}]]'
-                                    
+
                                     if markdown_links:
                                         markdown_links += ', ' + markdown_link
                                     else:
@@ -552,7 +561,7 @@ class StixParser():
                 source_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id)])
 
                 source_relationships = source_relationships_enterprise + source_relationships_mobile + source_relationships_ics
-                
+
                 techniques_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'attack-pattern')])
                 techniques_mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'attack-pattern')])
                 techniques_ics_stix = self.ics_attack.query([ Filter('type', '=', 'attack-pattern')])
@@ -587,7 +596,7 @@ class StixParser():
                         campaign_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'campaign'), Filter('id', '=', relationship['source_ref'])])
                         campaign_mobile_stix = self.mobile_attack.query([ Filter('type', '=', 'campaign'), Filter('id', '=', relationship['source_ref'])])
                         campaign_ics_stix = self.ics_attack.query([ Filter('type', '=', 'campaign'), Filter('id', '=', relationship['source_ref'])])
-                        
+
                         campaigns_stix = campaign_enterprise_stix + campaign_mobile_stix + campaign_ics_stix
 
                         for campaign in campaigns_stix:
@@ -650,7 +659,7 @@ class StixParser():
                                         if item not in added:
                                             software_obj.external_references = item
                                             added.append(item)
-                            
+
                             for campaign in software_obj.campaigns_using:
                                 campaign_id = campaign['campaign_internal_id']
                                 campaign_enterprise_stix = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'attributed-to'), Filter('source_ref', '=', campaign_id), Filter('target_ref', '=', groupinfo['id'])])
