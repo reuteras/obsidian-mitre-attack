@@ -2,6 +2,10 @@
 
 This is a changed version of the original repository [vincenzocaputo/obsidian-mitre-attack](https://github.com/vincenzocaputo/obsidian-mitre-attack). Some functions have been removed (create canvas) and some have been added (generating software and campaigns).
 
+## Use from release
+
+Download release from GitHub and unzip. Place the _MITRE_ folder in your Obsidian vault.
+
 ## TODO
 
 - Add more relevant tags and consider prepending tags with **attack** or use **attack/<tag>**.
