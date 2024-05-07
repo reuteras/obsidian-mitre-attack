@@ -29,17 +29,16 @@ jobs:
         run: cp default-config.yml config.yml
 
       - name: Create output
-        run: python3 . -o output
+        run: python3 . -o MITRE
 
       - name: Create dist directory
         run: mkdir dist
 
       - name: Create zip
-        run: zip -r dist/release.zip output
+        run: zip -r dist/release.zip MITRE README.md
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            README.md
             dist/*
