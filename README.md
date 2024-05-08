@@ -39,7 +39,7 @@ Result is shown below.
 
 Locking at the graph it is also easy to see that [T1548.004](https://attack.mitre.org/techniques/T1548/004/) is not associated with APT28 by MITRE ATT&CK.
 
-![Result in Obsidian with lists generated](https://raw.githubusercontent.com/reuteras/obsidian-mitre-attack/main/resources/text.png)
+![Result in Obsidian with lists generated](https://raw.githubusercontent.com/reuteras/obsidian-mitre-attack/main/resources/graph.png)
 
 ## TODO
 
