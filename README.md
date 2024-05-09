@@ -18,13 +18,13 @@ If you have the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) pl
 ~~~markdown
 ## Techniques
 ```dataview
-list from #technique 
+list from #technique
 WHERE contains(file.inlinks, this.file.link)
 ```
 
 ## Tools and malware
 ```dataview
-list from #tool or #malware  
+list from #tool or #malware
 WHERE contains(file.inlinks, this.file.link)
 ```
 ~~~
