@@ -172,16 +172,11 @@ class StixParser():
                 technique_obj.created = tech.get('created', '')
                 technique_obj.modified = tech.get('modified', '')
                 technique_obj.version = tech.get('x_mitre_version', [])
-                technique_obj.tactic = tech['kill_chain_phases'][0]['phase_name']
                 technique_obj.detection = tech.get('x_mitre_detection', '')
-                technique_obj.tactic_name = shortname_name[technique_obj.tactic]
-                technique_obj.tactic_id = shortname_id[technique_obj.tactic]
+                technique_obj.tactic_name = shortname_name[tech['kill_chain_phases'][0]['phase_name']]
+                technique_obj.tactic_id = shortname_id[tech['kill_chain_phases'][0]['phase_name']]
                 technique_obj.supports_remote = tech.get('x_mitre_remote_support', False)
                 technique_obj.domain = domain
-
-                kill_chain = tech.get('kill_chain_phases', [])
-                for kill_phase in kill_chain:
-                    technique_obj.kill_chain_phases = kill_phase
 
                 # Get external references
                 ext_refs = tech.get('external_references', [])

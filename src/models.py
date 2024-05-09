@@ -135,7 +135,6 @@ class MITRETechnique(MITREObject):
 
     def __init__(self, name):
         MITREObject.__init__(self, name)
-        self._kill_chain_phases = list()
         self._mitigations = list()
         self._groups = list()
         self._version = None                    # Version of the object, e.g. 1.0
@@ -212,17 +211,6 @@ class MITRETechnique(MITREObject):
     @techniques_used.setter
     def techniques_used(self, technique_used:dict):
         self._techniques_used.append(technique_used)
-
-    @property
-    def kill_chain_phases(self):
-        return self._kill_chain_phases
-
-    @kill_chain_phases.setter
-    def kill_chain_phases(self, kill_chain_phase:dict):
-        if 'kill_chain_name' not in kill_chain_phase or 'phase_name' not in kill_chain_phase:
-            raise ValueError("The parameter provided is not supported")
-
-        self._kill_chain_phases.append(kill_chain_phase)
 
     @property
     def is_subtechnique(self):
