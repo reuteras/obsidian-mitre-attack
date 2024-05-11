@@ -130,4 +130,3 @@ options:
                         Output directory in which the notes will be saved. It should be placed inside a Obsidian vault.
 
 ```
-
