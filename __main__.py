@@ -26,25 +26,24 @@ if __name__ == '__main__':
 
     stix_data = StixParser(config['repository_url'], version=config['version'], verbose=config['verbose'])
 
+    output_dir = args.output
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+
     for domain in domains:
         stix_data.get_domain_data(domain)
-        # Only run one time. Could be for any domain
-        if domain == 'enterprise-attack':
-            stix_data.get_cti_data()
 
-        output_dir = args.output
-        if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
-        markdown_generator = MarkdownGenerator(output_dir, stix_data.techniques, stix_data.groups, stix_data.tactics, stix_data.mitigations, stix_data.software, stix_data.campaigns)
-        markdown_generator.create_tactic_notes(domain.replace('-', ' ').capitalize().replace('Ics ', 'ICS '))
-        markdown_generator.create_technique_notes(domain.replace('-', ' ').capitalize().replace('Ics ', 'ICS '))
-        markdown_generator.create_mitigation_notes(domain.replace('-', ' ').capitalize().replace('Ics ', 'ICS '))
+    stix_data.get_cti_data()
+    markdown_generator = MarkdownGenerator(output_dir, stix_data.techniques, stix_data.groups, stix_data.tactics, stix_data.mitigations, stix_data.software, stix_data.campaigns)
+    
+    for domain in domains:
+        markdown_generator.create_tactic_notes(domain)
+        markdown_generator.create_technique_notes(domain)
+        markdown_generator.create_mitigation_notes(domain)
 
-        # Only run one time. Could be for any domain
-        if domain == 'enterprise-attack':
-            markdown_generator.create_software_notes()
-            markdown_generator.create_group_notes()
-            markdown_generator.create_campaign_notes()
+    markdown_generator.create_software_notes()
+    markdown_generator.create_group_notes()
+    markdown_generator.create_campaign_notes()
 
     # Generate Main README file
     attack_file = os.path.join(args.output, "MITRE ATT&CK.md")

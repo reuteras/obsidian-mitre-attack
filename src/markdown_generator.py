@@ -47,270 +47,278 @@ class MarkdownGenerator():
     # Function to create markdown notes for tactics
     def create_tactic_notes(self, domain):
         base_dir = os.path.join(self.output_dir, "Tactics")
+        filename = domain.replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
         if not os.path.exists(base_dir):
             os.mkdir(base_dir)
-        tactics_dir = os.path.join(base_dir, domain)
+        tactics_dir = os.path.join(base_dir, filename)
         if not os.path.exists(tactics_dir):
             os.mkdir(tactics_dir)
 
         for tactic in self.tactics:
-            tactic_file = os.path.join(tactics_dir, f"{tactic.name} - {tactic.id}.md")
+            if tactic.domain == domain:
+                tactic_file = os.path.join(tactics_dir, f"{tactic.name} - {tactic.id}.md")
 
-            # Create markdown file for current tactic
-            with open(tactic_file, 'w') as fd:
-                content = "---\naliases:\n"
-                content += f"  - {tactic.id}\n"
-                content += f"  - {tactic.name}\n"
-                content += f"  - {tactic.name} ({tactic.id})\n"
-                content += f"  - {tactic.id} ({tactic.name})\n"
-                content += "tags:\n"
-                content += "  - tactic\n"
-                content += "  - mitre_attack\n"
-                content += f"  - {tactic.domain}\n"
-                content += "---"
+                # Create markdown file for current tactic
+                with open(tactic_file, 'w') as fd:
+                    content = "---\naliases:\n"
+                    content += f"  - {tactic.id}\n"
+                    content += f"  - {tactic.name}\n"
+                    content += f"  - {tactic.name} ({tactic.id})\n"
+                    content += f"  - {tactic.id} ({tactic.name})\n"
+                    content += "tags:\n"
+                    content += "  - tactic\n"
+                    content += "  - mitre_attack\n"
+                    content += f"  - {tactic.domain}\n"
+                    content += "---"
 
-                content += f"\n\n## {tactic.id}\n"
-                tactic_description = fix_description(tactic.description)
-                content += f"\n{tactic_description}\n\n"
+                    content += f"\n\n## {tactic.id}\n"
+                    tactic_description = fix_description(tactic.description)
+                    content += f"\n{tactic_description}\n\n"
 
-                # Tactic Information
-                content += "> [!info]\n"
-                content += f"> ID: {tactic.id}\n"
-                content += f"> Created: {str(tactic.created).split(' ')[0]}\n"
-                content += f"> Last Modified: {str(tactic.modified).split(' ')[0]}\n\n\n"
+                    # Tactic Information
+                    content += "> [!info]\n"
+                    content += f"> ID: {tactic.id}\n"
+                    content += f"> Created: {str(tactic.created).split(' ')[0]}\n"
+                    content += f"> Last Modified: {str(tactic.modified).split(' ')[0]}\n\n\n"
 
-                # Techniques Used
-                if tactic.techniques_used:
-                    content += "### Techniques Used\n"
-                    content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
-                    for technique in sorted(tactic.techniques_used, key=lambda x: x['id']):
-                        description = fix_description(technique['description'])
-                        description = description[0:description.find('\n')]
-                        description = remove_references(description)
-                        content += f"| [[{technique['name']} - {technique['id']}\\|{technique['id']}]] | {technique['name']} | {description} |\n"
+                    # Techniques Used
+                    if tactic.techniques_used:
+                        content += "### Techniques Used\n"
+                        content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
+                        for technique in sorted(tactic.techniques_used, key=lambda x: x['id']):
+                            description = fix_description(technique['description'])
+                            description = description[0:description.find('\n')]
+                            description = remove_references(description)
+                            content += f"| [[{technique['name']} - {technique['id']}\\|{technique['id']}]] | {technique['name']} | {description} |\n"
 
-                content = convert_to_local_links(content)
-                fd.write(content)
+                    content = convert_to_local_links(content)
+                    fd.write(content)
 
 
     # Function to create markdown notes for techniques
     def create_technique_notes(self, domain):
         base_dir = os.path.join(self.output_dir, "Techniques")
+        filename = domain
+        filename = filename.replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
         if not os.path.exists(base_dir):
             os.mkdir(base_dir)
-        techniques_dir = os.path.join(base_dir, domain)
+        techniques_dir = os.path.join(base_dir, filename)
         if not os.path.exists(techniques_dir):
             os.mkdir(techniques_dir)
 
         for technique in self.techniques:
-            tactic_folder = os.path.join(techniques_dir, technique.tactic_name)
-            if not os.path.exists(tactic_folder):
-                os.mkdir(tactic_folder)
-
-            if technique.is_subtechnique:
-                technique_name_folder = os.path.join(tactic_folder, technique.parent_name)
-            else:
-                technique_name_folder = os.path.join(tactic_folder, technique.name)
-            if not os.path.exists(technique_name_folder):
-                os.mkdir(technique_name_folder)
-            technique_file = os.path.join(technique_name_folder, f"{technique.name} - {technique.id}.md")
-
-            # Create markdown file for current technique
-            with open(technique_file, 'w') as fd:
-                content = "---\naliases:\n"
-                content += f"  - {technique.id}\n"
-                content += f"  - {technique.name}\n"
-                content += f"  - {technique.name} ({technique.id})\n"
-                content += f"  - {technique.id} ({technique.name})\n"
-                content += "tags:\n"
-                content += "  - technique\n"
-                content += "  - mitre_attack\n"
-                content += f"  - {technique.domain}\n"
-                if technique.platforms and 'None' not in technique.platforms:
-                    for platform in technique.platforms:
-                        if platform:
-                            content += f"  - {platform.replace(' ', '_')}\n"
-
-                if technique.supports_remote:
-                    content += "  - supports_remote\n"
-                content += "---\n\n"
+            if technique.domain == domain:
+                tactic_folder = os.path.join(techniques_dir, technique.tactic_name)
+                if not os.path.exists(tactic_folder):
+                    os.mkdir(tactic_folder)
 
                 if technique.is_subtechnique:
-                    content += f"## {technique.parent_name}: {technique.name}\n\n"
+                    technique_name_folder = os.path.join(tactic_folder, technique.parent_name)
                 else:
-                    content += f"## {technique.name}\n\n"
+                    technique_name_folder = os.path.join(tactic_folder, technique.name)
+                if not os.path.exists(technique_name_folder):
+                    os.mkdir(technique_name_folder)
+                technique_file = os.path.join(technique_name_folder, f"{technique.name} - {technique.id}.md")
 
-                if technique.is_subtechnique:
-                    first = True
-                    for subt in sorted(technique.subtechniques, key=lambda x: x['id']):
-                        if first:
-                            content += f"> [!summary]- Other sub-techniques of {technique.parent_name} ({len(technique.subtechniques)})\n" # TODO
-                            content += ">"
-                            content += "> | ID | Name |\n| --- | --- |\n"
-                            first = False
-                        if subt['id'] == technique.id:
-                            content += f"> | {subt['id']} | {subt['name']} |\n"
-                        else:
-                            content += f"> | [[{subt['name']} - {subt['id']}\\|{subt['id']}]] | [[{subt['name']} - {subt['id']}\\|{subt['name']}]] |\n"
-                    content += "\n\n"
-                elif technique.subtechniques:
-                    first = True
-                    for subt in sorted(technique.subtechniques, key=lambda x: x['id']):
-                        if first:
-                            content += f"> [!summary]- Sub-techniques ({len(technique.subtechniques)})\n"
-                            content += ">"
-                            content += "> | ID | Name |\n| --- | --- |\n"
-                            first = False
-                        content += f"> | [[{subt['name']} - {subt['id']}\\|{subt['id']}]] | {subt['name']} |\n"
-                    content += "\n\n"
+                # Create markdown file for current technique
+                with open(technique_file, 'w') as fd:
+                    content = "---\naliases:\n"
+                    content += f"  - {technique.id}\n"
+                    content += f"  - {technique.name}\n"
+                    content += f"  - {technique.name} ({technique.id})\n"
+                    content += f"  - {technique.id} ({technique.name})\n"
+                    content += "tags:\n"
+                    content += "  - technique\n"
+                    content += "  - mitre_attack\n"
+                    content += f"  - {technique.domain}\n"
+                    if technique.platforms and 'None' not in technique.platforms:
+                        for platform in technique.platforms:
+                            if platform:
+                                content += f"  - {platform.replace(' ', '_')}\n"
 
-                technique_description = fix_description(technique.description)
-                content += f"{technique_description}\n\n\n"
+                    if technique.supports_remote:
+                        content += "  - supports_remote\n"
+                    content += "---\n\n"
 
-                # Information for the technique
-                content += "> [!info]\n"
-                content += f"> ID: {technique.id}\n"
-                if technique.is_subtechnique:
-                    content += f"> Sub-technique of: [[{technique.parent_name} - {technique.id.split('.')[0]}|{technique.id.split('.')[0]}]]\n"
-                else:
-                    content += "> Sub-techniques: "
-                    tech_first = True
-                    for subt in sorted(self.techniques, key=lambda x: x.id):
-                        if subt.is_subtechnique and technique.id in subt.id:
-                            if tech_first:
-                                content += f"[[{subt.name} - {subt.id}\\|{subt.id}]]"
-                                tech_first = False
+                    if technique.is_subtechnique:
+                        content += f"## {technique.parent_name}: {technique.name}\n\n"
+                    else:
+                        content += f"## {technique.name}\n\n"
+
+                    if technique.is_subtechnique:
+                        first = True
+                        for subt in sorted(technique.subtechniques, key=lambda x: x['id']):
+                            if first:
+                                content += f"> [!summary]- Other sub-techniques of {technique.parent_name} ({len(technique.subtechniques)})\n" # TODO
+                                content += ">"
+                                content += "> | ID | Name |\n| --- | --- |\n"
+                                first = False
+                            if subt['id'] == technique.id:
+                                content += f"> | {subt['id']} | {subt['name']} |\n"
                             else:
-                                content += f", [[{subt.name} - {subt.id}\\|{subt.id}]]"
-                    content += "\n"
-                first = True
-                content += f"> Tactic: [[{technique.tactic_name} - {technique.tactic_id}\\|{technique.tactic_name}]]\n"
-                if technique.platforms and 'None' not in technique.platforms:
-                    content += f"> Platforms: {', '.join(technique.platforms)}\n"
-                if technique.permissions_required:
-                    content += f"> Permissions Required: {', '.join(technique.permissions_required)}\n"
-                if technique.effective_permissions:
-                    content += f"> Effective Permissions: {', '.join(technique.effective_permissions)}\n"
-                if technique.defense_bypassed:
-                    content += f"> Defense Bypassed: {', '.join(technique.defense_bypassed)}\n"
-                if technique.supports_remote:
-                    content += "> Remote Support: Yes\n"
-                content += f"> Version: {technique.version}\n"
-                content += f"> Created: {str(technique.created).split(' ')[0]}\n"
-                content += f"> Last Modified: {str(technique.modified).split(' ')[0]}\n\n\n"
+                                content += f"> | [[{subt['name']} - {subt['id']}\\|{subt['id']}]] | [[{subt['name']} - {subt['id']}\\|{subt['name']}]] |\n"
+                        content += "\n\n"
+                    elif technique.subtechniques:
+                        first = True
+                        for subt in sorted(technique.subtechniques, key=lambda x: x['id']):
+                            if first:
+                                content += f"> [!summary]- Sub-techniques ({len(technique.subtechniques)})\n"
+                                content += ">"
+                                content += "> | ID | Name |\n| --- | --- |\n"
+                                first = False
+                            content += f"> | [[{subt['name']} - {subt['id']}\\|{subt['id']}]] | {subt['name']} |\n"
+                        content += "\n\n"
 
-                # Procedure Examples
-                if technique.procedure_examples:
-                    content += "### Procedure Examples\n"
-                    content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
-                    for example in sorted(technique.procedure_examples, key=lambda x: x['id']):
-                        description = fix_description(example['description'])
-                        description = description.replace('\n', '<br />')
-                        content += f"| [[{example['name'].replace('/', '／')}\\|{example['id']}]] | [[{example['name'].replace('/', '／')}\\|{example['name'].replace('/', '／')}]] | {description} |\n"
+                    technique_description = fix_description(technique.description)
+                    content += f"{technique_description}\n\n\n"
 
-                # Mitigations for the technique
-                content += "\n### Mitigations\n"
-                if technique.mitigations:
-                    mitigation_first = True
-                    for mitigation in sorted(technique.mitigations, key=lambda x: x['id']):
-                        if mitigation['id'] == technique.id:
-                            content += "\nThis type of attack technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features.\n"
-                        else:
-                            if mitigation_first:
-                                content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
-                                mitigation_first = False
-                            description = fix_description(mitigation['description'])
+                    # Information for the technique
+                    content += "> [!info]\n"
+                    content += f"> ID: {technique.id}\n"
+                    if technique.is_subtechnique:
+                        content += f"> Sub-technique of: [[{technique.parent_name} - {technique.id.split('.')[0]}|{technique.id.split('.')[0]}]]\n"
+                    else:
+                        content += "> Sub-techniques: "
+                        tech_first = True
+                        for subt in sorted(self.techniques, key=lambda x: x.id):
+                            if subt.is_subtechnique and technique.id in subt.id:
+                                if tech_first:
+                                    content += f"[[{subt.name} - {subt.id}\\|{subt.id}]]"
+                                    tech_first = False
+                                else:
+                                    content += f", [[{subt.name} - {subt.id}\\|{subt.id}]]"
+                        content += "\n"
+                    first = True
+                    content += f"> Tactic: [[{technique.tactic_name} - {technique.tactic_id}\\|{technique.tactic_name}]]\n"
+                    if technique.platforms and 'None' not in technique.platforms:
+                        content += f"> Platforms: {', '.join(technique.platforms)}\n"
+                    if technique.permissions_required:
+                        content += f"> Permissions Required: {', '.join(technique.permissions_required)}\n"
+                    if technique.effective_permissions:
+                        content += f"> Effective Permissions: {', '.join(technique.effective_permissions)}\n"
+                    if technique.defense_bypassed:
+                        content += f"> Defense Bypassed: {', '.join(technique.defense_bypassed)}\n"
+                    if technique.supports_remote:
+                        content += "> Remote Support: Yes\n"
+                    content += f"> Version: {technique.version}\n"
+                    content += f"> Created: {str(technique.created).split(' ')[0]}\n"
+                    content += f"> Last Modified: {str(technique.modified).split(' ')[0]}\n\n\n"
+
+                    # Procedure Examples
+                    if technique.procedure_examples:
+                        content += "### Procedure Examples\n"
+                        content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
+                        for example in sorted(technique.procedure_examples, key=lambda x: x['id']):
+                            description = fix_description(example['description'])
                             description = description.replace('\n', '<br />')
-                            content += f"| [[{mitigation['name']} - {mitigation['id']}\\|{mitigation['id']}]] | [[{mitigation['name']} - {mitigation['id']}\\|{mitigation['name']}]] | {description} |\n"
-                else:
-                    content += "\nThis type of attack technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features.\n"
+                            content += f"| [[{example['name'].replace('/', '／')}\\|{example['id']}]] | [[{example['name'].replace('/', '／')}\\|{example['name'].replace('/', '／')}]] | {description} |\n"
 
-                # Detection
-                if technique.detections:
-                    content += "\n\n### Detection\n"
-                    content += "\n| ID | Data Source | Data Source Type | Detects |\n| --- | --- | --- | --- |\n"
-                    for detection in sorted(technique.detections, key=lambda x: x['id']):
-                        description = fix_description(detection['description'])
-                        description = description.replace('\n', '<br />')
-                        content += f"| {detection['id']} | {detection['data_source']} | {detection['name']} | {description} |\n"
+                    # Mitigations for the technique
+                    content += "\n### Mitigations\n"
+                    if technique.mitigations:
+                        mitigation_first = True
+                        for mitigation in sorted(technique.mitigations, key=lambda x: x['id']):
+                            if mitigation['id'] == technique.id:
+                                content += "\nThis type of attack technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features.\n"
+                            else:
+                                if mitigation_first:
+                                    content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
+                                    mitigation_first = False
+                                description = fix_description(mitigation['description'])
+                                description = description.replace('\n', '<br />')
+                                content += f"| [[{mitigation['name']} - {mitigation['id']}\\|{mitigation['id']}]] | [[{mitigation['name']} - {mitigation['id']}\\|{mitigation['name']}]] | {description} |\n"
+                    else:
+                        content += "\nThis type of attack technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features.\n"
 
-                content = convert_to_local_links(content)
+                    # Detection
+                    if technique.detections:
+                        content += "\n\n### Detection\n"
+                        content += "\n| ID | Data Source | Data Source Type | Detects |\n| --- | --- | --- | --- |\n"
+                        for detection in sorted(technique.detections, key=lambda x: x['id']):
+                            description = fix_description(detection['description'])
+                            description = description.replace('\n', '<br />')
+                            content += f"| {detection['id']} | {detection['data_source']} | {detection['name']} | {description} |\n"
 
-                # References
-                content += "\n\n### References\n\n"
-                for ref in technique.external_references:
-                    name = ref['name'].replace(' ', '_')
-                    if 'url' in ref:
-                        content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+                    content = convert_to_local_links(content)
 
-                fd.write(content)
+                    # References
+                    content += "\n\n### References\n\n"
+                    for ref in technique.external_references:
+                        name = ref['name'].replace(' ', '_')
+                        if 'url' in ref:
+                            content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+
+                    fd.write(content)
 
 
     # Function to create markdown notes for mitigations
     def create_mitigation_notes(self, domain):
         base_dir = os.path.join(self.output_dir, "Defenses")
+        filename = domain
+        filename = filename.replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
         if not os.path.exists(base_dir):
             os.mkdir(base_dir)
         defenses_dir = os.path.join(base_dir, "Mitigations")
         if not os.path.exists(defenses_dir):
             os.mkdir(defenses_dir)
-        mitigations_dir = os.path.join(defenses_dir, domain)
+        mitigations_dir = os.path.join(defenses_dir, filename)
         if not os.path.exists(mitigations_dir):
             os.mkdir(mitigations_dir)
 
         for mitigation in self.mitigations:
-            mitigation_file = os.path.join(mitigations_dir, f"{mitigation.name} - {mitigation.id}.md")
+            if mitigation.domain == domain:
+                mitigation_file = os.path.join(mitigations_dir, f"{mitigation.name} - {mitigation.id}.md")
 
-            # Create markdown file for current mitigation
-            with open(mitigation_file, 'w') as fd:
-                content = "---\naliases:\n"
-                content += f"  - {mitigation.id}\n"
-                content += f"  - {mitigation.name}\n"
-                content += f"  - {mitigation.name} ({mitigation.id})\n"
-                content += f"  - {mitigation.id} ({mitigation.name})\n"
-                content += "tags:\n"
-                content += "  - mitigation\n"
-                content += "  - mitre_attack\n"
-                content += f"  - {mitigation.domain}\n"
-                content += "---\n\n"
+                # Create markdown file for current mitigation
+                with open(mitigation_file, 'w') as fd:
+                    content = "---\naliases:\n"
+                    content += f"  - {mitigation.id}\n"
+                    content += f"  - {mitigation.name}\n"
+                    content += f"  - {mitigation.name} ({mitigation.id})\n"
+                    content += f"  - {mitigation.id} ({mitigation.name})\n"
+                    content += "tags:\n"
+                    content += "  - mitigation\n"
+                    content += "  - mitre_attack\n"
+                    content += f"  - {mitigation.domain}\n"
+                    content += "---\n\n"
 
-                content += f"## {mitigation.id}\n\n"
-                mitigation_description = fix_description(mitigation.description)
-                content += f"{mitigation_description}\n\n\n"
+                    content += f"## {mitigation.id}\n\n"
+                    mitigation_description = fix_description(mitigation.description)
+                    content += f"{mitigation_description}\n\n\n"
 
-                # Mitigation Information
-                content += "> [!info]\n"
-                content += f"> ID: {mitigation.id}\n"
-                content += f"> Version: {mitigation.version}\n"
-                content += f"> Created: {str(mitigation.created).split(' ')[0]}\n"
-                content += f"> Last Modified: {str(mitigation.modified).split(' ')[0]}\n\n\n"
+                    # Mitigation Information
+                    content += "> [!info]\n"
+                    content += f"> ID: {mitigation.id}\n"
+                    content += f"> Version: {mitigation.version}\n"
+                    content += f"> Created: {str(mitigation.created).split(' ')[0]}\n"
+                    content += f"> Last Modified: {str(mitigation.modified).split(' ')[0]}\n\n\n"
 
-                # Techniques Addressed by Mitigation
-                content += "### Techniques Addressed by Mitigation\n"
-                if mitigation.mitigates:
-                    content += "\n| Domain | ID | Name | Description |\n| --- | --- | --- | --- |\n"
-                    for technique in sorted(mitigation.mitigates, key=lambda x: x['technique'].id):
-                        domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
-                        description = fix_description(technique['description'])
-                        description = description.replace('\n', '<br />')
-                        content += f"| {domain} | [[{technique['technique'].name} - {technique['technique'].id}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+                    # Techniques Addressed by Mitigation
+                    content += "### Techniques Addressed by Mitigation\n"
+                    if mitigation.mitigates:
+                        content += "\n| Domain | ID | Name | Description |\n| --- | --- | --- | --- |\n"
+                        for technique in sorted(mitigation.mitigates, key=lambda x: x['id']):
+                            mitre_domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
+                            description = fix_description(technique['description'])
+                            description = description.replace('\n', '<br />')
+                            content += f"| {mitre_domain} | [[{technique['name']} - {technique['id']}\\|{technique['id']}]] | {technique['name']} | {description} |\n"
 
-                content = convert_to_local_links(content)
+                    content = convert_to_local_links(content)
 
-                # References
-                content += "\n\n### References\n\n"
-                for ref in mitigation.external_references:
-                    name = ref['name'].replace(' ', '_')
-                    if 'url' in ref:
-                        content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+                    # References
+                    content += "\n\n### References\n\n"
+                    for ref in mitigation.external_references:
+                        name = ref['name'].replace(' ', '_')
+                        if 'url' in ref:
+                            content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
 
-                if mitigation.external_references:
-                    for alias in mitigation.external_references:
-                        if 'url' in alias:
-                            name = alias['name'].replace(' ', '_')
-                            content += f"[^{name}]: [{alias['description']}]({alias['url']})\n"
+                    if mitigation.external_references:
+                        for alias in mitigation.external_references:
+                            if 'url' in alias:
+                                name = alias['name'].replace(' ', '_')
+                                content += f"[^{name}]: [{alias['description']}]({alias['url']})\n"
 
-                fd.write(content)
+                    fd.write(content)
 
 
     # Function to create markdown notes for groups in CTI folder
