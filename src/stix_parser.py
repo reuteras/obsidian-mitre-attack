@@ -442,20 +442,27 @@ class StixParser():
 
                 for tech_group_rel in tech_group_relationships:
                     if ('x_mitre_deprecated' not in tech_group_rel or not tech_group_rel['x_mitre_deprecated']) and ('revoked' not in tech_group_rel or not tech_group_rel['revoked']):
-                        technique = ''
-                        ext_refs = tech_group_rel.get('external_references', [])
-                        print(tech_group_rel)
-                        for ext_ref in ext_refs:
-                            if ext_ref['source_name'] == 'mitre-attack':
-                                technique = ext_ref['external_id']
-                            if 'url' in ext_ref and 'description' in ext_ref:
-                                item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                if item not in ext_ref_added:
-                                    group_obj.external_references = item
-                                    ext_ref_added.append(item)
-                        if technique:
-                            print(technique)
-                            group_obj.techniques_used = {'technique': technique, 'description': tech_group_rel.get('description', ''), 'domain': tech_group_rel.get('x_mitre_domains', [])}
+                        if tech_group_rel['x_mitre_domains'] == ['enterprise']:
+                            technique_stix = self.enterprise_attack.query([Filter('id', '=', tech_group_rel['target_ref'])])
+                        elif tech_group_rel['x_mitre_domains'] == ['mobile']:
+                            technique_stix = self.mobile_attack.query([Filter('id', '=', tech_group_rel['target_ref'])])
+                        elif tech_group_rel['x_mitre_domains'] == ['ics']:
+                            technique_stix = self.ics_attack.query([Filter('id', '=', tech_group_rel['target_ref'])])
+                        
+                        if technique_stix:
+                            technique = technique_stix[0]
+                        
+                            ext_refs = technique.get('external_references', [])
+                            for ext_ref in ext_refs:
+                                if ext_ref['source_name'] == 'mitre-attack':
+                                    technique_id = ext_ref['external_id']
+                                if 'url' in ext_ref and 'description' in ext_ref:
+                                    item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                    if item not in ext_ref_added:
+                                        group_obj.external_references = item
+                                        ext_ref_added.append(item)
+
+                            group_obj.techniques_used = {'technique': technique.name, 'technique_id': technique_id, 'description': tech_group_rel.get('description', ''), 'domain': tech_group_rel.get('x_mitre_domains', [])}
 
                 # Get software used by group
                 software_enterprise_relationships_malware = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id), Filter('target_ref', 'contains', 'malware')])
