@@ -372,11 +372,11 @@ class MarkdownGenerator():
                 if group.techniques_used:
                     content += "\n### Techniques Used\n"
                     content += "\n| Domain | ID | Name | Use |\n| --- | --- | --- | --- |\n"
-                    for technique in sorted(group.techniques_used, key=lambda x: x['technique'].id):
+                    for technique in sorted(group.techniques_used, key=lambda x: x['technique_id']):
                         domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
                         description = fix_description(technique['description'])
                         description = description.replace('\n', '<br />')
-                        content += f"| {domain} | [[{technique['technique'].name} - {technique['technique'].id}\\|{technique['technique'].id}]] | {technique['technique'].name} | {description} |\n"
+                        content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"
 
                 # Software used by group
                 if group.software_used:

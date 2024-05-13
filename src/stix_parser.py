@@ -426,9 +426,9 @@ class StixParser():
                         group_obj.id = ext_ref['external_id']
                     elif 'url' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                        if item not in ext_ref_added:
+                        if ext_ref['source_name'] not in ext_ref_added:
                             group_obj.external_references = item
-                            ext_ref_added.append(item)
+                            ext_ref_added.append(ext_ref['source_name'])
                     else:
                         if ext_ref['source_name'] != group_obj.name:
                             group_obj.aliases_references = {'name': ext_ref['source_name'], 'description': ext_ref['description']}
@@ -442,11 +442,11 @@ class StixParser():
 
                 for tech_group_rel in tech_group_relationships:
                     if ('x_mitre_deprecated' not in tech_group_rel or not tech_group_rel['x_mitre_deprecated']) and ('revoked' not in tech_group_rel or not tech_group_rel['revoked']):
-                        if tech_group_rel['x_mitre_domains'] == ['enterprise']:
+                        if 'enterprise-attack' in tech_group_rel['x_mitre_domains']:
                             technique_stix = self.enterprise_attack.query([Filter('id', '=', tech_group_rel['target_ref'])])
-                        elif tech_group_rel['x_mitre_domains'] == ['mobile']:
+                        elif 'mobile-attack' in tech_group_rel['x_mitre_domains']:
                             technique_stix = self.mobile_attack.query([Filter('id', '=', tech_group_rel['target_ref'])])
-                        elif tech_group_rel['x_mitre_domains'] == ['ics']:
+                        elif 'ics-attack' in tech_group_rel['x_mitre_domains']:
                             technique_stix = self.ics_attack.query([Filter('id', '=', tech_group_rel['target_ref'])])
                         
                         if technique_stix:
@@ -456,13 +456,16 @@ class StixParser():
                             for ext_ref in ext_refs:
                                 if ext_ref['source_name'] == 'mitre-attack':
                                     technique_id = ext_ref['external_id']
-                                if 'url' in ext_ref and 'description' in ext_ref:
-                                    item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                    if item not in ext_ref_added:
-                                        group_obj.external_references = item
-                                        ext_ref_added.append(item)
+                            ext_refs = tech_group_rel.get('external_references', [])
+                            if 'url' in ext_ref and 'description' in ext_ref:
+                                item = {'name': ext_ref['source_name'].replace("/", "／"), 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                if ext_ref['source_name'] not in ext_ref_added:
+                                    group_obj.external_references = item
+                                    ext_ref_added.append(ext_ref['source_name'])
 
-                            group_obj.techniques_used = {'technique': technique.name, 'technique_id': technique_id, 'description': tech_group_rel.get('description', ''), 'domain': tech_group_rel.get('x_mitre_domains', [])}
+                            group_obj.techniques_used = {'technique_name': technique.name.replace("/", "／"), 'technique_id': technique_id, 'description': tech_group_rel.get('description', ''), 'domain': tech_group_rel.get('x_mitre_domains', [])}
+                        else:
+                            sys.exit(f"Technique not found: {tech_group_rel['target_ref']}")
 
                 # Get software used by group
                 software_enterprise_relationships_malware = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_obj.internal_id), Filter('target_ref', 'contains', 'malware')])
@@ -476,20 +479,27 @@ class StixParser():
                 for group_software_rel in software_relationships:
                     if ('x_mitre_deprecated' not in group_software_rel or not group_software_rel['x_mitre_deprecated']) and ('revoked' not in group_software_rel or not group_software_rel['revoked']):
                         software_id = ''
-                        ext_refs = group_software_rel.get('external_references', [])
                         software_name = ''
 
                         # Get software name
-                        if group_software_rel['x_mitre_domains'] == ['enterprise']:
-                            software_name = self.enterprise_attack.query([Filter('id', '=', group_software_rel['target_ref'])])
-                        elif group_software_rel['x_mitre_domains'] == ['mobile']:
-                            software_name = self.mobile_attack.query([Filter('id', '=', group_software_rel['target_ref'])])
-                        elif group_software_rel['x_mitre_domains'] == ['ics']:
-                            software_name = self.ics_attack.query([Filter('id', '=', group_software_rel['target_ref'])])
+                        if 'enterprise-attack' in group_software_rel['x_mitre_domains']:
+                            software_name_stix = self.enterprise_attack.query([Filter('id', '=', group_software_rel['target_ref'])])
+                        elif 'mobile-attack' in group_software_rel['x_mitre_domains']:
+                            software_name_stix = self.mobile_attack.query([Filter('id', '=', group_software_rel['target_ref'])])
+                        elif 'ics-attack' in group_software_rel['x_mitre_domains']:
+                            software_name_stix = self.ics_attack.query([Filter('id', '=', group_software_rel['target_ref'])])
+                        else:
+                            sys.exit(f"Unknown domain: {group_software_rel['x_mitre_domains']} for software {group_software_rel['target_ref']}")
 
-                        for ext_ref in ext_refs:
-                            if ext_ref['source_name'] == 'mitre-attack':
-                                software_id = ext_ref['external_id']
+                        if software_name_stix:
+                            software_name = software_name_stix[0].name
+                            ext_refs = software_name_stix[0].get('external_references', [])
+                            for ext_ref in ext_refs:
+                                if ext_ref['source_name'] == 'mitre-attack':
+                                    software_id = ext_ref['external_id']
+                        
+                        if not software_name or not software_id:
+                            sys.exit(f"Software not found: {group_software_rel['target_ref']}")
 
                         # Get technique name used by software
                         source_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', group_software_rel['target_ref']), Filter('target_ref', 'contains', 'attack-pattern')])
@@ -581,9 +591,9 @@ class StixParser():
                         software_obj.id = ext_ref['external_id']
                     elif 'url' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                        if item not in ext_ref_added:
+                        if ext_ref['source_name'] not in ext_ref_added:
                             software_obj.external_references = item
-                            ext_ref_added.append(item)
+                            ext_ref_added.append(ext_ref['source_name'])
 
                 # Techniques used by software
                 source_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id)])
@@ -608,9 +618,9 @@ class StixParser():
                                 for ext_ref in ext_refs:
                                     if 'url' in ext_ref and 'description' in ext_ref:
                                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if item not in ext_ref_added:
+                                        if ext_ref['source_name'] not in ext_ref_added:
                                             software_obj.external_references = item
-                                            ext_ref_added.append(item)
+                                            ext_ref_added.append(ext_ref['source_name'])
 
                 # Software has been used in these campaigns
                 source_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
@@ -635,16 +645,16 @@ class StixParser():
                                         campaign_id = ext_ref['external_id']
                                     if 'url' in ext_ref and 'description' in ext_ref:
                                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if item not in ext_ref_added:
+                                        if ext_ref['source_name'] not in ext_ref_added:
                                             software_obj.external_references = item
-                                            ext_ref_added.append(item)
+                                            ext_ref_added.append(ext_ref['source_name'])
                                 ext_refs = relationship.get('external_references', [])
                                 for ext_ref in ext_refs:
                                     if 'url' in ext_ref and 'description' in ext_ref:
                                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if item not in ext_ref_added:
+                                        if ext_ref['source_name'] not in ext_ref_added:
                                             software_obj.external_references = item
-                                            ext_ref_added.append(item)
+                                            ext_ref_added.append(ext_ref['source_name'])
                                 item = {'campaign_id': campaign_id, 'campaign_name': campaign.get('name', ''), 'description': relationship.get('description', ''), 'campaign_internal_id': campaign['id']}
                                 if item not in added:
                                     software_obj.campaigns_using = item
@@ -676,17 +686,17 @@ class StixParser():
                                         group_id = ext_ref['external_id']
                                     if 'url' in ext_ref and 'description' in ext_ref:
                                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if item not in added:
+                                        if ext_ref['source_name'] not in ext_ref_added:
                                             software_obj.external_references = item
-                                            added.append(item)
+                                            ext_ref_added.append(ext_ref['source_name'])
                             if 'external_references' in relationship:
                                 ext_refs = relationship.get('external_references', [])
                                 for ext_ref in ext_refs:
                                     if 'url' in ext_ref and 'description' in ext_ref:
                                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if item not in added:
+                                        if ext_ref['source_name'] not in ext_ref_added:
                                             software_obj.external_references = item
-                                            added.append(item)
+                                            ext_ref_added.append(ext_ref['source_name'])
 
                             for campaign in software_obj.campaigns_using:
                                 campaign_id = campaign['campaign_internal_id']
@@ -700,9 +710,9 @@ class StixParser():
                                         for ext_ref in campaign.get('external_references', []):
                                             if 'url' in ext_ref and 'description' in ext_ref:
                                                 item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                                if item not in added:
+                                                if ext_ref['source_name'] not in ext_ref_added:
                                                     software_obj.external_references = item
-                                                    added.append(item)
+                                                    ext_ref_added.append(ext_ref['source_name'])
                                         description = campaign.get('description', '')
                                         if description not in descriptions:
                                             descriptions += description
