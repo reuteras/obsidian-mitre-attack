@@ -630,14 +630,20 @@ class MarkdownGenerator():
                 if asset.sectors and asset.sectors != [[]]:
                     sectors =[ ', '.join(sector) for sector in asset.sectors ]
                     content += f"> Sectors: {''.join(sectors)}\n"
-                content += f"> Sectors: {', '.join(asset.sectors)}\n"
                 content += f"> Version: {asset.version}\n"
                 content += f"> Created: {str(asset.created).split(' ')[0]}\n"
                 content += f"> Last Modified: {str(asset.modified).split(' ')[0]}\n\n\n"
 
+                # Related assets
+
+                if asset.related_assets:
+                    content += "\n### Related Assets\n"
+                    content += "\n| ID | Asset |\n| --- | --- |\n"
+                    for related_asset in sorted(asset.related_assets, key=lambda x: x['id']):
+                        content += f"| [[{related_asset['name']} - {related_asset['id']}\\|{related_asset['id']}]] | [[{related_asset['name']} - {related_asset['id']}\\|{related_asset['name']}]] |\n"
                 # Techniques Addressed by Asset
                 content += "### Techniques Addressed by Asset\n"
-                if asset.techniques:
+                if asset.techniques_used:
                     content += "\n| Domain | ID | Name | Description |\n| --- | --- | --- | --- |\n"
                     for technique in sorted(asset.techniques, key=lambda x: x['technique_id']):
                         domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
@@ -646,6 +652,7 @@ class MarkdownGenerator():
                         content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"
 
                 content = convert_to_local_links(content)
+
 
                 # References
                 content += "\n\n### References\n\n"
