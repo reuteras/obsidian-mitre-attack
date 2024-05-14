@@ -12,6 +12,7 @@ class MITREObject():
         self._references = dict()
         self._internal_id = None                # Internal ID from MITRE ATT&CK
         self._domain = None                     # ATT&CK Domain (enterprise, mobile or ICS)
+        self._url = None                  # URL to page on MITRE
 
     @property
     def name(self):
@@ -63,6 +64,14 @@ class MITREObject():
     @domain.setter
     def domain(self, domain):
         self._domain = domain
+
+    @property
+    def url(self):
+        return self._url
+
+    @url.setter
+    def url(self, url):
+        self._url = url
 
 
 class MITRETactic(MITREObject):
@@ -163,6 +172,7 @@ class MITRETechnique(MITREObject):
         self._procedure_examples = list()
         self._detections = list()
         self._mitigations = list()
+        self._targeted_assets = list()          # List of targeted assets
 
     @property
     def version(self):
@@ -395,6 +405,14 @@ class MITRETechnique(MITREObject):
     @parent_name.setter
     def parent_name(self, parent_name):
         self._parent_name = parent_name.replace('/', '／')
+
+    @property
+    def targeted_assets(self):
+        return self._targeted_assets
+
+    @targeted_assets.setter
+    def targeted_assets(self, targeted_asset):
+        self._targeted_assets.append(targeted_asset)
 
 
 class MITREMitigation(MITREObject):
@@ -727,3 +745,84 @@ class MITRECampaign(MITREObject):
     @techniques_used.setter
     def techniques_used(self, technique_used:dict):
         self._techniques_used.append(technique_used)
+
+
+class MITREAsset(MITREObject):
+    """
+    Define a asset
+    """
+
+    def __init__(self, name):
+        MITREObject.__init__(self, name)
+        self._external_references = list()
+        self._related_assets = list()
+        self._techniques_used = list()
+        self._created = None
+        self._modified = None
+        self._version = None
+        self._platforms = list()
+        self._sectors = list()
+
+    @property
+    def version(self):
+        return self._version
+
+    @version.setter
+    def version(self, version):
+        self._version = version
+
+    @property
+    def created(self):
+        return self._created
+
+    @created.setter
+    def created(self, created):
+        self._created = created
+
+    @property
+    def modified(self):
+        return self._modified
+
+    @modified.setter
+    def modified(self, modified):
+        self._modified = modified
+
+    @property
+    def external_references(self):
+        return self._external_references
+
+    @external_references.setter
+    def external_references(self, external_reference:dict):
+        self._external_references.append(external_reference)
+
+    @property
+    def related_assets(self):
+        return self._related_assets
+
+    @related_assets.setter
+    def related_assets(self, related_asset:dict):
+        self._related_assets.append(related_asset)
+
+    @property
+    def techniques_used(self):
+        return self._techniques_used
+
+    @techniques_used.setter
+    def techniques_used(self, technique_used:dict):
+        self._techniques_used.append(technique_used)
+
+    @property
+    def platforms(self):
+        return self._platforms
+
+    @platforms.setter
+    def platforms(self, platform):
+        self._platforms.append(platform)
+
+    @property
+    def sectors(self):
+        return self._sectors
+
+    @sectors.setter
+    def sectors(self, sector):
+        self._sectors.append(sector)

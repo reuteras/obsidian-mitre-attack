@@ -33,7 +33,7 @@ def remove_references(text):
 
 # Class to generate markdown notes
 class MarkdownGenerator():
-    def __init__(self, output_dir=None, techniques=[], groups=[], tactics=[], mitigations=[], software=[], campaigns=[]):
+    def __init__(self, output_dir=None, techniques=[], groups=[], tactics=[], mitigations=[], software=[], campaigns=[], assets=[]):
         if output_dir:
             self.output_dir = os.path.join(ROOT, output_dir)
         self.tactics = tactics
@@ -42,6 +42,7 @@ class MarkdownGenerator():
         self.groups = groups
         self.software = software
         self.campaigns = campaigns
+        self.assets = assets
 
 
     # Function to create markdown notes for tactics
@@ -65,6 +66,7 @@ class MarkdownGenerator():
                     content += f"  - {tactic.name}\n"
                     content += f"  - {tactic.name} ({tactic.id})\n"
                     content += f"  - {tactic.id} ({tactic.name})\n"
+                    content += "url: MITRE_URL\n"
                     content += "tags:\n"
                     content += "  - tactic\n"
                     content += "  - mitre_attack\n"
@@ -92,6 +94,7 @@ class MarkdownGenerator():
                             content += f"| [[{technique['name']} - {technique['id']}\\|{technique['id']}]] | {technique['name']} | {description} |\n"
 
                     content = convert_to_local_links(content)
+                    content = content.replace("MITRE_URL", tactic.url)
                     fd.write(content)
 
 
@@ -127,6 +130,7 @@ class MarkdownGenerator():
                     content += f"  - {technique.name}\n"
                     content += f"  - {technique.name} ({technique.id})\n"
                     content += f"  - {technique.id} ({technique.name})\n"
+                    content += "url: MITRE_URL\n"
                     content += "tags:\n"
                     content += "  - technique\n"
                     content += "  - mitre_attack\n"
@@ -213,6 +217,13 @@ class MarkdownGenerator():
                             description = description.replace('\n', '<br />')
                             content += f"| [[{example['name'].replace('/', '／')}\\|{example['id']}]] | [[{example['name'].replace('/', '／')}\\|{example['name'].replace('/', '／')}]] | {description} |\n"
 
+                    # Targeted Assets for the technique
+                    if technique.targeted_assets:
+                        content += "\n\n### Targeted Assets\n"
+                        content += "\n| ID | Asset |\n| --- | --- |\n"
+                        for asset in sorted(technique.targeted_assets, key=lambda x: x['id']):
+                            content += f"| [[{asset['name']} - {asset['id']}\\|{asset['id']}]] | [[{asset['name']} - {asset['id']}\\|{asset['name']}]] |\n"
+
                     # Mitigations for the technique
                     content += "\n### Mitigations\n"
                     if technique.mitigations:
@@ -248,6 +259,7 @@ class MarkdownGenerator():
                         if 'url' in ref:
                             content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
 
+                    content = content.replace("MITRE_URL", technique.url)
                     fd.write(content)
 
 
@@ -276,6 +288,7 @@ class MarkdownGenerator():
                     content += f"  - {mitigation.name}\n"
                     content += f"  - {mitigation.name} ({mitigation.id})\n"
                     content += f"  - {mitigation.id} ({mitigation.name})\n"
+                    content += "url: MITRE_URL\n"
                     content += "tags:\n"
                     content += "  - mitigation\n"
                     content += "  - mitre_attack\n"
@@ -318,6 +331,7 @@ class MarkdownGenerator():
                                 name = alias['name'].replace(' ', '_')
                                 content += f"[^{name}]: [{alias['description']}]({alias['url']})\n"
 
+                    content = content.replace("MITRE_URL", mitigation.url)
                     fd.write(content)
 
 
@@ -338,6 +352,7 @@ class MarkdownGenerator():
                 content = "---\naliases:\n"
                 for alias in group.aliases:
                     content += f"  - {alias}\n"
+                content += "url: MITRE_URL\n"
                 content += "\ntags:\n"
                 content += "  - group\n"
                 content += "  - mitre_attack\n"
@@ -401,6 +416,7 @@ class MarkdownGenerator():
                             name = alias['name'].replace(' ', '_')
                             content += f"[^{name}]: [{alias['description']}]({alias['url']})\n"
 
+                content = content.replace("MITRE_URL", group.url)
                 fd.write(content)
 
 
@@ -421,6 +437,7 @@ class MarkdownGenerator():
                 content = f"---\naliases:\n  - {software.id}\n"
                 content += f"  - {software.name} ({software.id})\n"
                 content += f"  - {software.id} ({software.name})\n"
+                content += "url: MITRE_URL\n"
                 content += "tags:\n"
                 content += "  - software\n"
                 content += "  - mitre_attack\n"
@@ -493,6 +510,8 @@ class MarkdownGenerator():
                     if 'url' in ref:
                         content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
 
+                content = content.replace("MITRE_URL", software.url)
+
                 fd.write(content)
 
 
@@ -512,6 +531,7 @@ class MarkdownGenerator():
             with open(campaign_file, 'w') as fd:
                 content = "---\naliases:\n"
                 content += f"  - {campaign.id}\n"
+                content += "url: MITRE_URL\n"
                 content += "tags:\n"
                 content += "  - campaign\n"
                 content += "  - mitre_attack\n"
@@ -571,5 +591,69 @@ class MarkdownGenerator():
                     name = ref['name'].replace(' ', '_')
                     if 'url' in ref:
                         content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+
+                content = content.replace("MITRE_URL", campaign.url)
+                fd.write(content)
+
+
+    # Function to create markdown notes for assets in Defense folder
+    def create_asset_notes(self):
+        defenses_dir = os.path.join(self.output_dir, "Defenses")
+        assets_dir = os.path.join(defenses_dir, "Assets")
+        if not os.path.exists(assets_dir):
+            os.mkdir(assets_dir)
+
+        for asset in self.assets:
+            asset_file = os.path.join(assets_dir, f"{asset.name}.md")
+
+            # Create markdown file for current asset
+            with open(asset_file, 'w') as fd:
+                content = f"---\naliases:\n  - {asset.id}\n"
+                content += f"  - {asset.name} ({asset.id})\n"
+                content += f"  - {asset.id} ({asset.name})\n"
+                content += "url: MITRE_URL\n"
+                content += "tags:\n"
+                content += "  - asset\n"
+                content += "  - mitre_attack\n"
+                content += "---\n\n"
+
+                content += f"## {asset.name}\n\n"
+                asset_description = fix_description(asset.description)
+                content += f"{asset_description}\n\n\n"
+
+                # Asset information
+                content += "> [!info]\n"
+                content += f"> ID: {asset.id}\n"
+                if asset.platforms and asset.platforms != [[]]:
+                    platforms =[ ', '.join(platform) for platform in asset.platforms ]
+                    content += f"> Platforms: {''.join(platforms)}\n"
+                if asset.sectors and asset.sectors != [[]]:
+                    sectors =[ ', '.join(sector) for sector in asset.sectors ]
+                    content += f"> Sectors: {''.join(sectors)}\n"
+                content += f"> Sectors: {', '.join(asset.sectors)}\n"
+                content += f"> Version: {asset.version}\n"
+                content += f"> Created: {str(asset.created).split(' ')[0]}\n"
+                content += f"> Last Modified: {str(asset.modified).split(' ')[0]}\n\n\n"
+
+                # Techniques Addressed by Asset
+                content += "### Techniques Addressed by Asset\n"
+                if asset.techniques:
+                    content += "\n| Domain | ID | Name | Description |\n| --- | --- | --- | --- |\n"
+                    for technique in sorted(asset.techniques, key=lambda x: x['technique_id']):
+                        domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
+                        description = fix_description(technique['description'])
+                        description = description.replace('\n', '<br />')
+                        content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"
+
+                content = convert_to_local_links(content)
+
+                # References
+                content += "\n\n### References\n\n"
+                for ref in asset.external_references:
+                    name = ref['name'].replace(' ', '_')
+                    if 'url' in ref:
+                        content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+
+                content = content.replace("MITRE_URL", asset.url)
 
                 fd.write(content)

@@ -5,6 +5,7 @@ import sys
 from stix2 import Filter, MemoryStore
 
 from .models import (
+    MITREAsset,
     MITRECampaign,
     MITREGroup,
     MITREMitigation,
@@ -71,6 +72,8 @@ class StixParser():
         """
         Get and parse groups, software, and campaigns from STIX data
         """
+        self.verbose_log("Getting assets data")
+        self._get_assets()
         self.verbose_log("Getting groups data")
         self._get_groups()
         self.verbose_log("Getting campaigns data")
@@ -106,6 +109,7 @@ class StixParser():
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         tactic_obj.id = ext_ref['external_id']
+                        tactic_obj.url = ext_ref['url']
                     elif 'url' in ext_ref and 'description' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
                         if item not in added:
@@ -189,6 +193,7 @@ class StixParser():
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         technique_obj.id = ext_ref['external_id']
+                        technique_obj.url = ext_ref['url']
                     elif 'url' in ext_ref and 'description' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
                         if item not in external_references_added:
@@ -308,6 +313,26 @@ class StixParser():
                             technique_obj.parent_name = parent_technique['name']
                             break
 
+                # Targeted assets
+                targeted_assets_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'targets'), Filter('source_ref', '=', technique_obj.internal_id)])
+
+                for relation in targeted_assets_relationships:
+                    targeted_asset = self.src.query([ Filter('id', '=', relation['target_ref'])])[0]
+                    targeted_assets_name = targeted_asset.get('name', '')
+                    targeted_assets_description = targeted_asset.get('description', '')
+                    ext_refs = targeted_asset.get('external_references', [])
+                    for ext_ref in ext_refs:
+                        if ext_ref['source_name'] == 'mitre-attack':
+                            targeted_assets_id = ext_ref['external_id']
+                        if 'url' in ext_ref and 'description' in ext_ref:
+                            item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                            if ext_ref['source_name'] not in external_references_added:
+                                technique_obj.external_references = item
+                                external_references_added.append(ext_ref['source_name'])
+                    item = {'name': targeted_assets_name.replace('/', '／'), 'id': targeted_assets_id, 'description': targeted_assets_description}
+                    if item not in added:
+                        technique_obj.targeted_assets = item
+                        added.append(item)
                 self.techniques.append(technique_obj)
 
 
@@ -347,6 +372,7 @@ class StixParser():
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         mitigation_obj.id = ext_ref['external_id']
+                        mitigation_obj.url = ext_ref['url']
                     elif 'url' in ext_ref and 'description' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
                         if ext_ref['source_name'] not in ext_ref_add:
@@ -424,6 +450,7 @@ class StixParser():
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         group_obj.id = ext_ref['external_id']
+                        group_obj.url = ext_ref['url']
                     elif 'url' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
                         if ext_ref['source_name'] not in ext_ref_added:
@@ -448,10 +475,10 @@ class StixParser():
                             technique_stix = self.mobile_attack.query([Filter('id', '=', tech_group_rel['target_ref'])])
                         elif 'ics-attack' in tech_group_rel['x_mitre_domains']:
                             technique_stix = self.ics_attack.query([Filter('id', '=', tech_group_rel['target_ref'])])
-                        
+
                         if technique_stix:
                             technique = technique_stix[0]
-                        
+
                             ext_refs = technique.get('external_references', [])
                             for ext_ref in ext_refs:
                                 if ext_ref['source_name'] == 'mitre-attack':
@@ -497,7 +524,7 @@ class StixParser():
                             for ext_ref in ext_refs:
                                 if ext_ref['source_name'] == 'mitre-attack':
                                     software_id = ext_ref['external_id']
-                        
+
                         if not software_name or not software_id:
                             sys.exit(f"Software not found: {group_software_rel['target_ref']}")
 
@@ -589,6 +616,7 @@ class StixParser():
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         software_obj.id = ext_ref['external_id']
+                        software_obj.url = ext_ref['url']
                     elif 'url' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
                         if ext_ref['source_name'] not in ext_ref_added:
@@ -766,6 +794,7 @@ class StixParser():
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
                         campaign_obj.id = ext_ref['external_id']
+                        campaign_obj.url = ext_ref['url']
                     elif 'url' in ext_ref and 'description' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
                         if item not in added:
@@ -848,3 +877,112 @@ class StixParser():
                                     added.append(item)
 
                 self.campaigns.append(campaign_obj)
+
+
+    def _get_assets(self):
+        """
+        Get and parse assets from STIX data
+        """
+
+        # Extract assets
+        assets_stix_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'x-mitre-asset')])
+        assets_stix_mobile = self.mobile_attack.query([ Filter('type', '=', 'x-mitre-asset')])
+        assets_stix_ics = self.ics_attack.query([ Filter('type', '=', 'x-mitre-asset')])
+        assets_stix = assets_stix_enterprise + assets_stix_mobile + assets_stix_ics
+
+        self.assets = list()
+
+        for asset in assets_stix:
+            if ('x_mitre_deprecated' not in asset or not asset['x_mitre_deprecated']) and ('revoked' not in asset or not asset['revoked']):
+                asset_obj = MITREAsset(asset['name'])
+                
+                ext_ref_added = []
+
+                # Add attributes to the asset object
+                asset_obj.internal_id = asset['id']
+                asset_obj.description = asset.get('description', '')
+                asset_obj.created = asset.get('created', '')
+                asset_obj.modified = asset.get('modified', '')
+                asset_obj.platforms = asset.get('x_mitre_platforms', [])
+                asset_obj.sectors = asset.get('x_mitre_sectors', [])
+
+                # Get external references
+                ext_refs = asset.get('external_references', [])
+
+                for ext_ref in ext_refs:
+                    if ext_ref['source_name'] == 'mitre-attack':
+                        asset_obj.id = ext_ref['external_id']
+                        asset_obj.url = ext_ref['url']
+                    elif 'url' in ext_ref:
+                        item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
+                        if ext_ref['source_name'] not in ext_ref_added:
+                            asset_obj.external_references = item
+                            ext_ref_added.append(ext_ref['source_name'])
+
+                # Get techniques used by asset
+                asset_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', asset_obj.internal_id)])
+                asset_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', asset_obj.internal_id)])
+                asset_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', asset_obj.internal_id)])
+
+                asset_relationships = asset_relationships_enterprise + asset_relationships_mobile + asset_relationships_ics
+
+                for relationship in asset_relationships:
+                    if ('x_mitre_deprecated' not in relationship or not relationship['x_mitre_deprecated']) and ('revoked' not in relationship or not relationship['revoked']):
+                        if 'enterprise-attack' in relationship['x_mitre_domains']:
+                            technique_stix = self.enterprise_attack.query([Filter('id', '=', relationship['target_ref'])])
+                        elif 'mobile-attack' in relationship['x_mitre_domains']:
+                            technique_stix = self.mobile_attack.query([Filter('id', '=', relationship['target_ref'])])
+                        elif 'ics-attack' in relationship['x_mitre_domains']:
+                            technique_stix = self.ics_attack.query([Filter('id', '=', relationship['target_ref'])])
+
+                        if technique_stix:
+                            technique = technique_stix[0]
+                            ext_refs = technique.get('external_references', [])
+                            for ext_ref in ext_refs:
+                                if ext_ref['source_name'] == 'mitre-attack':
+                                    technique_id = ext_ref['external_id']
+                            ext_refs = relationship.get('external_references', [])
+                            if 'url' in ext_ref and 'description' in ext_ref:
+                                item = {'name': ext_ref['source_name'].replace("/", "／"), 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                if ext_ref['source_name'] not in ext_ref_added:
+                                    asset_obj.external_references = item
+                                    ext_ref_added.append(ext_ref['source_name'])
+
+                            asset_obj.techniques_used = {'technique_name': technique.name.replace("/", "／"), 'technique_id': technique_id, 'description': relationship.get('description', ''), 'domain': relationship.get('x_mitre_domains', [])}
+                        else:
+                            sys.exit(f"Technique not found: {relationship['target_ref']}")
+
+                # Get related assets
+                asset_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'related-to'), Filter('source_ref', '=', asset_obj.internal_id)])
+                asset_relationships_mobile = self.mobile_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'related-to'), Filter('source_ref', '=', asset_obj.internal_id)])
+                asset_relationships_ics = self.ics_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'related-to'), Filter('source_ref', '=', asset_obj.internal_id)])
+
+                asset_relationships = asset_relationships_enterprise + asset_relationships_mobile + asset_relationships_ics
+
+                for relationship in asset_relationships:
+                    if ('x_mitre_deprecated' not in relationship or not relationship['x_mitre_deprecated']) and ('revoked' not in relationship or not relationship['revoked']):
+                        if 'enterprise-attack' in relationship['x_mitre_domains']:
+                            related_asset_stix = self.enterprise_attack.query([Filter('id', '=', relationship['target_ref'])])
+                        elif 'mobile-attack' in relationship['x_mitre_domains']:
+                            related_asset_stix = self.mobile_attack.query([Filter('id', '=', relationship['target_ref'])])
+                        elif 'ics-attack' in relationship['x_mitre_domains']:
+                            related_asset_stix = self.ics_attack.query([Filter('id', '=', relationship['target_ref'])])
+
+                        if related_asset_stix:
+                            related_asset = related_asset_stix[0]
+                            ext_refs = related_asset.get('external_references', [])
+                            for ext_ref in ext_refs:
+                                if ext_ref['source_name'] == 'mitre-attack':
+                                    related_asset_id = ext_ref['external_id']
+                            ext_refs = relationship.get('external_references', [])
+                            if 'url' in ext_ref and 'description' in ext_ref:
+                                item = {'name': ext_ref['source_name'].replace("/", "／"), 'url': ext_ref['url'], 'description': ext_ref['description']}
+                                if ext_ref['source_name'] not in ext_ref_added:
+                                    asset_obj.external_references = item
+                                    ext_ref_added.append(ext_ref['source_name'])
+
+                            asset_obj.related_assets = {'asset_name': related_asset.name.replace("/", "／"), 'asset_id': related_asset_id, 'description': relationship.get('description', ''), 'domain': relationship.get('x_mitre_domains', [])}
+                        else:
+                            sys.exit(f"Related asset not found: {relationship['target_ref']}")
+
+                self.assets.append(asset_obj)

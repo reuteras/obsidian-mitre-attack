@@ -65,6 +65,7 @@ Missing in the current implementation:
   - First version done.
 - Techniques
   - No links to data sources since they are not implemented yet.
+  - No "Targeted Assets" since they are not implemented yet.
 
 Current time to run the scripts and the different parts in verbose mode:
 
