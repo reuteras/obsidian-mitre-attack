@@ -33,7 +33,10 @@ def remove_references(text):
 
 # Class to generate markdown notes
 class MarkdownGenerator():
-    def __init__(self, output_dir=None, techniques=[], groups=[], tactics=[], mitigations=[], software=[], campaigns=[], assets=[]):
+    """
+    Class to generate markdown notes for MITRE ATT&CK data
+    """
+    def __init__(self, output_dir=None, techniques=[], groups=[], tactics=[], mitigations=[], software=[], campaigns=[], assets=[], data_sources=[]):
         if output_dir:
             self.output_dir = os.path.join(ROOT, output_dir)
         self.tactics = tactics
@@ -43,6 +46,7 @@ class MarkdownGenerator():
         self.software = software
         self.campaigns = campaigns
         self.assets = assets
+        self.data_sources = data_sources
 
 
     # Function to create markdown notes for tactics
@@ -457,7 +461,7 @@ class MarkdownGenerator():
                 content += f"> ID: {software.id}\n"
                 content += f"> Type: {software.type}\n"
                 if software.platforms and software.platforms != [[]]:
-                    platforms =[ ', '.join(platform) for platform in software.platforms ]
+                    platforms = [ ', '.join(platform) for platform in software.platforms ]
                     content += f"> Platforms: {''.join(platforms)}\n"
                 if software.aliases:
                     content += f"> Associated Software: {', '.join(software.aliases)}\n"
@@ -615,6 +619,14 @@ class MarkdownGenerator():
                 content += "tags:\n"
                 content += "  - asset\n"
                 content += "  - mitre_attack\n"
+                if asset.platforms and asset.platforms != '':
+                    for platform in asset.platforms[0]:
+                        if platform:
+                            content += f"  - {platform.replace(' ', '_')}\n"
+                if asset.sectors and asset.sectors != '':
+                    for sector in asset.sectors[0]:
+                        if sector:
+                            content += f"  - {sector.replace(' ', '_')}\n"
                 content += "---\n\n"
 
                 content += f"## {asset.name}\n\n"
@@ -625,42 +637,116 @@ class MarkdownGenerator():
                 content += "> [!info]\n"
                 content += f"> ID: {asset.id}\n"
                 if asset.platforms and asset.platforms != [[]]:
-                    platforms =[ ', '.join(platform) for platform in asset.platforms ]
+                    platforms = [ ', '.join(platform) for platform in asset.platforms ]
                     content += f"> Platforms: {''.join(platforms)}\n"
                 if asset.sectors and asset.sectors != [[]]:
-                    sectors =[ ', '.join(sector) for sector in asset.sectors ]
+                    sectors = [ ', '.join(sector) for sector in asset.sectors ]
                     content += f"> Sectors: {''.join(sectors)}\n"
                 content += f"> Version: {asset.version}\n"
-                content += f"> Created: {str(asset.created).split(' ')[0]}\n"
-                content += f"> Last Modified: {str(asset.modified).split(' ')[0]}\n\n\n"
+                content += f"> Created: {str(asset.created).split(' ')[0].split('T')[0]}\n"
+                content += f"> Last Modified: {str(asset.modified).split(' ')[0].split('T')[0]}\n\n\n"
 
                 # Related assets
-
                 if asset.related_assets:
                     content += "\n### Related Assets\n"
-                    content += "\n| ID | Asset |\n| --- | --- |\n"
-                    for related_asset in sorted(asset.related_assets, key=lambda x: x['id']):
-                        content += f"| [[{related_asset['name']} - {related_asset['id']}\\|{related_asset['id']}]] | [[{related_asset['name']} - {related_asset['id']}\\|{related_asset['name']}]] |\n"
-                # Techniques Addressed by Asset
-                content += "### Techniques Addressed by Asset\n"
-                if asset.techniques_used:
-                    content += "\n| Domain | ID | Name | Description |\n| --- | --- | --- | --- |\n"
-                    for technique in sorted(asset.techniques, key=lambda x: x['technique_id']):
-                        domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
-                        description = fix_description(technique['description'])
+                    content += "\n| Name | Sectors | Description |\n| --- | --- | --- |\n"
+                    for related_asset in sorted(asset.related_assets, key=lambda x: x['name']):
+                        description = fix_description(related_asset['description'])
                         description = description.replace('\n', '<br />')
-                        content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"
+                        try:
+                            sectors = [ ', '.join(sector) for sector in related_asset.sectors ]
+                            content += f"| {related_asset['name']} | {', '.join(sectors)} | {description} |\n"
+                        except AttributeError:
+                            content += f"| {related_asset['name']} | | {description} |\n"
+
+                # Techniques Addressed by Asset
+                if asset.techniques_used:
+                    content += "### Techniques Addressed by Asset\n"
+                    content += "\n| Domain | ID | Name |\n| --- | --- | --- |\n"
+                    for technique in sorted(asset.techniques_used, key=lambda x: x['technique_id']):
+                        domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
+                        content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_name']}]] |\n"
 
                 content = convert_to_local_links(content)
 
-
                 # References
-                content += "\n\n### References\n\n"
-                for ref in asset.external_references:
-                    name = ref['name'].replace(' ', '_')
-                    if 'url' in ref:
-                        content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+                if asset.external_references and len(asset.external_references) > 0:
+                    content += "\n\n### References\n\n"
+                    for ref in asset.external_references:
+                        name = ref['name'].replace(' ', '_')
+                        if 'url' in ref:
+                            content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
 
                 content = content.replace("MITRE_URL", asset.url)
 
                 fd.write(content)
+
+
+    # Function to create markdown notes for data sources in Defense folder
+    def create_data_source_notes(self):
+        defenses_dir = os.path.join(self.output_dir, "Defenses")
+        data_sources_dir = os.path.join(defenses_dir, "Data_Sources")
+        if not os.path.exists(data_sources_dir):
+            os.mkdir(data_sources_dir)
+
+        for data_source in self.data_sources:
+            data_source_file = os.path.join(data_sources_dir, f"{data_source.name}.md")
+
+            # Create markdown file for current data source
+            with open(data_source_file, 'w') as fd:
+                content = f"---\naliases:\n  - {data_source.id}\n"
+                content += f"  - {data_source.name} ({data_source.id})\n"
+                content += f"  - {data_source.id} ({data_source.name})\n"
+                content += "url: MITRE_URL\n"
+                content += "tags:\n"
+                content += "  - data_source\n"
+                content += "  - mitre_attack\n"
+                content += "---\n\n"
+
+                content += f"## {data_source.name}\n\n"
+                data_source_description = fix_description(data_source.description)
+                content += f"{data_source_description}\n\n\n"
+
+                # Data source information
+                content += "> [!info]\n"
+                content += f"> ID: {data_source.id}\n"
+                if data_source.platforms and data_source.platforms != [[]]:
+                    platforms = [ ', '.join(platform) for platform in data_source.platforms ]
+                    content += f"> Platforms: {''.join(platforms)}\n"
+                if data_source.sectors and data_source.sectors != [[]]:
+                    sectors = [ ', '.join(sector) for sector in data_source.sectors ]
+                    content += f"> Sectors: {''.join(sectors)}\n"
+                content += f"> Version: {data_source.version}\n"
+                content += f"> Created: {str(data_source.created).split(' ')[0].split('T')[0]}\n"
+                content += f"> Last Modified: {str(data_source.modified).split(' ')[0].split('T')[0]}\n\n\n"
+
+                content += "## Data Components\n"
+
+                for related_data_source in sorted(data_source.data_components, key=lambda x: x['data_component_name']):
+                    content += f"### {related_data_source.data_component_name}\n"
+                    if related_data_source.description:
+                        description = fix_description(related_data_source['description'])
+                        description = description.replace('\n', '<br />')
+                        content += f"{description}\n\n"
+
+                    content += "| Domain | ID | Name | Detects |\n| --- | --- | --- | --- |\n"
+
+                    for technique in related_data_source.techniques:
+                        detects = fix_description(technique['description'])
+                        detects = description.replace('\n', '<br />')
+                        content += f"| {technique['domain']} | [[{technique['name']} - {technique['id']}\\|{technique['id']}]] | [[{technique['name']} - {technique['id']}\\|{technique['name']}]] | {detects} |\n"
+
+                content = convert_to_local_links(content)
+
+                # References
+                if data_source.external_references and len(data_source.external_references) > 0:
+                    content += "\n\n### References\n\n"
+                    for ref in data_source.external_references:
+                        name = ref['name'].replace(' ', '_')
+                        if 'url' in ref:
+                            content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+
+                content = content.replace("MITRE_URL", data_source.url)
+
+                fd.write(content)
+

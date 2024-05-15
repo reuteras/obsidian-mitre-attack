@@ -826,3 +826,101 @@ class MITREAsset(MITREObject):
     @sectors.setter
     def sectors(self, sector):
         self._sectors.append(sector)
+
+class MITREDataSource(MITREObject):
+    """
+    Define a data source
+    """
+
+    def __init__(self, name):
+        MITREObject.__init__(self, name)
+        self._description = None
+        self._version = None
+        self._created = None
+        self._modified = None
+        self._external_references = list()
+        self._techniques_used = list()
+        self._contributors = list()
+        self._data_components = list()
+        self._platforms = list()
+        self._collection_layers = list()
+
+    @property
+    def description(self):
+        return self._description
+
+    @description.setter
+    def description(self, description):
+        self._description = description
+
+    @property
+    def version(self):
+        return self._version
+
+    @version.setter
+    def version(self, version):
+        self._version = version
+
+    @property
+    def created(self):
+        return self._created
+
+    @created.setter
+    def created(self, created):
+        self._created = created
+
+    @property
+    def modified(self):
+        return self._modified
+
+    @modified.setter
+    def modified(self, modified):
+        self._modified = modified
+
+    @property
+    def external_references(self):
+        return self._external_references
+
+    @external_references.setter
+    def external_references(self, external_reference:dict):
+        self._external_references.append(external_reference)
+
+    @property
+    def techniques_used(self):
+        return self._techniques_used
+
+    @techniques_used.setter
+    def techniques_used(self, technique_used:dict):
+        self._techniques_used.append(technique_used)
+
+    @property
+    def contributors(self):
+        return self._contributors
+
+    @contributors.setter
+    def contributors(self, contributors):
+        self._contributors.append(contributors)
+
+    @property
+    def data_components(self):
+        return self._data_components
+
+    @data_components.setter
+    def data_components(self, data_component:dict):
+        self._data_components.append(data_component)
+
+    @property
+    def platforms(self):
+        return self._platforms
+
+    @platforms.setter
+    def platforms(self, platform):
+        self._platforms.append(platform)
+
+    @property
+    def collection_layers(self):
+        return self._collection_layers
+
+    @collection_layers.setter
+    def collection_layers(self, collection_layer:dict):
+        self._collection_layers.append(collection_layer)

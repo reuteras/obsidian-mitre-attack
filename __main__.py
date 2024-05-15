@@ -34,7 +34,7 @@ if __name__ == '__main__':
         stix_data.get_domain_data(domain)
 
     stix_data.get_cti_data()
-    markdown_generator = MarkdownGenerator(output_dir, stix_data.techniques, stix_data.groups, stix_data.tactics, stix_data.mitigations, stix_data.software, stix_data.campaigns, stix_data.assets)
+    markdown_generator = MarkdownGenerator(output_dir, stix_data.techniques, stix_data.groups, stix_data.tactics, stix_data.mitigations, stix_data.software, stix_data.campaigns, stix_data.assets, stix_data.data_sources)
 
     for domain in domains:
         markdown_generator.create_tactic_notes(domain)
@@ -45,6 +45,7 @@ if __name__ == '__main__':
     markdown_generator.create_group_notes()
     markdown_generator.create_campaign_notes()
     markdown_generator.create_asset_notes()
+    markdown_generator.create_data_source_notes()
 
     # Generate Main README file
     attack_file = os.path.join(args.output, "MITRE ATT&CK.md")
