@@ -730,7 +730,6 @@ class MarkdownGenerator():
                 content += "\n\n"
 
                 for related_data_source in data_source.data_components[0]:
-                    print(related_data_source)
                     content += f"### {related_data_source['data_component_parent']}: {related_data_source['data_component_name']}\n"
                     if related_data_source['data_component_description']:
                         description = fix_description(related_data_source['data_component_description'])
