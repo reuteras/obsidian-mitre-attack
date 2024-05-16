@@ -713,28 +713,36 @@ class MarkdownGenerator():
                 if data_source.platforms and data_source.platforms != [[]]:
                     platforms = [ ', '.join(platform) for platform in data_source.platforms ]
                     content += f"> Platforms: {''.join(platforms)}\n"
-                if data_source.sectors and data_source.sectors != [[]]:
-                    sectors = [ ', '.join(sector) for sector in data_source.sectors ]
-                    content += f"> Sectors: {''.join(sectors)}\n"
+                if data_source.collection_layers and data_source.collection_layers != [[]]:
+                    layers = [ ', '.join(layer) for layer in data_source.collection_layers ]
+                    content += f"> Collection Layers: {''.join(layers)}\n"
                 content += f"> Version: {data_source.version}\n"
                 content += f"> Created: {str(data_source.created).split(' ')[0].split('T')[0]}\n"
                 content += f"> Last Modified: {str(data_source.modified).split(' ')[0].split('T')[0]}\n\n\n"
 
                 content += "## Data Components\n"
 
-                for related_data_source in sorted(data_source.data_components, key=lambda x: x['data_component_name']):
-                    content += f"### {related_data_source.data_component_name}\n"
-                    if related_data_source.description:
-                        description = fix_description(related_data_source['description'])
+                # Data Components
+
+                for related_data_source in data_source.data_components[0]:
+                    content += f"- [[#{related_data_source['data_component_parent']}: {related_data_source['data_component_name']}\\|{related_data_source['data_component_name']}]]\n"
+
+                content += "\n\n"
+
+                for related_data_source in data_source.data_components[0]:
+                    print(related_data_source)
+                    content += f"### {related_data_source['data_component_parent']}: {related_data_source['data_component_name']}\n"
+                    if related_data_source['data_component_description']:
+                        description = fix_description(related_data_source['data_component_description'])
                         description = description.replace('\n', '<br />')
                         content += f"{description}\n\n"
 
                     content += "| Domain | ID | Name | Detects |\n| --- | --- | --- | --- |\n"
 
-                    for technique in related_data_source.techniques:
+                    for technique in related_data_source['techniques_used']:
                         detects = fix_description(technique['description'])
                         detects = description.replace('\n', '<br />')
-                        content += f"| {technique['domain']} | [[{technique['name']} - {technique['id']}\\|{technique['id']}]] | [[{technique['name']} - {technique['id']}\\|{technique['name']}]] | {detects} |\n"
+                        content += f"| {technique['domain'][0]} | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_name']}]] | {detects} |\n"
 
                 content = convert_to_local_links(content)
 

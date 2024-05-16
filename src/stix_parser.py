@@ -954,12 +954,6 @@ class StixParser():
                             for ext_ref in ext_refs:
                                 if ext_ref['source_name'] == 'mitre-attack':
                                     technique_id = ext_ref['external_id']
-                            ext_refs = relationship.get('external_references', [])
-                            if 'url' in ext_ref and 'description' in ext_ref:
-                                item = {'name': ext_ref['source_name'].replace("/", "／"), 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                if ext_ref['source_name'] not in ext_ref_added:
-                                    asset_obj.external_references = item
-                                    ext_ref_added.append(ext_ref['source_name'])
 
                             asset_obj.techniques_used = {'technique_name': technique.name.replace("/", "／"), 'technique_id': technique_id, 'domain': relationship.get('x_mitre_domains', [])}
                         else:
@@ -994,6 +988,8 @@ class StixParser():
                 data_source_obj.modified = data_source.get('modified', '')
                 data_source_obj.version = data_source.get('x_mitre_version', [])
                 data_source_obj.contributors = data_source.get('x_mitre_contributors', [])
+                data_source_obj.platforms = data_source.get('x_mitre_platforms', [])
+                data_source_obj.collection_layers = data_source.get('x_mitre_collection_layers', [])
 
                 # Get external references
                 ext_refs = data_source.get('external_references', [])
@@ -1023,42 +1019,43 @@ class StixParser():
                         data_component_parent = data_source_obj.name
 
                         # Get techniques used by data source
-                        enterprise_technique_stix= self.enterprise_attack.query([Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', relationship['id'])])
-                        mobile_technique_stix = self.mobile_attack.query([Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', relationship['id'])])
-                        ics_technique_stix = self.ics_attack.query([Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', relationship['id'])])
-                        technique_stix = enterprise_technique_stix + mobile_technique_stix + ics_technique_stix
+                        enterprise_technique_stix= self.enterprise_attack.query([Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'detects'), Filter('source_ref', '=', relationship['id'])])
+                        mobile_technique_stix = self.mobile_attack.query([Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'detects'), Filter('source_ref', '=', relationship['id'])])
+                        ics_technique_stix = self.ics_attack.query([Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'detects'), Filter('source_ref', '=', relationship['id'])])
+                        techniques_used_stix = enterprise_technique_stix + mobile_technique_stix + ics_technique_stix
 
                         techniques_used = []
-                        for relationship in technique_stix:
-                            if 'enterprise-attack' in relationship['x_mitre_domains']:
-                                technique_stix = self.enterprise_attack.query([Filter('id', '=', relationship['target_ref'])])
-                            elif 'mobile-attack' in relationship['x_mitre_domains']:
-                                technique_stix = self.mobile_attack.query([Filter('id', '=', relationship['target_ref'])])
-                            elif 'ics-attack' in relationship['x_mitre_domains']:
-                                technique_stix = self.ics_attack.query([Filter('id', '=', relationship['target_ref'])])
+                        for techniques_relationship in techniques_used_stix:
+                            if 'enterprise-attack' in techniques_relationship['x_mitre_domains']:
+                                technique_stix = self.enterprise_attack.query([Filter('id', '=', techniques_relationship['target_ref'])])
+                            elif 'mobile-attack' in techniques_relationship['x_mitre_domains']:
+                                technique_stix = self.mobile_attack.query([Filter('id', '=', techniques_relationship['target_ref'])])
+                            elif 'ics-attack' in techniques_relationship['x_mitre_domains']:
+                                technique_stix = self.ics_attack.query([Filter('id', '=', techniques_relationship['target_ref'])])
 
                             if technique_stix:
                                 technique = technique_stix[0]
                                 ext_refs = technique.get('external_references', [])
                                 technique_name = technique['name']
+                                technique_description = techniques_relationship.get('description', '')
                                 for ext_ref in ext_refs:
                                     if ext_ref['source_name'] == 'mitre-attack':
                                         technique_id = ext_ref['external_id']
-                                ext_refs = relationship.get('external_references', [])
+                                ext_refs = techniques_relationship.get('external_references', [])
                                 if 'url' in ext_ref and 'description' in ext_ref:
                                     item = {'name': ext_ref['source_name'].replace("/", "／"), 'url': ext_ref['url'], 'description': ext_ref['description']}
                                     if ext_ref['source_name'] not in ext_ref_added:
                                         data_source_obj.external_references = item
                                         ext_ref_added.append(ext_ref['source_name'])
 
-                                techniques_used.append({'technique_name': technique_name.replace("/", "／"), 'technique_id': technique_id, 'description': relationship.get('description', ''), 'domain': relationship.get('x_mitre_domains', [])})
+                                item = {'technique_name': technique_name.replace("/", "／"), 'technique_id': technique_id, 'description': technique_description, 'domain': techniques_relationship.get('x_mitre_domains', '')}
+                                techniques_used.append(item)
                             else:
-                                sys.exit(f"Technique not found: {relationship['target_ref']}")
+                                sys.exit(f"Technique not found: {techniques_relationship['target_ref']}")
                         data_component = {'data_component_name': data_component_name, 'data_component_description': data_component_description, 'data_component_parent': data_component_parent, 'techniques_used': techniques_used}
-                        
+
                         data_components.append(data_component)
-                
+
                 data_source_obj.data_components = data_components
 
                 self.data_sources.append(data_source_obj)
-                          
