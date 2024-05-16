@@ -1,19 +1,19 @@
 # obsidian-mitre-attack
 
-This is a modified and extended version of the original version that can be found here [vincenzocaputo/obsidian-mitre-attack](https://github.com/vincenzocaputo/obsidian-mitre-attack). Some functions have been removed (create canvas) and some have been added (generating software and campaigns).
+This is a modified and extended version of the original version that can be found here [vincenzocaputo/obsidian-mitre-attack](https://github.com/vincenzocaputo/obsidian-mitre-attack). Some functions have been removed (create canvas) and some have been added such as always generating the full MITRE ATT&CK (enterprise-attack, ics-attack and mobile-attack) as well as adding some missing parts for the original repository.
 
-The repository contains Python code that parses the MITRE ATT&CK knowledge base into Markdown format, making it readable and browsable using the Obsidian note-taking application.
+Python code is used to parse the MITRE ATT&CK knowledge base into Markdown format, making it readable and browsable using the Obsidian note-taking application.
 MITRE ATT&CK data is retrieved from the MITRE GitHub repository ([https://github.com/mitre-attack/attack-stix-data](https://github.com/mitre-attack/attack-stix-data)) in STIX 2.1 JSON format.
 
 The main idea behind this project is to make the MITRE ATT&CK knowledge base easily accessible and seamlessly integrable into Obsidian, along with reports or your personal notes. Utilizing Obsidian's features such as hyperlinks, tags, graph view, and more can greatly support threat intelligence analysis and investigations.
 
 ## Quick start from release
 
-Generating the files takes a long time at the moment and it is recommended that you download the release zip-file. After downloading it unzip it and place the content of the _MITRE_ folder in your Obsidian vault.
+Generating the files takes a long time at the moment and it is recommended that you download the release zip-file that contains the result of running the code. After downloading it unzip it and place the content of the _MITRE_ folder in your Obsidian vault.
 
 ## Example usage
 
-If you have the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin for Obsidian installed you can get a list of for example MITRE ATT&CK _techniques_ or _software_ for the current note with the following code.
+With the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin for Obsidian installed you can get a list of f MITRE ATT&CK _techniques_ or _software_ (or something else) for the current note with the following code.
 
 ~~~markdown
 ## Techniques
@@ -41,15 +41,23 @@ Locking at the graph it is also easy to see that [T1548.004](https://attack.mitr
 
 ![Result in Obsidian with lists generated](https://raw.githubusercontent.com/reuteras/obsidian-mitre-attack/main/resources/graph.png)
 
+The markdown shown above is available [here](./sample.md).
+
 ## TODO
 
 - Add more relevant tags and consider prepending tags with **attack** or use **attack/<tag>**.
-- Add other metadata? Att&ck ID, etc.
-- Add [Data sources](https://attack.mitre.org/datasources/)
-- Add [Assets](https://attack.mitre.org/assets/)
+- Add other metadata? Att&ck ID, etc. (url has been added)
 - Should top level pages be added to each category or are they not needed when ATT&CK is used in Obsidian?
 - Check for unused code and remove it. Since speed is not the main concern (runs one time) it has not been top priority.
+
+## Done
+
+- Add [Data sources](https://attack.mitre.org/datasources/)
+- Add [Assets](https://attack.mitre.org/assets/)
 - Add one link per page to the corresponding page on [https://attack.mitre.org/](https://attack.mitre.org/)
+
+
+## Status
 
 Missing in the current implementation:
 
