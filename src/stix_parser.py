@@ -1026,6 +1026,8 @@ class StixParser():
 
                         techniques_used = []
                         for techniques_relationship in techniques_used_stix:
+                            technique_description = techniques_relationship.get('description', '')
+
                             if 'enterprise-attack' in techniques_relationship['x_mitre_domains']:
                                 technique_stix = self.enterprise_attack.query([Filter('id', '=', techniques_relationship['target_ref'])])
                             elif 'mobile-attack' in techniques_relationship['x_mitre_domains']:
@@ -1037,7 +1039,6 @@ class StixParser():
                                 technique = technique_stix[0]
                                 ext_refs = technique.get('external_references', [])
                                 technique_name = technique['name']
-                                technique_description = techniques_relationship.get('description', '')
                                 for ext_ref in ext_refs:
                                     if ext_ref['source_name'] == 'mitre-attack':
                                         technique_id = ext_ref['external_id']
