@@ -1,7 +1,7 @@
+import sys
 from time import gmtime, strftime
 
 import requests
-import sys
 from stix2 import Filter, MemoryStore
 
 from .models import (

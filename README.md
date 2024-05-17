@@ -41,12 +41,12 @@ Locking at the graph it is also easy to see that [T1548.004](https://attack.mitr
 
 ![Result in Obsidian with lists generated](https://raw.githubusercontent.com/reuteras/obsidian-mitre-attack/main/resources/graph.png)
 
-The markdown shown above is available [here](./sample.md).
+The Markdown shown above is available [here](./sample.md).
 
 ## TODO
 
 - Add more relevant tags and consider prepending tags with **attack** or use **attack/<tag>**.
-- Add other metadata? Att&ck ID, etc. (url has been added)
+- Add other metadata? Att&ck ID, etc. (URL has been added)
 - Should top level pages be added to each category or are they not needed when ATT&CK is used in Obsidian?
 - Check for unused code and remove it. Since speed is not the main concern (runs one time) it has not been top priority.
 
@@ -130,7 +130,7 @@ python3 . -o obsidian_vault_path
 ```bash
 usage: . [-h] [--path PATH] [-o OUTPUT]
 
-Download MITRE ATT&CK STIX data and parse it to Obsidian markdown notes
+Download MITRE ATT&CK STIX data and parse it to Obsidian Markdown notes
 
 options:
   -h, --help            show this help message and exit
