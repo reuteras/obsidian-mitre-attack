@@ -36,7 +36,17 @@ class MarkdownGenerator():
     """
     Class to generate markdown notes for MITRE ATT&CK data
     """
-    def __init__(self, output_dir=None, techniques=[], groups=[], tactics=[], mitigations=[], software=[], campaigns=[], assets=[], data_sources=[]):
+    def __init__(self,
+                 output_dir=None,
+                 techniques=[],
+                 groups=[],
+                 tactics=[],
+                 mitigations=[],
+                 software=[],
+                 campaigns=[],
+                 assets=[],
+                 data_sources=[]
+    ):
         if output_dir:
             self.output_dir = os.path.join(ROOT, output_dir)
         self.tactics = tactics
