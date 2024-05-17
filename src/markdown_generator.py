@@ -740,7 +740,7 @@ class MarkdownGenerator():
 
                     for technique in related_data_source['techniques_used']:
                         detects = fix_description(technique['description'])
-                        detects = description.replace('\n', '<br />')
+                        detects = detects.replace('\n', '<br />')
                         content += f"| {technique['domain'][0]} | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_name']}]] | {detects} |\n"
 
                 content = convert_to_local_links(content)
