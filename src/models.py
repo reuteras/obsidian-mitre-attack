@@ -827,6 +827,7 @@ class MITREAsset(MITREObject):
     def sectors(self, sector):
         self._sectors.append(sector)
 
+
 class MITREDataSource(MITREObject):
     """
     Define a data source

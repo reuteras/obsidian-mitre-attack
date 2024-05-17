@@ -71,7 +71,12 @@ class StixParser():
 
     def get_cti_data(self):
         """
-        Get and parse groups, software, and campaigns from STIX data
+        Get and parse the following from STIX data
+        - Groups
+        - Campaigns
+        - Software
+        - Data sources
+        - Assets
         """
         self.verbose_log("Getting data sources data")
         self._get_data_sources()
@@ -97,7 +102,7 @@ class StixParser():
         for tactic in tactics_stix:
             if ('x_mitre_deprecated' not in tactic or not tactic['x_mitre_deprecated']) and ('revoked' not in tactic or not tactic['revoked']):
                 tactic_obj = MITRETactic(tactic['name'])
-                added = []
+                external_references_added = []
 
                 # Add attributes to the tactic object
                 tactic_obj.description = tactic['description']
@@ -107,7 +112,7 @@ class StixParser():
                 tactic_obj.shortname = tactic.get('x_mitre_shortname', '')
                 tactic_obj.domain = domain
 
-                # Get external references
+                # Get external references for the description as well as the URL and external ID
                 ext_refs = tactic.get('external_references', [])
                 for ext_ref in ext_refs:
                     if ext_ref['source_name'] == 'mitre-attack':
@@ -115,9 +120,9 @@ class StixParser():
                         tactic_obj.url = ext_ref['url']
                     elif 'url' in ext_ref and 'description' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                        if item not in added:
+                        if ext_ref['source_name'] not in external_references_added:
                             tactic_obj.external_references = item
-                            added.append(item)
+                            external_references_added.append(ext_ref['source_name'])
 
                 # Extract external references from relationships
                 techniques_stix = self.src.query([Filter('type', '=', 'attack-pattern')])
@@ -133,9 +138,9 @@ class StixParser():
                                         id = ext_ref['external_id']
                                     elif 'url' in ext_ref and 'description' in ext_ref:
                                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if item not in added:
+                                        if ext_ref['source_name'] not in external_references_added:
                                             tactic_obj.external_references = item
-                                            added.append(item)
+                                            external_references_added.append(ext_ref['source_name'])
                                 tactic_obj.techniques_used = {'id': id, 'name': technique['name'].replace('/', '／'), 'description': technique['description'] }
 
                 self.tactics.append(tactic_obj)
@@ -148,7 +153,7 @@ class StixParser():
 
         # Extract techniques
         techniques_stix = self.src.query([Filter('type', '=', 'attack-pattern')])
-        added = []
+        external_references_added = []
 
         # Extract tactics to build relationship between techniques and tactics
         tactics_stix = self.src.query([Filter('type', '=', 'x-mitre-tactic')])
@@ -171,7 +176,6 @@ class StixParser():
             if ('x_mitre_deprecated' not in tech or not tech['x_mitre_deprecated']) and ('revoked' not in tech or not tech['revoked']):
                 technique_obj = MITRETechnique(tech['name'])
                 added = []
-                external_references_added = []
 
                 # Add attributes to the technique object
                 technique_obj.internal_id = tech['id']
@@ -199,9 +203,9 @@ class StixParser():
                         technique_obj.url = ext_ref['url']
                     elif 'url' in ext_ref and 'description' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                        if item not in external_references_added:
+                        if ext_ref['source_name'] not in external_references_added:
                             technique_obj.external_references = item
-                            added.append(item)
+                            external_references_added.append(ext_ref['source_name'])
 
                 # Get technique main id
                 if technique_obj.is_subtechnique:
@@ -218,9 +222,9 @@ class StixParser():
                             for ext_ref in ext_refs:
                                 if 'url' in ext_ref and 'description' in ext_ref:
                                     item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                    if item not in external_references_added:
+                                    if ext_ref['source_name'] not in external_references_added:
                                         technique_obj.external_references = item
-                                        external_references_added.append(item)
+                                        external_references_added.append(ext_ref['source_name'])
 
                         if 'malware' in relation['source_ref']:
                             source_stix = self.src.query([ Filter('type', '=', 'malware'), Filter('id', '=', relation['source_ref'])])
@@ -243,9 +247,9 @@ class StixParser():
                                         source_id = ext_ref['external_id']
                                     elif 'url' in ext_ref and 'description' in ext_ref:
                                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if item not in external_references_added:
+                                        if ext_ref['source_name'] not in external_references_added:
                                             technique_obj.external_references = item
-                                            external_references_added.append(item)
+                                            external_references_added.append(ext_ref['source_name'])
 
                                 technique_obj.procedure_examples = {'name': source['name'], 'id': source_id, 'description': relation.get('description', '')}
 
@@ -256,9 +260,9 @@ class StixParser():
                     for ext_ref in ext_refs:
                         if 'url' in ext_ref and 'description' in ext_ref:
                             item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                            if item not in external_references_added:
+                            if ext_ref['source_name'] not in external_references_added:
                                 technique_obj.external_references = item
-                                external_references_added.append(item)
+                                external_references_added.append(ext_ref['source_name'])
                     # Get mitigation id
                     mitigation = self.src.query([ Filter('type', '=', 'course-of-action'), Filter('id', '=', relation['source_ref'])])[0]
                     ext_refs = mitigation.get('external_references', [])
@@ -285,9 +289,9 @@ class StixParser():
                             data_source_id = ext_ref['external_id']
                         if 'url' in ext_ref and 'description' in ext_ref:
                             item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                            if item not in external_references_added:
+                            if ext_ref['source_name'] not in external_references_added:
                                 technique_obj.external_references = item
-                                external_references_added.append(item)
+                                external_references_added.append(ext_ref['source_name'])
                     item = {'name': data_component_name, 'data_source': data_source_name, 'id': data_source_id, 'description': relation.get('description', '')}
                     if item not in added:
                         technique_obj.detections = item
@@ -347,20 +351,12 @@ class StixParser():
         # Extract mitigations
         mitigations_stix = self.src.query([ Filter('type', '=', 'course-of-action')])
 
-        # Extract mitigates relationships
-        #mitigates_stix = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates')])
-
-        #mitigates_list = list()
-
-        #for mitigate in mitigates_stix:
-        #    mitigates_list.append(mitigate)
-
         for mitigation in mitigations_stix:
             if ('x_mitre_deprecated' not in mitigation or not mitigation['x_mitre_deprecated']) and \
                 ('revoked' not in mitigation or not mitigation['revoked']) and \
                 (domain in mitigation['x_mitre_domains']):
                 mitigation_obj = MITREMitigation(mitigation['name'])
-                ext_ref_add = []
+                external_references_added = []
 
                 # Add attributes to the mitigation object
                 mitigation_obj.internal_id = mitigation['id']
@@ -378,9 +374,9 @@ class StixParser():
                         mitigation_obj.url = ext_ref['url']
                     elif 'url' in ext_ref and 'description' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                        if ext_ref['source_name'] not in ext_ref_add:
+                        if ext_ref['source_name'] not in external_references_added:
                             mitigation_obj.external_references = item
-                            ext_ref_add.append(ext_ref['source_name'])
+                            external_references_added.append(ext_ref['source_name'])
 
                 mitigation_relationships = self.src.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'mitigates'), Filter('source_ref', '=', mitigation_obj.internal_id)])
 
@@ -397,24 +393,10 @@ class StixParser():
                         for ext_ref in ext_refs:
                             if 'url' in ext_ref and 'description' in ext_ref:
                                 item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                if ext_ref['source_name'] not in ext_ref_add:
+                                if ext_ref['source_name'] not in external_references_added:
                                     mitigation_obj.external_references = item
-                                    ext_ref_add.append(ext_ref['source_name'])
+                                    external_references_added.append(ext_ref['source_name'])
                         mitigation_obj.mitigates = {'id': external_id, 'name': technique['name'].replace("/", "／") , 'description': relationship.get('description', ''), 'domain': relationship.get('x_mitre_domains', '')}
-
-                    #for mitigate in mitigates_list:
-                    #    if mitigate['id'] == relationship['target_ref']:
-                    #        external_id = ''
-                    #        ext_refs = mitigate.get('external_references', [])
-
-                    #        for ext_ref in ext_refs:
-                    #            if ext_ref['source_name'] == 'mitre-attack':
-                    #                external_id = ext_ref['external_id']
-
-                    #        item = {'name': mitigate['name'], 'id': external_id}
-                    #        if item not in added:
-                    #            mitigation_obj.external_references = item
-                    #            added.append(item)
 
                 self.mitigations.append(mitigation_obj)
 
@@ -435,7 +417,7 @@ class StixParser():
         for group in groups_stix:
             if ('x_mitre_deprecated' not in group or not group['x_mitre_deprecated']) and ('revoked' not in group or not group['revoked']):
                 group_obj = MITREGroup(group['name'])
-                ext_ref_added = []
+                external_references_added = []
                 added = []
 
                 # Add attributes to the group object
@@ -456,9 +438,9 @@ class StixParser():
                         group_obj.url = ext_ref['url']
                     elif 'url' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                        if ext_ref['source_name'] not in ext_ref_added:
+                        if ext_ref['source_name'] not in external_references_added:
                             group_obj.external_references = item
-                            ext_ref_added.append(ext_ref['source_name'])
+                            external_references_added.append(ext_ref['source_name'])
                     else:
                         if ext_ref['source_name'] != group_obj.name:
                             group_obj.aliases_references = {'name': ext_ref['source_name'], 'description': ext_ref['description']}
@@ -489,9 +471,9 @@ class StixParser():
                             ext_refs = tech_group_rel.get('external_references', [])
                             if 'url' in ext_ref and 'description' in ext_ref:
                                 item = {'name': ext_ref['source_name'].replace("/", "／"), 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                if ext_ref['source_name'] not in ext_ref_added:
+                                if ext_ref['source_name'] not in external_references_added:
                                     group_obj.external_references = item
-                                    ext_ref_added.append(ext_ref['source_name'])
+                                    external_references_added.append(ext_ref['source_name'])
 
                             group_obj.techniques_used = {'technique_name': technique.name.replace("/", "／"), 'technique_id': technique_id, 'description': tech_group_rel.get('description', ''), 'domain': tech_group_rel.get('x_mitre_domains', [])}
                         else:
@@ -550,7 +532,6 @@ class StixParser():
                                         technique_id = ext_ref['external_id']
                                 if technique_relationship[0]['x_mitre_is_subtechnique']:
                                     technique_parent_id = technique_id.split('.')[0]
-                                    # TODO: Find a better way to get the parent name
                                     technique_parent_name_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'attack-pattern'), Filter('external_references.external_id', '=', technique_parent_id)])
                                     technique_parent_name_mobile = self.mobile_attack.query([ Filter('type', '=', 'attack-pattern'), Filter('external_references.external_id', '=', technique_parent_id)])
                                     technique_parent_name_ics = self.ics_attack.query([ Filter('type', '=', 'attack-pattern'), Filter('external_references.external_id', '=', technique_parent_id)])
@@ -600,7 +581,7 @@ class StixParser():
             if ('x_mitre_deprecated' not in software or not software['x_mitre_deprecated']) and ('revoked' not in software or not software['revoked']):
                 software_obj = MITRESoftware(software['name'])
                 added = []
-                ext_ref_added = []
+                external_references_added = []
 
                 # Add simple attributes to the software object
                 software_obj.internal_id = software['id']
@@ -622,9 +603,9 @@ class StixParser():
                         software_obj.url = ext_ref['url']
                     elif 'url' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                        if ext_ref['source_name'] not in ext_ref_added:
+                        if ext_ref['source_name'] not in external_references_added:
                             software_obj.external_references = item
-                            ext_ref_added.append(ext_ref['source_name'])
+                            external_references_added.append(ext_ref['source_name'])
 
                 # Techniques used by software
                 source_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('source_ref', '=', software_obj.internal_id)])
@@ -649,9 +630,9 @@ class StixParser():
                                 for ext_ref in ext_refs:
                                     if 'url' in ext_ref and 'description' in ext_ref:
                                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if ext_ref['source_name'] not in ext_ref_added:
+                                        if ext_ref['source_name'] not in external_references_added:
                                             software_obj.external_references = item
-                                            ext_ref_added.append(ext_ref['source_name'])
+                                            external_references_added.append(ext_ref['source_name'])
 
                 # Software has been used in these campaigns
                 source_relationships_enterprise = self.enterprise_attack.query([ Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'uses'), Filter('target_ref', '=', software_obj.internal_id)])
@@ -676,16 +657,16 @@ class StixParser():
                                         campaign_id = ext_ref['external_id']
                                     if 'url' in ext_ref and 'description' in ext_ref:
                                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if ext_ref['source_name'] not in ext_ref_added:
+                                        if ext_ref['source_name'] not in external_references_added:
                                             software_obj.external_references = item
-                                            ext_ref_added.append(ext_ref['source_name'])
+                                            external_references_added.append(ext_ref['source_name'])
                                 ext_refs = relationship.get('external_references', [])
                                 for ext_ref in ext_refs:
                                     if 'url' in ext_ref and 'description' in ext_ref:
                                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if ext_ref['source_name'] not in ext_ref_added:
+                                        if ext_ref['source_name'] not in external_references_added:
                                             software_obj.external_references = item
-                                            ext_ref_added.append(ext_ref['source_name'])
+                                            external_references_added.append(ext_ref['source_name'])
                                 item = {'campaign_id': campaign_id, 'campaign_name': campaign.get('name', ''), 'description': relationship.get('description', ''), 'campaign_internal_id': campaign['id']}
                                 if item not in added:
                                     software_obj.campaigns_using = item
@@ -717,17 +698,17 @@ class StixParser():
                                         group_id = ext_ref['external_id']
                                     if 'url' in ext_ref and 'description' in ext_ref:
                                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if ext_ref['source_name'] not in ext_ref_added:
+                                        if ext_ref['source_name'] not in external_references_added:
                                             software_obj.external_references = item
-                                            ext_ref_added.append(ext_ref['source_name'])
+                                            external_references_added.append(ext_ref['source_name'])
                             if 'external_references' in relationship:
                                 ext_refs = relationship.get('external_references', [])
                                 for ext_ref in ext_refs:
                                     if 'url' in ext_ref and 'description' in ext_ref:
                                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                        if ext_ref['source_name'] not in ext_ref_added:
+                                        if ext_ref['source_name'] not in external_references_added:
                                             software_obj.external_references = item
-                                            ext_ref_added.append(ext_ref['source_name'])
+                                            external_references_added.append(ext_ref['source_name'])
 
                             for campaign in software_obj.campaigns_using:
                                 campaign_id = campaign['campaign_internal_id']
@@ -741,9 +722,9 @@ class StixParser():
                                         for ext_ref in campaign.get('external_references', []):
                                             if 'url' in ext_ref and 'description' in ext_ref:
                                                 item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                                if ext_ref['source_name'] not in ext_ref_added:
+                                                if ext_ref['source_name'] not in external_references_added:
                                                     software_obj.external_references = item
-                                                    ext_ref_added.append(ext_ref['source_name'])
+                                                    external_references_added.append(ext_ref['source_name'])
                                         description = campaign.get('description', '')
                                         if description not in descriptions:
                                             descriptions += description
@@ -899,7 +880,7 @@ class StixParser():
             if ('x_mitre_deprecated' not in asset or not asset['x_mitre_deprecated']) and ('revoked' not in asset or not asset['revoked']):
                 asset_obj = MITREAsset(asset['name'])
 
-                ext_ref_added = []
+                external_references_added = []
 
                 # Add attributes to the asset object
                 asset_obj.internal_id = asset['id']
@@ -919,9 +900,9 @@ class StixParser():
                         asset_obj.url = ext_ref['url']
                     elif 'url' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                        if ext_ref['source_name'] not in ext_ref_added:
+                        if ext_ref['source_name'] not in external_references_added:
                             asset_obj.external_references = item
-                            ext_ref_added.append(ext_ref['source_name'])
+                            external_references_added.append(ext_ref['source_name'])
 
                 related_assets = asset.get('x_mitre_related_assets', [])
 
@@ -979,7 +960,7 @@ class StixParser():
             if ('x_mitre_deprecated' not in data_source or not data_source['x_mitre_deprecated']) and ('revoked' not in data_source or not data_source['revoked']):
                 data_source_obj = MITREDataSource(data_source['name'])
 
-                ext_ref_added = []
+                external_references_added = []
 
                 # Add attributes to the data source object
                 data_source_obj.internal_id = data_source['id']
@@ -1000,9 +981,9 @@ class StixParser():
                         data_source_obj.url = ext_ref['url']
                     elif 'url' in ext_ref and 'description' in ext_ref:
                         item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                        if ext_ref['source_name'] not in ext_ref_added:
+                        if ext_ref['source_name'] not in external_references_added:
                             data_source_obj.external_references = item
-                            ext_ref_added.append(ext_ref['source_name'])
+                            external_references_added.append(ext_ref['source_name'])
 
                 # Get data components used by data source
                 data_source_relationships_enterprise = self.enterprise_attack.query([ Filter('x_mitre_data_source_ref', '=', data_source_obj.internal_id)])
@@ -1024,9 +1005,9 @@ class StixParser():
                         for ext_ref in ext_refs:
                             if 'url' in ext_ref and 'description' in ext_ref:
                                 item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                if ext_ref['source_name'] not in ext_ref_added:
+                                if ext_ref['source_name'] not in external_references_added:
                                     data_source_obj.external_references = item
-                                    ext_ref_added.append(ext_ref['source_name'])
+                                    external_references_added.append(ext_ref['source_name'])
 
                         # Get techniques used by data source
                         enterprise_technique_stix= self.enterprise_attack.query([Filter('type', '=', 'relationship'), Filter('relationship_type', '=', 'detects'), Filter('source_ref', '=', relationship['id'])])
@@ -1044,9 +1025,9 @@ class StixParser():
                             for ext_ref in ext_refs:
                                 if 'url' in ext_ref and 'description' in ext_ref:
                                     item = {'name': ext_ref['source_name'], 'url': ext_ref['url'], 'description': ext_ref['description']}
-                                    if ext_ref['source_name'] not in ext_ref_added:
+                                    if ext_ref['source_name'] not in external_references_added:
                                         data_source_obj.external_references = item
-                                        ext_ref_added.append(ext_ref['source_name'])
+                                        external_references_added.append(ext_ref['source_name'])
 
                             # Get technique name and id
                             if 'enterprise-attack' in techniques_relationship['x_mitre_domains']:

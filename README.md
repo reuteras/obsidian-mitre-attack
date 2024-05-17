@@ -78,20 +78,23 @@ Missing in the current implementation:
 Current time to run the scripts and the different parts in verbose mode:
 
 ```bash
-2024-05-07 09:16:29 - Getting STIX data from https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master for version 15.1
-2024-05-07 09:17:48 - STIX data loaded successfully
-2024-05-07 09:17:48 - Getting tactics data for enterprise-attack domain
-2024-05-07 09:17:48 - Getting techniques data for enterprise-attack domain
-2024-05-07 09:21:48 - Getting mitigations data for enterprise-attack domain
-2024-05-07 09:21:50 - Getting groups data
-2024-05-07 09:33:20 - Getting campaigns data
-2024-05-07 09:33:27 - Getting software data
-2024-05-07 09:37:52 - Getting tactics data for mobile-attack domain
-2024-05-07 09:37:52 - Getting techniques data for mobile-attack domain
-2024-05-07 09:37:56 - Getting mitigations data for mobile-attack domain
-2024-05-07 09:37:56 - Getting tactics data for ics-attack domain
-2024-05-07 09:37:56 - Getting techniques data for ics-attack domain
-2024-05-07 09:37:59 - Getting mitigations data for ics-attack domain
+2024-05-17 05:36:02 - Getting STIX data from https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master for version 15.1
+2024-05-17 05:36:07 - STIX data loaded successfully
+2024-05-17 05:36:07 - Getting tactics data for enterprise-attack domain
+2024-05-17 05:36:07 - Getting techniques data for enterprise-attack domain
+2024-05-17 05:43:48 - Getting mitigations data for enterprise-attack domain
+2024-05-17 05:44:20 - Getting tactics data for mobile-attack domain
+2024-05-17 05:44:20 - Getting techniques data for mobile-attack domain
+2024-05-17 05:44:25 - Getting mitigations data for mobile-attack domain
+2024-05-17 05:44:26 - Getting tactics data for ics-attack domain
+2024-05-17 05:44:26 - Getting techniques data for ics-attack domain
+2024-05-17 05:44:29 - Getting mitigations data for ics-attack domain
+2024-05-17 05:44:30 - Getting data sources data
+2024-05-17 05:48:15 - Getting assets data
+2024-05-17 05:48:17 - Getting groups data
+2024-05-17 06:03:18 - Getting campaigns data
+2024-05-17 06:03:26 - Getting software data
+2024-05-17 06:11:02 - CTI data loaded successfully
 ```
 
 ## Development
