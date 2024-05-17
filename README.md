@@ -48,7 +48,8 @@ The Markdown shown above is available [here](./sample.md).
 - Add more relevant tags and consider prepending tags with **attack** or use **attack/<tag>**.
 - Add other metadata? Att&ck ID, etc. (URL has been added)
 - Should top level pages be added to each category or are they not needed when ATT&CK is used in Obsidian?
-- Check for unused code and remove it. Since speed is not the main concern (runs one time) it has not been top priority.
+- Check for unused code and remove it. 
+- Since speed is not the main concern (runs one time) it has not been top priority but I should look at [https://github.com/oasis-open/cti-python-stix2/issues/516#issuecomment-871510496](https://github.com/oasis-open/cti-python-stix2/issues/516#issuecomment-871510496).
 
 ## Done
 
