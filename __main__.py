@@ -86,6 +86,6 @@ if __name__ == '__main__':
         content += "This collection is based on the following ATT&CK domains:\n\n"
         for domain in domains:
             content += "- " + domain + " version " + str(config['version']) + ".\n"
-        content += "\n[^obsidian-mitre-attack](https://github.com/reuteras/obsidian-mitre-attack))\n"
+        content += "\n[^obsidian-mitre-attack]: [https://github.com/reuteras/obsidian-mitre-attack](https://github.com/reuteras/obsidian-mitre-attack)\n"
         content += "[^mitre]: [MITRE ATT&CK®](https://attack.mitre.org/)\n"
         fd.write(content)
