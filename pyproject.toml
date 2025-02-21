@@ -26,7 +26,7 @@ build-backend = "hatchling.build"
 packages = ["obsidian-mitre-attack"]
 
 [project.scripts]
-obsidian-mitre-attack = "obsidian-mitre-attack:main"
+obsidian-mitre-attack = "obsidian_mitre_attack:main"
 
 [project.urls]
 Homepage = "https://github.com/reuteras/obsidian-mitre-attack"
