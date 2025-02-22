@@ -107,39 +107,33 @@ Clone this repository
 ```bash
 git clone https://github.com/vincenzocaputo/obsidian-mitre-attack.git
 ```
-Create a Python virtual environment
+
+Use `uv`to create a _.venv_.
 
 ```bash
 cd obsidian-mitre-attack
-python3 -m venv .venv
+uv venv
 source .venv/bin/activate
-```
-
-Install Python module dependencies
-```bash
-python3 -m pip install -U pip
-python3 -m pip install -r requirements.txt
 ```
 
 ### Run
 
-Run the application specifying the output directory path (i.e.: your obsidian vault)
+Run the application specifying the output directory path (i.e.: your obsidian vault) with a full path
 
 ```bash
-python3 . -o obsidian_vault_path
+uv run obsidian-attack-markdown --output $(pwd)/output
 ```
 
 ### Options
 
 ```bash
-usage: . [-h] [--path PATH] [-o OUTPUT]
+usage: obsidian-mitre-attack [-h] [-o OUTPUT] [-t TAGS] [-v]
 
-Download MITRE ATT&CK STIX data and parse it to Obsidian Markdown notes
+Download MITRE ATT&CK STIX data and parse it to Obsidian markdown notes.
 
 options:
-  -h, --help            show this help message and exit
-  --path PATH           Filepath to the markdown note file
-  -o OUTPUT, --output OUTPUT
-                        Output directory in which the notes will be saved. It should be placed inside a Obsidian vault.
-
+  -h, --help           show this help message and exit
+  -o, --output OUTPUT  Output directory in which the notes will be saved.
+  -t, --tags TAGS      Prepend this string to tags in the markdown files.
+  -v, --verbose        Print verbose output.
 ```

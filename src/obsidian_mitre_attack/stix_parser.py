@@ -92,7 +92,7 @@ class StixParser:
         self.verbose_log(message="CTI data loaded successfully")
 
 
-    def _get_tactics(self, domain) -> None:
+    def _get_tactics(self, domain) -> None:  # noqa: PLR0912
         """Get and parse tactics from STIX data."""
         # Extract tactics
         tactics_stix = self.src.query([Filter(prop='type', op='=', value='x-mitre-tactic')])
@@ -139,7 +139,7 @@ class StixParser:
                                 ext_refs = technique.get('external_references', [])
                                 for ext_ref in ext_refs:
                                     if ext_ref['source_name'] == 'mitre-attack':
-                                        id = ext_ref['external_id']
+                                        id: str = ext_ref['external_id']
                                     elif 'url' in ext_ref and 'description' in ext_ref:
                                         item = {
                                             'name': ext_ref['source_name'],
@@ -158,7 +158,7 @@ class StixParser:
                 self.tactics.append(tactic_obj)
 
 
-    def _get_techniques(self, domain):
+    def _get_techniques(self, domain):  # noqa: PLR0912, PLR0915
         """Get and parse techniques from STIX data."""
         # Extract techniques
         techniques_stix = self.src.query([Filter('type', '=', 'attack-pattern')])
@@ -452,7 +452,7 @@ class StixParser:
                 self.techniques.append(technique_obj)
 
 
-    def _get_mitigations(self, domain) -> None:
+    def _get_mitigations(self, domain) -> None:  # noqa: PLR0912
         """Get and parse techniques from STIX data."""
         # Extract mitigations
         mitigations_stix = self.src.query([
@@ -532,7 +532,7 @@ class StixParser:
                 self.mitigations.append(mitigation_obj)
 
 
-    def _get_groups(self) -> None:
+    def _get_groups(self) -> None:  # noqa: PLR0912, PLR0915
         """Get and parse groups from STIX data."""
         # Extract groups
         groups_enterprise_stix = self.enterprise_attack.query([
@@ -826,7 +826,7 @@ class StixParser:
                 self.groups.append(group_obj)
 
 
-    def _get_software(self) -> None:
+    def _get_software(self) -> None:  # noqa: PLR0912, PLR0915
         """Get and parse software from STIX data."""
         # Extract software
         software_enterprise_malware_stix = self.enterprise_attack.query([
@@ -1148,7 +1148,7 @@ class StixParser:
                 self.software.append(software_obj)
 
 
-    def _get_campaigns(self) -> None:
+    def _get_campaigns(self) -> None:  # noqa: PLR0912, PLR0915
         """Get and parse campaigns from STIX data."""
         # Extract campaigns
         enterprise_stix = self.enterprise_attack.query([
@@ -1345,7 +1345,7 @@ class StixParser:
                 self.campaigns.append(campaign_obj)
 
 
-    def _get_assets(self):
+    def _get_assets(self):  # noqa: PLR0912, PLR0915
         """Get and parse assets from STIX data."""
         # Extract assets
         assets_stix_enterprise = self.enterprise_attack.query([
@@ -1461,7 +1461,7 @@ class StixParser:
                 self.assets.append(asset_obj)
 
 
-    def _get_data_sources(self) -> None:
+    def _get_data_sources(self) -> None:  # noqa: PLR0912, PLR0915
         """Get and parse data sources from STIX data."""
         # Extract data sources
         data_sources_stix_enterprise = self.enterprise_attack.query([
