@@ -34,9 +34,6 @@ jobs:
       - name: Create output
         run: uv run obsidian-mitre-attack -o MITRE --tags "mitre/"
 
-      - name: Create dist directory
-        run: mkdir dist
-
       - name: Create zip
         run: zip -r dist/release.zip MITRE README.md
 
