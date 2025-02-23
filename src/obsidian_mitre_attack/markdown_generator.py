@@ -3,8 +3,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-ROOT: Path = Path(__file__).parent.parent
-
 # Utility functions
 
 def fix_description(description_str) -> str:
@@ -43,7 +41,7 @@ class MarkdownGenerator:
     ) -> None:
         """Initialize the class."""
         if output_dir:
-            self.output_dir = Path(ROOT, output_dir)
+            self.output_dir = Path(output_dir)
         self.tactics = stix_data.tactics
         self.techniques = stix_data.techniques
         self.mitigations = stix_data.mitigations
