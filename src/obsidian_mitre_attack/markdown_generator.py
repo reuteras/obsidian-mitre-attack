@@ -95,7 +95,7 @@ class MarkdownGenerator:
                             description: str = fix_description(description_str=technique['description'])
                             description = description[0:description.find('\n')]
                             description = remove_references(text=description)
-                            content += f"| [[{technique['name']} - {technique['id']}\\|{technique['id']}]] | {technique['name']} | {description} |\n"
+                            content += f"| [[{technique['name']} - {technique['id']} \\| {technique['id']}]] | {technique['name']} | {description} |\n"
 
                     content: str = convert_to_local_links(text=content)
                     content = content.replace("MITRE_URL", tactic.url)
@@ -143,7 +143,7 @@ class MarkdownGenerator:
                 if subt['id'] == technique.id:
                     content += f"> | {subt['id']} | {subt['name']} |\n"
                 else:
-                    content += f"> | [[{subt['name']} - {subt['id']}\\|{subt['id']}]] | [[{subt['name']} - {subt['id']}\\|{subt['name']}]] |\n"
+                    content += f"> | [[{subt['name']} - {subt['id']} \\| {subt['id']}]] | [[{subt['name']} - {subt['id']} \\| {subt['name']}]] |\n"
             content += "\n\n"
         elif technique.subtechniques:
             first = True
@@ -153,7 +153,7 @@ class MarkdownGenerator:
                     content += ">"
                     content += "> | ID | Name |\n| --- | --- |\n"
                     first = False
-                content += f"> | [[{subt['name']} - {subt['id']}\\|{subt['id']}]] | {subt['name']} |\n"
+                content += f"> | [[{subt['name']} - {subt['id']} \\| {subt['id']}]] | {subt['name']} |\n"
             content += "\n\n"
         return content
 
@@ -174,12 +174,12 @@ class MarkdownGenerator:
             for subt in sorted(self.techniques, key=lambda x: x.id):
                 if subt.is_subtechnique and technique.id in subt.id:
                     if tech_first:
-                        content += f"[[{subt.name} - {subt.id}\\|{subt.id}]]"
+                        content += f"[[{subt.name} - {subt.id} \\| {subt.id}]]"
                         tech_first = False
                     else:
-                        content += f", [[{subt.name} - {subt.id}\\|{subt.id}]]"
+                        content += f", [[{subt.name} - {subt.id} \\| {subt.id}]]"
             content += "\n"
-        content += f"> Tactic: [[{technique.tactic_name} - {technique.tactic_id}\\|{technique.tactic_name}]]\n"
+        content += f"> Tactic: [[{technique.tactic_name} - {technique.tactic_id} \\| {technique.tactic_name}]]\n"
         if technique.platforms and 'None' not in technique.platforms:
             content += f"> Platforms: {', '.join(technique.platforms)}\n"
         if technique.permissions_required:
@@ -204,7 +204,7 @@ class MarkdownGenerator:
             for example in sorted(technique.procedure_examples, key=lambda x: x['id']):
                 description: str = fix_description(description_str=example['description'])
                 description = description.replace('\n', '<br />')
-                content += f"| [[{example['name'].replace('/', '／')}\\|{example['id']}]] | [[{example['name'].replace('/', '／')}\\|{example['name'].replace('/', '／')}]] | {description} |\n"  # noqa: RUF001
+                content += f"| [[{example['name'].replace('/', '／')} \\| {example['id']}]] | [[{example['name'].replace('/', '／')} \\| {example['name'].replace('/', '／')}]] | {description} |\n"  # noqa: RUF001
         return content
     
 
@@ -214,7 +214,7 @@ class MarkdownGenerator:
             content += "\n\n### Targeted Assets\n"
             content += "\n| ID | Asset |\n| --- | --- |\n"
             for asset in sorted(technique.targeted_assets, key=lambda x: x['id']):
-                content += f"| [[{asset['name']} - {asset['id']}\\|{asset['id']}]] | [[{asset['name']} - {asset['id']}\\|{asset['name']}]] |\n"
+                content += f"| [[{asset['name']} - {asset['id']} \\| {asset['id']}]] | [[{asset['name']} - {asset['id']} \\| {asset['name']}]] |\n"
         return content
     
 
@@ -232,7 +232,7 @@ class MarkdownGenerator:
                         mitigation_first = False
                     description = fix_description(description_str=mitigation['description'])
                     description = description.replace('\n', '<br />')
-                    content += f"| [[{mitigation['name']} - {mitigation['id']}\\|{mitigation['id']}]] | [[{mitigation['name']} - {mitigation['id']}\\|{mitigation['name']}]] | {description} |\n"
+                    content += f"| [[{mitigation['name']} - {mitigation['id']} \\| {mitigation['id']}]] | [[{mitigation['name']} - {mitigation['id']} \\| {mitigation['name']}]] | {description} |\n"
         else:
             content += "\nThis type of attack technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features.\n"
         return content
@@ -335,7 +335,7 @@ class MarkdownGenerator:
                             mitre_domain: str = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
                             description: str = fix_description(description_str=technique['description'])
                             description = description.replace('\n', '<br />')
-                            content += f"| {mitre_domain} | [[{technique['name']} - {technique['id']}\\|{technique['id']}]] | {technique['name']} | {description} |\n"
+                            content += f"| {mitre_domain} | [[{technique['name']} - {technique['id']} \\| {technique['id']}]] | {technique['name']} | {description} |\n"
 
                     content: str = convert_to_local_links(text=content)
 
@@ -403,7 +403,7 @@ class MarkdownGenerator:
                     domain: str = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
                     description = fix_description(description_str=technique['description'])
                     description = description.replace('\n', '<br />')
-                    content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"
+                    content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"
 
             # Software used by group
             if group.software_used:
@@ -411,7 +411,7 @@ class MarkdownGenerator:
                 content += "\n| ID | Name | References | Techniques |\n| --- | --- | --- | --- |\n"
                 for software in sorted(group.software_used, key=lambda x: x['id']):
                     description = fix_description(description_str=software['description'])
-                    content += f"| [[{software['name']}\\|{software['id']}]] | [[{software['name']}\\|{software['name']}]] | {description} | {software['software_techniques']} |\n"
+                    content += f"| [[{software['name']} \\| {software['id']}]] | [[{software['name']} \\| {software['name']}]] | {description} | {software['software_techniques']} |\n"
 
             content = convert_to_local_links(text=content)
 
@@ -487,7 +487,7 @@ class MarkdownGenerator:
                 for ref in ext_refs:
                     if ref['source_name'] == 'mitre-attack':
                         external_id = ref['external_id']
-                content += f"| {domain} | [[{technique['technique'].name.replace('/', '／')} - {external_id}\\|{external_id}]] | {technique['technique'].name} | {description} |\n"  # noqa: RUF001
+                content += f"| {domain} | [[{technique['technique'].name.replace('/', '／')} - {external_id} \\| {external_id}]] | {technique['technique'].name} | {description} |\n"  # noqa: RUF001
 
         # Groups that use this software
         if software.groups_using:
@@ -496,7 +496,7 @@ class MarkdownGenerator:
                 for group in sorted(software.groups_using, key=lambda x: x['group_id']):
                     description = fix_description(description_str=group['description'])
                     description = description.replace('\n', '<br />')
-                    content += f"| [[{group['group_name']}\\|{group['group_id']}]] | {group['group_name']} | {description} |\n"
+                    content += f"| [[{group['group_name']} \\| {group['group_id']}]] | {group['group_name']} | {description} |\n"
         return content
 
 
@@ -519,7 +519,7 @@ class MarkdownGenerator:
                 for campaign in sorted(software.campaigns_using, key=lambda x: x['campaign_id']):
                     description = fix_description(description_str=campaign['description'])
                     description = description.replace('\n', '<br />')
-                    content += f"| [[{campaign['campaign_name']}\\|{campaign['campaign_id']}]] | {campaign['campaign_name']} | {description} |\n"
+                    content += f"| [[{campaign['campaign_name']} \\| {campaign['campaign_id']}]] | {campaign['campaign_name']} | {description} |\n"
 
             content = convert_to_local_links(text=content)
 
@@ -580,7 +580,7 @@ class MarkdownGenerator:
                     for group in sorted(campaign.groups, key=lambda x: x['group'].id):
                         description: str = fix_description(description_str=group['description'])
                         description = description.replace('\n', '<br />')
-                        content += f"| [[{group['group'].name}\\|{group['group'].id}]] | {group['group'].name} | {description} |\n"
+                        content += f"| [[{group['group'].name} \\| {group['group'].id}]] | {group['group'].name} | {description} |\n"
 
                 # Techniques used by campaign
                 if campaign.techniques_used:
@@ -590,7 +590,7 @@ class MarkdownGenerator:
                         domain: str = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics', 'ICS')
                         description = fix_description(description_str=technique['description'])
                         description = description.replace('\n', '<br />')
-                        content += f"| {domain} | [[{technique['technique_name'].replace('/', '／')} - {technique['technique_id']}\\|{technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"  # noqa: RUF001
+                        content += f"| {domain} | [[{technique['technique_name'].replace('/', '／')} - {technique['technique_id']} \\| {technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"  # noqa: RUF001
 
                 # Software used in campaign
                 if campaign.software_used:
@@ -603,7 +603,7 @@ class MarkdownGenerator:
                         for ref in software['software'].get('external_references', []):
                             if ref['source_name'] == 'mitre-attack':
                                 external_id = ref['external_id']
-                        content += f"| [[{software['software'].name}\\|{external_id}]] | {software['software'].name} | {description} |\n"
+                        content += f"| [[{software['software'].name} \\| {external_id}]] | {software['software'].name} | {description} |\n"
 
                 content = convert_to_local_links(text=content)
 
@@ -688,7 +688,7 @@ class MarkdownGenerator:
                     content += "\n| Domain | ID | Name |\n| --- | --- | --- |\n"
                     for technique in sorted(asset.techniques_used, key=lambda x: x['technique_id']):
                         domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
-                        content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_name']}]] |\n"
+                        content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_name']}]] |\n"
 
                 content = convert_to_local_links(text=content)
 
@@ -746,7 +746,7 @@ class MarkdownGenerator:
                 # Data Components
 
                 for related_data_source in data_source.data_components[0]:
-                    content += f"- [[#{related_data_source['data_component_parent']}: {related_data_source['data_component_name']}\\|{related_data_source['data_component_name']}]]\n"
+                    content += f"- [[#{related_data_source['data_component_parent']}: {related_data_source['data_component_name']} \\| {related_data_source['data_component_name']}]]\n"
 
                 content += "\n\n"
 
@@ -762,7 +762,7 @@ class MarkdownGenerator:
                     for technique in related_data_source['techniques_used']:
                         detects: str = fix_description(description_str=technique['description'])
                         detects = detects.replace('\n', '<br />')
-                        content += f"| {technique['domain'][0]} | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']}\\|{technique['technique_name']}]] | {detects} |\n"
+                        content += f"| {technique['domain'][0]} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_name']}]] | {detects} |\n"
 
                 content = convert_to_local_links(text=content)
 

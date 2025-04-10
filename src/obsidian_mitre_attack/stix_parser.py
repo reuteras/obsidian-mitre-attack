@@ -805,9 +805,9 @@ class StixParser:
                                     technique_parent_id: str = ''
                                     technique_parent_name: str = ''
                                 if technique_parent_name:
-                                    markdown_link: str = f'[[{technique_parent_name.replace("/", "／")} - {technique_parent_id}\\|{technique_parent_name.replace("/", "／")}]]: [[{technique_name.replace("/", "／")} - {technique_id}\\|{technique_name.replace("/", "／")}]]'  # noqa: RUF001
+                                    markdown_link: str = f'[[{technique_parent_name.replace("/", "／")} - {technique_parent_id} \\| {technique_parent_name.replace("/", "／")}]]: [[{technique_name.replace("/", "／")} - {technique_id} \\| {technique_name.replace("/", "／")}]]'  # noqa: RUF001
                                 else:
-                                    markdown_link = f'[[{technique_name.replace("/", "／")} - {technique_id}\\|{technique_name.replace("/", "／")}]]'  # noqa: RUF001
+                                    markdown_link = f'[[{technique_name.replace("/", "／")} - {technique_id} \\| {technique_name.replace("/", "／")}]]'  # noqa: RUF001
 
                                 if markdown_links:
                                     markdown_links += ', ' + markdown_link

@@ -121,7 +121,7 @@ source .venv/bin/activate
 Run the application specifying the output directory path (i.e.: your obsidian vault) with a full path
 
 ```bash
-uv run obsidian-attack-markdown --output $(pwd)/output
+uv run obsidian-mitre-attack --output $(pwd)/output
 ```
 
 ### Options
