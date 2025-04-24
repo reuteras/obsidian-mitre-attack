@@ -620,27 +620,27 @@ class MITREGroup(MITREObject):
     def version(self) -> str:
         """Return the version of the object."""
         return self._version
-    
+
     @version.setter
     def version(self, version: str) -> None:
         """Set the version of the object."""
         self._version: str = version
-    
+
     @property
     def created(self) -> str:
         """Return the created date of the object."""
         return self._created
-    
+
     @created.setter
     def created(self, created: str) -> None:
         """Set the created date of the object."""
         self._created: str = created
-    
+
     @property
     def modified(self) -> str:
         """Return the modified date of the object."""
         return self._modified
-    
+
     @modified.setter
     def modified(self, modified: str) -> None:
         """Set the modified date of the object."""
@@ -896,7 +896,7 @@ class MITRECampaign(MITREObject):
     def contributors(self):
         """Return the contributors of the object."""
         return self._contributors
-    
+
     @contributors.setter
     def contributors(self, contributors) -> None:
         """Set the contributors of the object."""

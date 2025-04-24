@@ -123,7 +123,7 @@ class MarkdownGenerator:
             content += f"  - {self.tags_prefix}supports_remote\n"
         content += "---\n\n"
         return content
-    
+
 
     def create_technique_notes_subtechnique(self, content: str, technique) -> str:
         """Function to create markdown notes for sub-techniques."""
@@ -194,7 +194,7 @@ class MarkdownGenerator:
         content += f"> Created: {str(object=technique.created).split(sep=' ')[0]}\n"
         content += f"> Last Modified: {str(object=technique.modified).split(sep=' ')[0]}\n\n\n"
         return content
-    
+
 
     def create_technique_notes_procedure_examples(self, content: str, technique) -> str:
         """Function to create markdown notes for procedure examples."""
@@ -206,7 +206,7 @@ class MarkdownGenerator:
                 description = description.replace('\n', '<br />')
                 content += f"| [[{example['name'].replace('/', '／')} \\| {example['id']}]] | [[{example['name'].replace('/', '／')} \\| {example['name'].replace('/', '／')}]] | {description} |\n"  # noqa: RUF001
         return content
-    
+
 
     def create_technique_notes_targeted_assets(self, content: str, technique) -> str:
         """Function to create markdown notes for targeted assets."""
@@ -216,7 +216,7 @@ class MarkdownGenerator:
             for asset in sorted(technique.targeted_assets, key=lambda x: x['id']):
                 content += f"| [[{asset['name']} - {asset['id']} \\| {asset['id']}]] | [[{asset['name']} - {asset['id']} \\| {asset['name']}]] |\n"
         return content
-    
+
 
     def create_technique_notes_mitigations(self, content: str, technique) -> str:
         """Function to create markdown notes for mitigations."""
@@ -236,7 +236,7 @@ class MarkdownGenerator:
         else:
             content += "\nThis type of attack technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features.\n"
         return content
-    
+
 
     def create_technique_notes_detection(self, content: str, technique) -> str:
         """Function to create markdown notes for detection."""
@@ -356,14 +356,14 @@ class MarkdownGenerator:
                     fd.write(content)
 
 
-    def create_group_notes(self) -> None:  # noqa: PLR0912
+    def create_group_notes(self) -> None:  # noqa: PLR0912, PLR0915
         """Function to create markdown notes for groups in CTI folder."""
         groups_dir = Path(self.output_dir, "CTI", "Groups")
         groups_dir.mkdir(parents=True, exist_ok=True)
 
         for group in self.groups:
             group_file = Path(groups_dir, f"{group.name}.md")
-        
+
             content: str = "---\naliases:\n"
             for alias in group.aliases:
                 content += f"  - {alias}\n"
@@ -429,7 +429,7 @@ class MarkdownGenerator:
                         content += f"[^{name}]: [{alias['description']}]({alias['url']})\n"
 
             content = content.replace("MITRE_URL", group.url)
-        
+
             # Create markdown file for current group
             with open(file=group_file, mode='w') as fd:
                 fd.write(content)
@@ -511,7 +511,7 @@ class MarkdownGenerator:
             # Create markdown file for current software
             content: str = self.create_software_notes_header(software=software)
             content = self.create_software_notes_info(content=content, software=software)
-            
+
             # Software have been used in the following campaigns
             if software.campaigns_using:
                 content += "\n\n### Campaigns\n"
@@ -532,7 +532,7 @@ class MarkdownGenerator:
                     content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
 
             content = content.replace("MITRE_URL", software.url)
-        
+
             with open(file=software_file, mode='w') as fd:
                 fd.write(content)
 
@@ -558,7 +558,7 @@ class MarkdownGenerator:
         content += f"> Last Seen: {str(object=campaign.last_seen).split(sep=' ')[0]}\n"
         content += f"> Version: {campaign.version}\n"
         content += f"> Created: {str(object=campaign.created).split(sep=' ')[0]}\n"
-        content += f"> Last Modified: {str(object=campaign.modified).split(sep=' ')[0]}\n\n\n"    
+        content += f"> Last Modified: {str(object=campaign.modified).split(sep=' ')[0]}\n\n\n"
         return content
 
 
@@ -668,7 +668,7 @@ class MarkdownGenerator:
             # Create markdown file for current asset
             with open(file=asset_file, mode='w') as fd:
                 content: str = self.create_tool_notes_header(asset=asset)
-                
+
                 # Related assets
                 if asset.related_assets:
                     content += "\n### Related Assets\n"

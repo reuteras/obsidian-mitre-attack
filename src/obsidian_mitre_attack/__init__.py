@@ -52,7 +52,7 @@ def main() -> None:
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                         help="Print verbose output."
     )
-    
+
     args: argparse.Namespace = parser.parse_args()
 
     try:
@@ -60,7 +60,7 @@ def main() -> None:
             config: dict[str, Any] = toml.load(f=fd)
     except FileNotFoundError as error:
         raise FileNotFoundError("You need to create a 'config.toml' file.") from error
-    
+
     if not args.output and not config['output_dir']:
         raise ValueError("You need to provide an output directory")
 
@@ -69,7 +69,7 @@ def main() -> None:
 
     if not args.tags:
         args.tags = ""
-    
+
     if not args.verbose:
         args.verbose = config['verbose']
 
