@@ -1,4 +1,4 @@
 repository_url = "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master"
 output_dir = "output"
-version = "16.1"
+version = "17.0"
 verbose = true
