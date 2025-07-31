@@ -17,12 +17,14 @@ With the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin fo
 
 ~~~markdown
 ## Techniques
+
 ```dataview
 list from #technique
 WHERE contains(file.inlinks, this.file.link)
 ```
 
 ## Tools and malware
+
 ```dataview
 list from #tool or #malware
 WHERE contains(file.inlinks, this.file.link)
@@ -50,13 +52,13 @@ The Markdown shown above is available [here](./sample.md).
 - Should top level pages be added to each category or are they not needed when ATT&CK is used in Obsidian?
 - Check for unused code and remove it.
 - Since speed is not the main concern (runs one time) it has not been top priority but I should look at [https://github.com/oasis-open/cti-python-stix2/issues/516#issuecomment-871510496](https://github.com/oasis-open/cti-python-stix2/issues/516#issuecomment-871510496).
+- Look at [coming changes](https://medium.com/mitre-attack/smarter-detection-strategies-in-attack-7e6738fec31f) for the data and in include them.
 
 ## Done
 
 - Add [Data sources](https://attack.mitre.org/datasources/)
 - Add [Assets](https://attack.mitre.org/assets/)
 - Add one link per page to the corresponding page on [https://attack.mitre.org/](https://attack.mitre.org/)
-
 
 ## Status
 
@@ -121,7 +123,7 @@ source .venv/bin/activate
 Run the application specifying the output directory path (i.e.: your obsidian vault) with a full path
 
 ```bash
-uv run obsidian-mitre-attack --output $(pwd)/output
+uv run obsidian-mitre-attack --output $(pwd)/output --tags 'mitre/'
 ```
 
 ### Options
