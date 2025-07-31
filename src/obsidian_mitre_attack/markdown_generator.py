@@ -400,7 +400,7 @@ class MarkdownGenerator:
                 content += "\n### Techniques Used\n"
                 content += "\n| Domain | ID | Name | Use |\n| --- | --- | --- | --- |\n"
                 for technique in sorted(group.techniques_used, key=lambda x: x['technique_id']):
-                    domain: str = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
+                    domain: str = technique['domain'].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
                     description = fix_description(description_str=technique['description'])
                     description = description.replace('\n', '<br />')
                     content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"
@@ -587,7 +587,7 @@ class MarkdownGenerator:
                     content += "\n\n### Techniques Used\n"
                     content += "\n| Domain | ID | Name | Use |\n| --- | --- | --- | --- |\n"
                     for technique in sorted(campaign.techniques_used, key=lambda x: x['technique_id']):
-                        domain: str = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics', 'ICS')
+                        domain: str = technique['domain'].replace('-', ' ').capitalize().replace('Ics', 'ICS')
                         description = fix_description(description_str=technique['description'])
                         description = description.replace('\n', '<br />')
                         content += f"| {domain} | [[{technique['technique_name'].replace('/', '／')} - {technique['technique_id']} \\| {technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"  # noqa: RUF001
@@ -687,7 +687,7 @@ class MarkdownGenerator:
                     content += "### Techniques Addressed by Asset\n"
                     content += "\n| Domain | ID | Name |\n| --- | --- | --- |\n"
                     for technique in sorted(asset.techniques_used, key=lambda x: x['technique_id']):
-                        domain = technique['domain'][0].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
+                        domain = technique['domain'].replace('-', ' ').capitalize().replace('Ics ', 'ICS ')
                         content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_name']}]] |\n"
 
                 content = convert_to_local_links(text=content)
@@ -762,7 +762,7 @@ class MarkdownGenerator:
                     for technique in related_data_source['techniques_used']:
                         detects: str = fix_description(description_str=technique['description'])
                         detects = detects.replace('\n', '<br />')
-                        content += f"| {technique['domain'][0]} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_name']}]] | {detects} |\n"
+                        content += f"| {technique['domain']} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_name']}]] | {detects} |\n"
 
                 content = convert_to_local_links(text=content)
 
