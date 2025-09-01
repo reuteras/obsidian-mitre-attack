@@ -1,15 +1,18 @@
 """MITRE ATT&CK Framework Models."""
 
+from __future__ import annotations
+
+
 class MITREObject:
     """Define a tactic (x-mitre-tactic)."""
 
     def __init__(self, name) -> None:
         """Initialize the MITREObject class."""
-        self._name: str = name.replace('/', '／')    # Name of the object  # noqa: RUF001
+        self._name: str = name.replace("/", "／")  # Name of the object  # noqa: RUF001
         self._references = dict()
-        self._internal_id: str = ""                # Internal ID from MITRE ATT&CK
-        self._domain: str = ""                     # ATT&CK Domain (enterprise, mobile or ICS)
-        self._url: str = ""                  # URL to page on MITRE
+        self._internal_id: str = ""  # Internal ID from MITRE ATT&CK
+        self._domain: str = ""  # ATT&CK Domain (enterprise, mobile or ICS)
+        self._url: str = ""  # URL to page on MITRE
 
     @property
     def name(self) -> str:
@@ -19,7 +22,7 @@ class MITREObject:
     @name.setter
     def name(self, name) -> None:
         """Set the name of the object."""
-        self._name = name.replace('/', '／')  # noqa: RUF001
+        self._name = name.replace("/", "／")  # noqa: RUF001
 
     @property
     def description(self) -> str:
@@ -47,12 +50,12 @@ class MITREObject:
         return self._references
 
     @references.setter
-    def references(self, reference:dict) -> None:
+    def references(self, reference: dict) -> None:
         """Set the references of the object."""
-        if 'name' not in reference or 'url' not in reference:
+        if "name" not in reference or "url" not in reference:
             raise ValueError("The parameter provided is not supported")
 
-        self._references[reference['name'].replace('/', '／')] = reference['url']  # noqa: RUF001
+        self._references[reference["name"].replace("/", "／")] = reference["url"]  # noqa: RUF001
 
     @property
     def internal_id(self) -> str:
@@ -142,7 +145,7 @@ class MITRETactic(MITREObject):
         return self._external_references
 
     @external_references.setter
-    def external_references(self, reference:dict) -> None:
+    def external_references(self, reference: dict) -> None:
         """Set the external references of the object."""
         self._external_references.append(reference)
 
@@ -152,7 +155,7 @@ class MITRETactic(MITREObject):
         return self._techniques_used
 
     @techniques_used.setter
-    def techniques_used(self, technique_used:dict) -> None:
+    def techniques_used(self, technique_used: dict) -> None:
         """Set the techniques used by the object."""
         self._techniques_used.append(technique_used)
 
@@ -165,16 +168,18 @@ class MITRETechnique(MITREObject):
         MITREObject.__init__(self=self, name=name)
         self._mitigations = list()
         self._groups = list()
-        self._version: str = ""                    # Version of the object, e.g. 1.0
-        self._created: str = ""                    # Date of creation, datetime object
-        self._modified: str = ""                   # Date of last modification, datetime object
+        self._version: str = ""  # Version of the object, e.g. 1.0
+        self._created: str = ""  # Date of creation, datetime object
+        self._modified: str = ""  # Date of last modification, datetime object
         self._shortname: str = ""
-        self._external_references = list()         # External references, list of dictionaries
-        self._description: str = ""                # Description of the object, string
-        self._parent_name: str = ""                # Parent technique name, string
-        self._is_subtechnique: bool = False        # Boolean value to indicate if the object is a subtechnique
-        self._subtechniques = list()               # List of subtechniques
-        self._main_id: str = ""                    # Main technique ID. Same as id for techniques, and parent id for subtechniques
+        self._external_references = list()  # External references, list of dictionaries
+        self._description: str = ""  # Description of the object, string
+        self._parent_name: str = ""  # Parent technique name, string
+        self._is_subtechnique: bool = (
+            False  # Boolean value to indicate if the object is a subtechnique
+        )
+        self._subtechniques = list()  # List of subtechniques
+        self._main_id: str = ""  # Main technique ID. Same as id for techniques, and parent id for subtechniques
         self._platforms = list()
         self._permissions_required = list()
         self._effective_permissions = list()
@@ -230,7 +235,7 @@ class MITRETechnique(MITREObject):
     @shortname.setter
     def shortname(self, shortname) -> None:
         """Set the shortname of the object."""
-        self._shortname: str = shortname.replace('/', '／')  # noqa: RUF001
+        self._shortname: str = shortname.replace("/", "／")  # noqa: RUF001
 
     @property
     def external_references(self):
@@ -238,7 +243,7 @@ class MITRETechnique(MITREObject):
         return self._external_references
 
     @external_references.setter
-    def external_references(self, reference:dict) -> None:
+    def external_references(self, reference: dict) -> None:
         """Set the external references of the object."""
         self._external_references.append(reference)
 
@@ -248,7 +253,7 @@ class MITRETechnique(MITREObject):
         return self._techniques_used
 
     @techniques_used.setter
-    def techniques_used(self, technique_used:dict) -> None:
+    def techniques_used(self, technique_used: dict) -> None:
         """Set the techniques used by the object."""
         self._techniques_used.append(technique_used)
 
@@ -258,7 +263,7 @@ class MITRETechnique(MITREObject):
         return self._is_subtechnique
 
     @is_subtechnique.setter
-    def is_subtechnique(self, is_subtechnique:bool) -> None:
+    def is_subtechnique(self, is_subtechnique: bool) -> None:
         """Set the subtechnique status of the object."""
         self._is_subtechnique: bool = is_subtechnique
 
@@ -288,7 +293,7 @@ class MITRETechnique(MITREObject):
         return self._groups
 
     @groups.setter
-    def groups(self, group:dict) -> None:
+    def groups(self, group: dict) -> None:
         """Set the groups of the object."""
         self._groups.append(group)
 
@@ -330,7 +335,7 @@ class MITRETechnique(MITREObject):
     @tactic_name.setter
     def tactic_name(self, tactic_name) -> None:
         """Set the tactic name of the object."""
-        self._tactic_name: str = tactic_name.replace('/', '／')  # noqa: RUF001
+        self._tactic_name: str = tactic_name.replace("/", "／")  # noqa: RUF001
 
     @property
     def tactic_id(self):
@@ -417,7 +422,7 @@ class MITRETechnique(MITREObject):
         return self._mitigations
 
     @mitigations.setter
-    def mitigations(self, mitigation:dict) -> None:
+    def mitigations(self, mitigation: dict) -> None:
         """Set the mitigations of the object."""
         self._mitigations.append(mitigation)
 
@@ -427,7 +432,7 @@ class MITRETechnique(MITREObject):
         return self._detections
 
     @detections.setter
-    def detections(self, detection:dict) -> None:
+    def detections(self, detection: dict) -> None:
         """Set the detections of the object."""
         self._detections.append(detection)
 
@@ -457,7 +462,7 @@ class MITRETechnique(MITREObject):
 
     @parent_name.setter
     def parent_name(self, parent_name) -> None:
-        self._parent_name = parent_name.replace('/', '／')  # noqa: RUF001
+        self._parent_name = parent_name.replace("/", "／")  # noqa: RUF001
 
     @property
     def targeted_assets(self):
@@ -497,7 +502,7 @@ class MITREMitigation(MITREObject):
         return self._mitigates
 
     @mitigates.setter
-    def mitigates(self, mitigated_technique:dict) -> None:
+    def mitigates(self, mitigated_technique: dict) -> None:
         """Set the mitigates of the object."""
         self._mitigates.append(mitigated_technique)
 
@@ -537,7 +542,7 @@ class MITREMitigation(MITREObject):
         return self._external_references
 
     @external_references.setter
-    def external_references(self, external_reference:dict):
+    def external_references(self, external_reference: dict):
         self._external_references.append(external_reference)
 
 
@@ -552,7 +557,7 @@ class MITREGroup(MITREObject):
         self._external_references = list()
         self._software_used = list()
         self._techniques_used = list()
-        self._contributors = None # Not implemented yet
+        self._contributors = None  # Not implemented yet
         self._version: str = ""
         self._created: str = ""
         self._modified: str = ""
@@ -573,7 +578,7 @@ class MITREGroup(MITREObject):
         return self._aliases_references
 
     @aliases_references.setter
-    def aliases_references(self, alias_reference:dict) -> None:
+    def aliases_references(self, alias_reference: dict) -> None:
         """Set the aliases references of the object."""
         self._aliases_references.append(alias_reference)
 
@@ -583,7 +588,7 @@ class MITREGroup(MITREObject):
         return self._external_references
 
     @external_references.setter
-    def external_references(self, external_reference:dict) -> None:
+    def external_references(self, external_reference: dict) -> None:
         """Set the external references of the object."""
         self._external_references.append(external_reference)
 
@@ -593,7 +598,7 @@ class MITREGroup(MITREObject):
         return self._software_used
 
     @software_used.setter
-    def software_used(self, software:dict) -> None:
+    def software_used(self, software: dict) -> None:
         """Set the software used by the object."""
         self._software_used.append(software)
 
@@ -603,7 +608,7 @@ class MITREGroup(MITREObject):
         return self._techniques_used
 
     @techniques_used.setter
-    def techniques_used(self, technique_used:dict) -> None:
+    def techniques_used(self, technique_used: dict) -> None:
         """Set the techniques used by the object."""
         self._techniques_used.append(technique_used)
 
@@ -691,7 +696,7 @@ class MITRESoftware(MITREObject):
         return self._techniques_used
 
     @techniques_used.setter
-    def techniques_used(self, technique_used:dict) -> None:
+    def techniques_used(self, technique_used: dict) -> None:
         """Set the techniques used by the object."""
         self._techniques_used.append(technique_used)
 
@@ -701,7 +706,7 @@ class MITRESoftware(MITREObject):
         return self._groups_using
 
     @groups_using.setter
-    def groups_using(self, group:dict) -> None:
+    def groups_using(self, group: dict) -> None:
         """Set the groups using the object."""
         self._groups_using.append(group)
 
@@ -771,7 +776,7 @@ class MITRESoftware(MITREObject):
         return self._campaigns_using
 
     @campaigns_using.setter
-    def campaigns_using(self, campaign:dict) -> None:
+    def campaigns_using(self, campaign: dict) -> None:
         self._campaigns_using.append(campaign)
 
 
@@ -868,7 +873,7 @@ class MITRECampaign(MITREObject):
         return self._external_references
 
     @external_references.setter
-    def external_references(self, external_reference:dict) -> None:
+    def external_references(self, external_reference: dict) -> None:
         """Set the external references of the object."""
         self._external_references.append(external_reference)
 
@@ -888,7 +893,7 @@ class MITRECampaign(MITREObject):
         return self._techniques_used
 
     @techniques_used.setter
-    def techniques_used(self, technique_used:dict) -> None:
+    def techniques_used(self, technique_used: dict) -> None:
         """Set the techniques used by the object."""
         self._techniques_used.append(technique_used)
 
@@ -901,6 +906,7 @@ class MITRECampaign(MITREObject):
     def contributors(self, contributors) -> None:
         """Set the contributors of the object."""
         self._contributors = contributors
+
 
 class MITREAsset(MITREObject):
     """Define a asset."""
@@ -971,7 +977,7 @@ class MITREAsset(MITREObject):
         return self._techniques_used
 
     @techniques_used.setter
-    def techniques_used(self, technique_used:dict) -> None:
+    def techniques_used(self, technique_used: dict) -> None:
         self._techniques_used.append(technique_used)
 
     @property
@@ -1057,7 +1063,7 @@ class MITREDataSource(MITREObject):
         return self._external_references
 
     @external_references.setter
-    def external_references(self, external_reference:dict) -> None:
+    def external_references(self, external_reference: dict) -> None:
         """Set the external references of the object."""
         self._external_references.append(external_reference)
 
@@ -1067,7 +1073,7 @@ class MITREDataSource(MITREObject):
         return self._techniques_used
 
     @techniques_used.setter
-    def techniques_used(self, technique_used:dict) -> None:
+    def techniques_used(self, technique_used: dict) -> None:
         """Set the techniques used by the object."""
         self._techniques_used.append(technique_used)
 
@@ -1078,7 +1084,6 @@ class MITREDataSource(MITREObject):
 
     @contributors.setter
     def contributors(self, contributors) -> None:
-
         self._contributors.append(contributors)
 
     @property
@@ -1107,6 +1112,6 @@ class MITREDataSource(MITREObject):
         return self._collection_layers
 
     @collection_layers.setter
-    def collection_layers(self, collection_layer:dict) -> None:
+    def collection_layers(self, collection_layer: dict) -> None:
         """Set the collection layers of the object."""
         self._collection_layers.append(collection_layer)
