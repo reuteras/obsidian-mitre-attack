@@ -154,9 +154,10 @@ class StixParser:
                         for phase in kill_chain_phase:
                             if phase["phase_name"] == tactic_obj.shortname:
                                 ext_refs = technique.get("external_references", [])
+                                technique_id = ""
                                 for ext_ref in ext_refs:
                                     if ext_ref["source_name"] == "mitre-attack":
-                                        pass  # technique_id not used in this context
+                                        technique_id = ext_ref["external_id"]
                                     elif "url" in ext_ref and "description" in ext_ref:
                                         item = {
                                             "name": ext_ref["source_name"],
@@ -172,7 +173,7 @@ class StixParser:
                                                 ext_ref["source_name"]
                                             )
                                 tactic_obj.techniques_used = {
-                                    "id": id,
+                                    "id": technique_id,
                                     "name": technique["name"].replace("/", "／"),  # noqa: RUF001
                                     "description": technique["description"],
                                 }
