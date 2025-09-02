@@ -387,8 +387,9 @@ class MarkdownGenerator:
                         for technique in sorted(
                             mitigation.mitigates, key=lambda x: x["id"]
                         ):
+                            domain_str = technique["domain"][0] if isinstance(technique["domain"], list) else technique["domain"]
                             mitre_domain: str = (
-                                technique["domain"]
+                                domain_str
                                 .replace("-", " ")
                                 .capitalize()
                                 .replace("Ics ", "ICS ")
@@ -469,8 +470,9 @@ class MarkdownGenerator:
                 for technique in sorted(
                     group.techniques_used, key=lambda x: x["technique_id"]
                 ):
+                    domain_str = technique["domain"][0] if isinstance(technique["domain"], list) else technique["domain"]
                     domain: str = (
-                        technique["domain"]
+                        domain_str
                         .replace("-", " ")
                         .capitalize()
                         .replace("Ics ", "ICS ")
@@ -567,8 +569,9 @@ class MarkdownGenerator:
             for technique in sorted(
                 software.techniques_used, key=lambda x: x["technique"].id
             ):
+                domain_str = technique["domain"][0] if isinstance(technique["domain"], list) else technique["domain"]
                 domain: str = (
-                    technique["domain"]
+                    domain_str
                     .replace("-", " ")
                     .capitalize()
                     .replace("Ics ", "ICS ")
@@ -697,8 +700,9 @@ class MarkdownGenerator:
                     for technique in sorted(
                         campaign.techniques_used, key=lambda x: x["technique_id"]
                     ):
+                        domain_str = technique["domain"][0] if isinstance(technique["domain"], list) else technique["domain"]
                         domain: str = (
-                            technique["domain"]
+                            domain_str
                             .replace("-", " ")
                             .capitalize()
                             .replace("Ics", "ICS")
@@ -820,8 +824,9 @@ class MarkdownGenerator:
                     for technique in sorted(
                         asset.techniques_used, key=lambda x: x["technique_id"]
                     ):
+                        domain_str = technique["domain"][0] if isinstance(technique["domain"], list) else technique["domain"]
                         domain = (
-                            technique["domain"]
+                            domain_str
                             .replace("-", " ")
                             .capitalize()
                             .replace("Ics ", "ICS ")
