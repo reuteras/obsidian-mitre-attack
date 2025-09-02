@@ -388,7 +388,7 @@ class MarkdownGenerator:
                             mitigation.mitigates, key=lambda x: x["id"]
                         ):
                             mitre_domain: str = (
-                                technique["domain"][0]
+                                technique["domain"]
                                 .replace("-", " ")
                                 .capitalize()
                                 .replace("Ics ", "ICS ")
@@ -568,7 +568,7 @@ class MarkdownGenerator:
                 software.techniques_used, key=lambda x: x["technique"].id
             ):
                 domain: str = (
-                    technique["domain"][0]
+                    technique["domain"]
                     .replace("-", " ")
                     .capitalize()
                     .replace("Ics ", "ICS ")
