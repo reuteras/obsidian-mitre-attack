@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Python tool that parses MITRE ATT&CK STIX data and converts it into Obsidian-compatible Markdown files. The project downloads STIX 2.1 JSON data from the MITRE ATT&CK GitHub repository and generates structured markdown notes for use in Obsidian with proper linking, tags, and metadata.
+This is a Python tool that parses MITRE ATT&CK STIX data and converts it into Obsidian-compatible Markdown files. The project downloads STIX 2.1 JSON data from the MITRE ATT&CK GitHub repository and generates structured Markdown notes for use in Obsidian with proper linking, tags, and metadata.
 
 ## Key Commands
 
@@ -51,7 +51,7 @@ uv run pylint src/
 
 3. **Models** (`models.py`): Defines Python classes for MITRE ATT&CK entities (Tactics, Techniques, Mitigations, Groups, Software, Campaigns, Assets, Data Sources) with proper attribute handling and reference management.
 
-4. **Main Module** (`__init__.py`): Entry point that orchestrates the entire process - argument parsing, configuration loading, data retrieval, and markdown generation.
+4. **Main Module** (`__init__.py`): Entry point that orchestrates the entire process - argument parsing, configuration loading, data retrieval, and Markdown generation.
 
 ### Data Flow
 
@@ -59,7 +59,7 @@ uv run pylint src/
 2. Initialize StixParser to download STIX data for all three domains
 3. Parse domain-specific data (tactics, techniques, mitigations)
 4. Parse cross-domain data (groups, software, campaigns, assets, data sources)
-5. Generate markdown files for each entity type
+5. Generate Markdown files for each entity type
 6. Create main README with metadata
 
 ### ATT&CK Domains Processed
@@ -86,7 +86,7 @@ The `config.toml` file contains:
 
 ## Output Structure
 
-Generated markdown files include:
+Generated Markdown files include:
 - Proper YAML frontmatter with aliases and tags
 - Cross-referenced internal links using Obsidian `[[link]]` syntax
 - MITRE ATT&CK ID references and external URLs
