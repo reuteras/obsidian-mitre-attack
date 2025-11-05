@@ -6,6 +6,11 @@ import re
 from pathlib import Path
 from typing import Any
 
+# Pre-compiled regex patterns for performance
+CITATION_PATTERN = re.compile(r"\(Citation: ([^)]+?)\)")
+MITRE_LINK_PATTERN = re.compile(r"\[([^\]]*?)\]\(https://attack.mitre.org/[^/]+/([^\)]+?)\)")
+REFERENCE_PATTERN = re.compile(r"\[\^[^\]]+?\]")
+
 # Utility functions
 
 
@@ -15,9 +20,7 @@ def fix_description(description_str: str) -> str:
     def match_citation(match) -> Any:
         return "[^" + match.group(1).replace(" ", "_") + "]"
 
-    description: str = re.sub(
-        pattern=r"\(Citation: ([^)]+?)\)", repl=match_citation, string=description_str
-    )
+    description: str = CITATION_PATTERN.sub(match_citation, description_str)
     return description
 
 
@@ -44,16 +47,12 @@ def convert_to_local_links(text: str) -> str:
             "https://attack.mitre.org/techniques/T1086",
             "https://attack.mitre.org/techniques/T1059/001",
         )
-    return re.sub(
-        pattern=r"\[([^\]]*?)\]\(https://attack.mitre.org/[^/]+/([^\)]+?)\)",
-        repl=match_link,
-        string=text,
-    )
+    return MITRE_LINK_PATTERN.sub(match_link, text)
 
 
 def remove_references(text: str) -> str:
     """Function to remove references from the text."""
-    return re.sub(pattern=r"\[\^[^\]]+?\]", repl="", string=text)
+    return REFERENCE_PATTERN.sub("", text)
 
 
 class MarkdownGenerator:
