@@ -6,3 +6,16 @@ output/
 src/__pycache__/
 test/
 venv/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Test cache
+tests/fixtures/cache/
