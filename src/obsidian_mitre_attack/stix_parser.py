@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import time as time_module
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from time import gmtime, strftime
 
@@ -703,6 +704,100 @@ class StixParser:
 
     def _get_groups(self) -> None:  # noqa: PLR0912, PLR0915
         """Get and parse groups from STIX data."""
+        # Pre-cache all relationships and techniques to avoid repeated queries
+        print("Pre-caching relationships and techniques for groups...")
+        cache_start = time_module.time()
+
+        # Cache all "uses" relationships for groups->techniques
+        all_tech_relationships_enterprise = self.enterprise_attack.query([
+            Filter(prop="type", op="=", value="relationship"),
+            Filter(prop="relationship_type", op="=", value="uses"),
+            Filter(prop="target_ref", op="contains", value="attack-pattern"),
+        ])
+        all_tech_relationships_mobile = self.mobile_attack.query([
+            Filter(prop="type", op="=", value="relationship"),
+            Filter(prop="relationship_type", op="=", value="uses"),
+            Filter(prop="target_ref", op="contains", value="attack-pattern"),
+        ])
+        all_tech_relationships_ics = self.ics_attack.query([
+            Filter(prop="type", op="=", value="relationship"),
+            Filter(prop="relationship_type", op="=", value="uses"),
+            Filter(prop="target_ref", op="contains", value="attack-pattern"),
+        ])
+
+        # Build a dict mapping source_ref -> list of relationships
+        tech_relationships_by_source = {}
+        for rel in (all_tech_relationships_enterprise + all_tech_relationships_mobile + all_tech_relationships_ics):
+            source = rel.get("source_ref")
+            if source:
+                if source not in tech_relationships_by_source:
+                    tech_relationships_by_source[source] = []
+                tech_relationships_by_source[source].append(rel)
+
+        # Cache all techniques by their ID for O(1) lookup
+        all_techniques_enterprise = self.enterprise_attack.query([Filter(prop="type", op="=", value="attack-pattern")])
+        all_techniques_mobile = self.mobile_attack.query([Filter(prop="type", op="=", value="attack-pattern")])
+        all_techniques_ics = self.ics_attack.query([Filter(prop="type", op="=", value="attack-pattern")])
+
+        technique_cache = {}
+        for tech in all_techniques_enterprise:
+            technique_cache[tech["id"]] = (tech, "enterprise-attack")
+        for tech in all_techniques_mobile:
+            technique_cache[tech["id"]] = (tech, "mobile-attack")
+        for tech in all_techniques_ics:
+            technique_cache[tech["id"]] = (tech, "ics-attack")
+
+        # Cache all "uses" relationships for groups->software
+        all_soft_relationships_enterprise = self.enterprise_attack.query([
+            Filter(prop="type", op="=", value="relationship"),
+            Filter(prop="relationship_type", op="=", value="uses"),
+            Filter(prop="target_ref", op="contains", value="malware"),
+        ]) + self.enterprise_attack.query([
+            Filter(prop="type", op="=", value="relationship"),
+            Filter(prop="relationship_type", op="=", value="uses"),
+            Filter(prop="target_ref", op="contains", value="tool"),
+        ])
+        all_soft_relationships_mobile = self.mobile_attack.query([
+            Filter(prop="type", op="=", value="relationship"),
+            Filter(prop="relationship_type", op="=", value="uses"),
+            Filter(prop="target_ref", op="contains", value="malware"),
+        ]) + self.mobile_attack.query([
+            Filter(prop="type", op="=", value="relationship"),
+            Filter(prop="relationship_type", op="=", value="uses"),
+            Filter(prop="target_ref", op="contains", value="tool"),
+        ])
+        all_soft_relationships_ics = self.ics_attack.query([
+            Filter(prop="type", op="=", value="relationship"),
+            Filter(prop="relationship_type", op="=", value="uses"),
+            Filter(prop="target_ref", op="contains", value="malware"),
+        ]) + self.ics_attack.query([
+            Filter(prop="type", op="=", value="relationship"),
+            Filter(prop="relationship_type", op="=", value="uses"),
+            Filter(prop="target_ref", op="contains", value="tool"),
+        ])
+
+        soft_relationships_by_source = {}
+        for rel in (all_soft_relationships_enterprise + all_soft_relationships_mobile + all_soft_relationships_ics):
+            source = rel.get("source_ref")
+            if source:
+                if source not in soft_relationships_by_source:
+                    soft_relationships_by_source[source] = []
+                soft_relationships_by_source[source].append(rel)
+
+        # Cache all software by ID
+        all_software_enterprise = self.enterprise_attack.query([Filter(prop="type", op="=", value="malware")]) + \
+                                  self.enterprise_attack.query([Filter(prop="type", op="=", value="tool")])
+        all_software_mobile = self.mobile_attack.query([Filter(prop="type", op="=", value="malware")]) + \
+                              self.mobile_attack.query([Filter(prop="type", op="=", value="tool")])
+        all_software_ics = self.ics_attack.query([Filter(prop="type", op="=", value="malware")]) + \
+                           self.ics_attack.query([Filter(prop="type", op="=", value="tool")])
+
+        software_cache = {}
+        for soft in (all_software_enterprise + all_software_mobile + all_software_ics):
+            software_cache[soft["id"]] = soft
+
+        print(f"  Cache built in {time_module.time() - cache_start:.2f}s")
+
         # Extract groups
         groups_enterprise_stix = self.enterprise_attack.query(
             [Filter(prop="type", op="=", value="intrusion-set")]
@@ -756,43 +851,8 @@ class StixParser:
                             "description": ext_ref["description"],
                         }
 
-                # Get techniques used by group
-                tech_group_enterprise_relationships = self.enterprise_attack.query(
-                    [
-                        Filter(prop="type", op="=", value="relationship"),
-                        Filter(prop="relationship_type", op="=", value="uses"),
-                        Filter(
-                            prop="target_ref", op="contains", value="attack-pattern"
-                        ),
-                        Filter(prop="source_ref", op="=", value=group_obj.internal_id),
-                    ]
-                )
-                tech_group_mobile_relationships = self.mobile_attack.query(
-                    [
-                        Filter(prop="type", op="=", value="relationship"),
-                        Filter(prop="relationship_type", op="=", value="uses"),
-                        Filter(
-                            prop="target_ref", op="contains", value="attack-pattern"
-                        ),
-                        Filter(prop="source_ref", op="=", value=group_obj.internal_id),
-                    ]
-                )
-                tech_group_ics_relationships = self.ics_attack.query(
-                    [
-                        Filter(prop="type", op="=", value="relationship"),
-                        Filter(prop="relationship_type", op="=", value="uses"),
-                        Filter(
-                            prop="target_ref", op="contains", value="attack-pattern"
-                        ),
-                        Filter(prop="source_ref", op="=", value=group_obj.internal_id),
-                    ]
-                )
-
-                tech_group_relationships = (
-                    tech_group_enterprise_relationships
-                    + tech_group_mobile_relationships
-                    + tech_group_ics_relationships
-                )
+                # Get techniques used by group (using cache)
+                tech_group_relationships = tech_relationships_by_source.get(group_obj.internal_id, [])
 
                 for tech_group_rel in tech_group_relationships:
                     if (
@@ -801,134 +861,40 @@ class StixParser:
                     ) and (
                         "revoked" not in tech_group_rel or not tech_group_rel["revoked"]
                     ):
-                        technique_stix = self.enterprise_attack.query(
-                            [
-                                Filter(
-                                    prop="id",
-                                    op="=",
-                                    value=tech_group_rel["target_ref"],
-                                )
-                            ]
-                        )
-                        domain = "enterprise-attack"
-                        if not technique_stix:
-                            technique_stix = self.mobile_attack.query(
-                                [
-                                    Filter(
-                                        prop="id",
-                                        op="=",
-                                        value=tech_group_rel["target_ref"],
-                                    )
-                                ]
-                            )
-                            domain = "mobile-attack"
-                        if not technique_stix:
-                            technique_stix = self.ics_attack.query(
-                                [
-                                    Filter(
-                                        prop="id",
-                                        op="=",
-                                        value=tech_group_rel["target_ref"],
-                                    )
-                                ]
-                            )
-                            domain = "ics-attack"
-
-                        if technique_stix:
-                            technique = technique_stix[0]
+                        # Use cache instead of repeated queries
+                        target_ref = tech_group_rel["target_ref"]
+                        if target_ref in technique_cache:
+                            technique, domain = technique_cache[target_ref]
 
                             ext_refs = technique.get("external_references", [])
+                            technique_id = None
                             for ext_ref in ext_refs:
                                 if ext_ref["source_name"] == "mitre-attack":
                                     technique_id = ext_ref["external_id"]
-                            ext_refs = tech_group_rel.get("external_references", [])
-                            if "url" in ext_ref and "description" in ext_ref:
-                                item = {
-                                    "name": ext_ref["source_name"].replace("/", "／"),  # noqa: RUF001
-                                    "url": ext_ref["url"],
-                                    "description": ext_ref["description"],
+                                    break
+
+                            if technique_id:
+                                ext_refs = tech_group_rel.get("external_references", [])
+                                for ext_ref in ext_refs:
+                                    if "url" in ext_ref and "description" in ext_ref:
+                                        item = {
+                                            "name": ext_ref["source_name"].replace("/", "／"),  # noqa: RUF001
+                                            "url": ext_ref["url"],
+                                            "description": ext_ref["description"],
+                                        }
+                                        if ext_ref["source_name"] not in external_references_added:
+                                            group_obj.external_references = item
+                                            external_references_added.add(ext_ref["source_name"])
+
+                                group_obj.techniques_used = {
+                                    "technique_name": technique["name"].replace("/", "／"),  # noqa: RUF001
+                                    "technique_id": technique_id,
+                                    "description": tech_group_rel.get("description", ""),
+                                    "domain": domain,
                                 }
-                                if (
-                                    ext_ref["source_name"]
-                                    not in external_references_added
-                                ):
-                                    group_obj.external_references = item
-                                    external_references_added.add(
-                                        ext_ref["source_name"]
-                                    )
 
-                            group_obj.techniques_used = {
-                                "technique_name": technique.name.replace("/", "／"),  # noqa: RUF001
-                                "technique_id": technique_id,
-                                "description": tech_group_rel.get("description", ""),
-                                "domain": domain,
-                            }
-                        else:
-                            sys.exit(
-                                f"Technique not found: {tech_group_rel['target_ref']}"
-                            )
-
-                # Get software used by group
-                software_enterprise_relationships_malware = (
-                    self.enterprise_attack.query(
-                        [
-                            Filter(prop="type", op="=", value="relationship"),
-                            Filter(prop="relationship_type", op="=", value="uses"),
-                            Filter(prop="target_ref", op="contains", value="malware"),
-                            Filter(
-                                prop="source_ref", op="=", value=group_obj.internal_id
-                            ),
-                        ]
-                    )
-                )
-                software_enterprise_relationships_tool = self.enterprise_attack.query(
-                    [
-                        Filter(prop="type", op="=", value="relationship"),
-                        Filter(prop="relationship_type", op="=", value="uses"),
-                        Filter(prop="target_ref", op="contains", value="tool"),
-                        Filter(prop="source_ref", op="=", value=group_obj.internal_id),
-                    ]
-                )
-                software_mobile_relationships_malware = self.mobile_attack.query(
-                    [
-                        Filter(prop="type", op="=", value="relationship"),
-                        Filter(prop="relationship_type", op="=", value="uses"),
-                        Filter(prop="target_ref", op="contains", value="malware"),
-                        Filter(prop="source_ref", op="=", value=group_obj.internal_id),
-                    ]
-                )
-                software_mobile_relationships_tool = self.mobile_attack.query(
-                    [
-                        Filter(prop="type", op="=", value="relationship"),
-                        Filter(prop="relationship_type", op="=", value="uses"),
-                        Filter(prop="target_ref", op="contains", value="tool"),
-                        Filter(prop="source_ref", op="=", value=group_obj.internal_id),
-                    ]
-                )
-                software_ics_relationships_malware = self.ics_attack.query(
-                    [
-                        Filter(prop="type", op="=", value="relationship"),
-                        Filter(prop="relationship_type", op="=", value="uses"),
-                        Filter(prop="target_ref", op="contains", value="malware"),
-                        Filter(prop="source_ref", op="=", value=group_obj.internal_id),
-                    ]
-                )
-                software_ics_relationships_tool = self.ics_attack.query(
-                    [
-                        Filter(prop="type", op="=", value="relationship"),
-                        Filter(prop="relationship_type", op="=", value="uses"),
-                        Filter(prop="target_ref", op="contains", value="tool"),
-                        Filter(prop="source_ref", op="=", value=group_obj.internal_id),
-                    ]
-                )
-                software_relationships = (
-                    software_enterprise_relationships_malware
-                    + software_enterprise_relationships_tool
-                    + software_mobile_relationships_malware
-                    + software_mobile_relationships_tool
-                    + software_ics_relationships_malware
-                    + software_ics_relationships_tool
-                )
+                # Get software used by group (using cache)
+                software_relationships = soft_relationships_by_source.get(group_obj.internal_id, [])
 
                 for group_software_rel in software_relationships:
                     if (
@@ -938,177 +904,49 @@ class StixParser:
                         "revoked" not in group_software_rel
                         or not group_software_rel["revoked"]
                     ):
-                        software_id: str = ""
-                        software_name: str = ""
+                        # Use cache to get software details
+                        target_ref = group_software_rel["target_ref"]
+                        if target_ref not in software_cache:
+                            continue
 
-                        # Get software name
-                        software_name_stix = self.enterprise_attack.query(
-                            [
-                                Filter(
-                                    prop="id",
-                                    op="=",
-                                    value=group_software_rel["target_ref"],
-                                ),
-                            ]
-                        )
-                        domain = "enterprise-attack"
-                        if not software_name_stix:
-                            software_name_stix = self.mobile_attack.query(
-                                [
-                                    Filter(
-                                        prop="id",
-                                        op="=",
-                                        value=group_software_rel["target_ref"],
-                                    ),
-                                ]
-                            )
-                            domain = "mobile-attack"
-                        if not software_name_stix:
-                            software_name_stix = self.ics_attack.query(
-                                [
-                                    Filter(
-                                        prop="id",
-                                        op="=",
-                                        value=group_software_rel["target_ref"],
-                                    ),
-                                ]
-                            )
-                            domain = "ics-attack"
+                        software = software_cache[target_ref]
+                        software_name = software["name"]
+                        software_id = ""
 
-                        if software_name_stix:
-                            software_name = software_name_stix[0].name
-                            ext_refs = software_name_stix[0].get(
-                                "external_references", []
-                            )
-                            for ext_ref in ext_refs:
-                                if ext_ref["source_name"] == "mitre-attack":
-                                    software_id = ext_ref["external_id"]
+                        ext_refs = software.get("external_references", [])
+                        for ext_ref in ext_refs:
+                            if ext_ref["source_name"] == "mitre-attack":
+                                software_id = ext_ref["external_id"]
+                                break
 
-                        if not software_name or not software_id:
-                            sys.exit(
-                                f"Software not found: {group_software_rel['target_ref']}"
-                            )
+                        if not software_id:
+                            continue
 
-                        # Get technique name used by software
-                        source_relationships_enterprise = self.enterprise_attack.query(
-                            [
-                                Filter(prop="type", op="=", value="relationship"),
-                                Filter(prop="relationship_type", op="=", value="uses"),
-                                Filter(
-                                    prop="target_ref",
-                                    op="contains",
-                                    value="attack-pattern",
-                                ),
-                                Filter(
-                                    prop="source_ref",
-                                    op="=",
-                                    value=group_software_rel["target_ref"],
-                                ),
-                            ]
-                        )
-                        source_relationships_mobile = self.mobile_attack.query(
-                            [
-                                Filter(prop="type", op="=", value="relationship"),
-                                Filter(prop="relationship_type", op="=", value="uses"),
-                                Filter(
-                                    prop="target_ref",
-                                    op="contains",
-                                    value="attack-pattern",
-                                ),
-                                Filter(
-                                    prop="source_ref",
-                                    op="=",
-                                    value=group_software_rel["target_ref"],
-                                ),
-                            ]
-                        )
-                        source_relationships_ics = self.ics_attack.query(
-                            [
-                                Filter(prop="type", op="=", value="relationship"),
-                                Filter(prop="relationship_type", op="=", value="uses"),
-                                Filter(
-                                    prop="target_ref",
-                                    op="contains",
-                                    value="attack-pattern",
-                                ),
-                                Filter(
-                                    prop="source_ref",
-                                    op="=",
-                                    value=group_software_rel["target_ref"],
-                                ),
-                            ]
-                        )
-                        source_relationships = (
-                            source_relationships_enterprise
-                            + source_relationships_mobile
-                            + source_relationships_ics
-                        )
+                        # Get techniques used by this software (using cache)
+                        source_relationships = tech_relationships_by_source.get(target_ref, [])
                         markdown_links: str = ""
 
                         for relationship in source_relationships:
-                            technique_relationship_enterprise = (
-                                self.enterprise_attack.query(
-                                    [
-                                        Filter(
-                                            prop="type", op="=", value="attack-pattern"
-                                        ),
-                                        Filter(
-                                            prop="x_mitre_deprecated",
-                                            op="=",
-                                            value=False,
-                                        ),
-                                        Filter(prop="revoked", op="=", value=False),
-                                        Filter(
-                                            prop="id",
-                                            op="=",
-                                            value=relationship["target_ref"],
-                                        ),
-                                    ]
-                                )
-                            )
-                            technique_relationship_mobile = self.mobile_attack.query(
-                                [
-                                    Filter(prop="type", op="=", value="attack-pattern"),
-                                    Filter(
-                                        prop="x_mitre_deprecated", op="=", value=False
-                                    ),
-                                    Filter(prop="revoked", op="=", value=False),
-                                    Filter(
-                                        prop="id",
-                                        op="=",
-                                        value=relationship["target_ref"],
-                                    ),
-                                ]
-                            )
-                            technique_relationship_ics = self.ics_attack.query(
-                                [
-                                    Filter(prop="type", op="=", value="attack-pattern"),
-                                    Filter(
-                                        prop="x_mitre_deprecated", op="=", value=False
-                                    ),
-                                    Filter(prop="revoked", op="=", value=False),
-                                    Filter(
-                                        prop="id",
-                                        op="=",
-                                        value=relationship["target_ref"],
-                                    ),
-                                ]
-                            )
-                            technique_relationship = (
-                                technique_relationship_enterprise
-                                + technique_relationship_mobile
-                                + technique_relationship_ics
-                            )
+                            # Use cache instead of repeated queries
+                            technique_ref = relationship["target_ref"]
+                            if technique_ref in technique_cache:
+                                technique, _ = technique_cache[technique_ref]
 
-                            if technique_relationship:
-                                technique_name = technique_relationship[0]["name"]
-                                technique_id: str = ""
-                                for ext_ref in technique_relationship[0].get(
-                                    "external_references", []
-                                ):
+                                # Check if deprecated/revoked
+                                if technique.get("x_mitre_deprecated") or technique.get("revoked"):
+                                    continue
+
+                                technique_name = technique["name"]
+                                technique_id = ""
+                                for ext_ref in technique.get("external_references", []):
                                     if ext_ref["source_name"] == "mitre-attack":
                                         technique_id = ext_ref["external_id"]
-                                if technique_relationship[0]["x_mitre_is_subtechnique"]:
+                                        break
+
+                                if not technique_id:
+                                    continue
+
+                                if technique.get("x_mitre_is_subtechnique"):
                                     technique_parent_id: str = technique_id.split(".")[
                                         0
                                     ]
