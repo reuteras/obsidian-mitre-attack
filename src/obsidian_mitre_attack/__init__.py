@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +12,14 @@ import toml
 
 from .markdown_generator import MarkdownGenerator
 from .stix_parser import StixParser
+
+
+def generate_domain_markdown(markdown_generator: MarkdownGenerator, domain: str) -> str:
+    """Generate markdown files for a specific domain."""
+    markdown_generator.create_tactic_notes(domain=domain)
+    markdown_generator.create_technique_notes(domain=domain)
+    markdown_generator.create_mitigation_notes(domain=domain)
+    return f"Completed {domain}"
 
 
 def create_main_readme(
@@ -110,16 +119,40 @@ def main() -> None:
         arguments=args,
     )
 
-    for domain in domains:
-        markdown_generator.create_tactic_notes(domain=domain)
-        markdown_generator.create_technique_notes(domain=domain)
-        markdown_generator.create_mitigation_notes(domain=domain)
+    # Generate domain-specific markdown in parallel (tactics, techniques, mitigations)
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        domain_futures = {
+            executor.submit(generate_domain_markdown, markdown_generator, domain): domain
+            for domain in domains
+        }
+        for future in as_completed(domain_futures):
+            domain = domain_futures[future]
+            try:
+                result = future.result()
+                if args.verbose:
+                    print(result)
+            except Exception as e:
+                print(f"Error generating markdown for {domain}: {e}")
+                raise
 
-    markdown_generator.create_software_notes()
-    markdown_generator.create_group_notes()
-    markdown_generator.create_campaign_notes()
-    markdown_generator.create_asset_notes()
-    markdown_generator.create_data_source_notes()
+    # Generate CTI data markdown in parallel (software, groups, campaigns, assets, data sources)
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        cti_futures = {
+            executor.submit(markdown_generator.create_software_notes): "software",
+            executor.submit(markdown_generator.create_group_notes): "groups",
+            executor.submit(markdown_generator.create_campaign_notes): "campaigns",
+            executor.submit(markdown_generator.create_asset_notes): "assets",
+            executor.submit(markdown_generator.create_data_source_notes): "data_sources",
+        }
+        for future in as_completed(cti_futures):
+            entity_type = cti_futures[future]
+            try:
+                future.result()
+                if args.verbose:
+                    print(f"Completed {entity_type}")
+            except Exception as e:
+                print(f"Error generating markdown for {entity_type}: {e}")
+                raise
 
     # Generate Main README file
     create_main_readme(arguments=args, domains=domains, config=config)
