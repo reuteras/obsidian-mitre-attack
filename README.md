@@ -17,12 +17,14 @@ With the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin fo
 
 ~~~markdown
 ## Techniques
+
 ```dataview
 list from #technique
 WHERE contains(file.inlinks, this.file.link)
 ```
 
 ## Tools and malware
+
 ```dataview
 list from #tool or #malware
 WHERE contains(file.inlinks, this.file.link)
@@ -41,21 +43,22 @@ Locking at the graph it is also easy to see that [T1548.004](https://attack.mitr
 
 ![Result in Obsidian with lists generated](https://raw.githubusercontent.com/reuteras/obsidian-mitre-attack/main/resources/graph.png)
 
-The markdown shown above is available [here](./sample.md).
+The Markdown shown above is available [here](./sample.md).
 
 ## TODO
 
 - Add more relevant tags and consider prepending tags with **attack** or use **attack/<tag>**.
-- Add other metadata? Att&ck ID, etc. (url has been added)
+- Add other metadata? Att&ck ID, etc. (URL has been added)
 - Should top level pages be added to each category or are they not needed when ATT&CK is used in Obsidian?
-- Check for unused code and remove it. Since speed is not the main concern (runs one time) it has not been top priority.
+- Check for unused code and remove it.
+- Since speed is not the main concern (runs one time) it has not been top priority but I should look at [https://github.com/oasis-open/cti-python-stix2/issues/516#issuecomment-871510496](https://github.com/oasis-open/cti-python-stix2/issues/516#issuecomment-871510496).
+- Look at [coming changes](https://medium.com/mitre-attack/smarter-detection-strategies-in-attack-7e6738fec31f) for the data and in include them.
 
 ## Done
 
 - Add [Data sources](https://attack.mitre.org/datasources/)
 - Add [Assets](https://attack.mitre.org/assets/)
 - Add one link per page to the corresponding page on [https://attack.mitre.org/](https://attack.mitre.org/)
-
 
 ## Status
 
@@ -78,20 +81,23 @@ Missing in the current implementation:
 Current time to run the scripts and the different parts in verbose mode:
 
 ```bash
-2024-05-07 09:16:29 - Getting STIX data from https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master for version 15.1
-2024-05-07 09:17:48 - STIX data loaded successfully
-2024-05-07 09:17:48 - Getting tactics data for enterprise-attack domain
-2024-05-07 09:17:48 - Getting techniques data for enterprise-attack domain
-2024-05-07 09:21:48 - Getting mitigations data for enterprise-attack domain
-2024-05-07 09:21:50 - Getting groups data
-2024-05-07 09:33:20 - Getting campaigns data
-2024-05-07 09:33:27 - Getting software data
-2024-05-07 09:37:52 - Getting tactics data for mobile-attack domain
-2024-05-07 09:37:52 - Getting techniques data for mobile-attack domain
-2024-05-07 09:37:56 - Getting mitigations data for mobile-attack domain
-2024-05-07 09:37:56 - Getting tactics data for ics-attack domain
-2024-05-07 09:37:56 - Getting techniques data for ics-attack domain
-2024-05-07 09:37:59 - Getting mitigations data for ics-attack domain
+2024-05-17 05:36:02 - Getting STIX data from https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master for version 15.1
+2024-05-17 05:36:07 - STIX data loaded successfully
+2024-05-17 05:36:07 - Getting tactics data for enterprise-attack domain
+2024-05-17 05:36:07 - Getting techniques data for enterprise-attack domain
+2024-05-17 05:43:48 - Getting mitigations data for enterprise-attack domain
+2024-05-17 05:44:20 - Getting tactics data for mobile-attack domain
+2024-05-17 05:44:20 - Getting techniques data for mobile-attack domain
+2024-05-17 05:44:25 - Getting mitigations data for mobile-attack domain
+2024-05-17 05:44:26 - Getting tactics data for ics-attack domain
+2024-05-17 05:44:26 - Getting techniques data for ics-attack domain
+2024-05-17 05:44:29 - Getting mitigations data for ics-attack domain
+2024-05-17 05:44:30 - Getting data sources data
+2024-05-17 05:48:15 - Getting assets data
+2024-05-17 05:48:17 - Getting groups data
+2024-05-17 06:03:18 - Getting campaigns data
+2024-05-17 06:03:26 - Getting software data
+2024-05-17 06:11:02 - CTI data loaded successfully
 ```
 
 ## Development
@@ -103,39 +109,33 @@ Clone this repository
 ```bash
 git clone https://github.com/vincenzocaputo/obsidian-mitre-attack.git
 ```
-Create a Python virtual environment
+
+Use `uv`to create a _.venv_.
 
 ```bash
 cd obsidian-mitre-attack
-python3 -m venv .venv
+uv venv
 source .venv/bin/activate
-```
-
-Install Python module dependencies
-```bash
-python3 -m pip install -U pip
-python3 -m pip install -r requirements.txt
 ```
 
 ### Run
 
-Run the application specifying the output directory path (i.e.: your obsidian vault)
+Run the application specifying the output directory path (i.e.: your obsidian vault) with a full path
 
 ```bash
-python3 . -o obsidian_vault_path
+uv run obsidian-mitre-attack --output $(pwd)/output --tags 'mitre/'
 ```
 
 ### Options
 
 ```bash
-usage: . [-h] [--path PATH] [-o OUTPUT]
+usage: obsidian-mitre-attack [-h] [-o OUTPUT] [-t TAGS] [-v]
 
-Download MITRE ATT&CK STIX data and parse it to Obsidian markdown notes
+Download MITRE ATT&CK STIX data and parse it to Obsidian markdown notes.
 
 options:
-  -h, --help            show this help message and exit
-  --path PATH           Filepath to the markdown note file
-  -o OUTPUT, --output OUTPUT
-                        Output directory in which the notes will be saved. It should be placed inside a Obsidian vault.
-
+  -h, --help           show this help message and exit
+  -o, --output OUTPUT  Output directory in which the notes will be saved.
+  -t, --tags TAGS      Prepend this string to tags in the markdown files.
+  -v, --verbose        Print verbose output.
 ```

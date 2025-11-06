@@ -6,7 +6,8 @@ on:
     tags:
       - "v*"
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -15,24 +16,24 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/checkout@v5
         with:
-          python-version: "3.12"
+          persist-credentials: false
+          fetch-depth: 0
 
-      - name: Install requirements
-        run: pip install -r requirements.txt
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: false
+          python-version: 3.13
+      - run: uv build
+
 
       - name: Copy configuration file
-        run: cp default-config.yml config.yml
+        run: cp default-config.toml config.toml
 
       - name: Create output
-        run: python3 . -o MITRE
-
-      - name: Create dist directory
-        run: mkdir dist
+        run: uv run obsidian-mitre-attack -o MITRE --tags "mitre/"
 
       - name: Create zip
         run: zip -r dist/release.zip MITRE README.md

@@ -1,0 +1,118 @@
+[project]
+name = "obsidian-mitre-attack"
+version = "0.0.1"
+authors = [
+  { name="Peter Reuterås", email="peter@reuteras.net" },
+]
+description = "Parse MITRE ATT&CK to markdown for Obsidian."
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.32.3",
+    "stix2>=3.0.1",
+    "toml>=0.10.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+obsidian-mitre-attack = "obsidian_mitre_attack:main"
+
+[project.urls]
+Homepage = "https://github.com/reuteras/obsidian-mitre-attack"
+Issues = "https://github.com/reuteras/obsidian-mitre-attack/issues"
+
+[tool.ruff]
+target-version = "py311"
+lint.select = [
+    "PL",   # Pylint
+    "F",    # pyflakes
+    "I",    # isort
+    "D",    # pydocstyle
+    "B",    # flake8-bugbear
+    "UP",   # pyupgrade
+    "RUF",  # Ruff-specific
+]
+lint.ignore = [
+    "E501",  # line too long, handled by black
+]
+fix = true
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = false
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
+
+[dependency-groups]
+dev = [
+    "pylint>=3.3.4",
+    "ruff>=0.9.7",
+]
+test = [
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "pytest-timeout>=2.3.1",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention="google"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+    "--cov=src/obsidian_mitre_attack",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+timeout = 300
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/tests/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
