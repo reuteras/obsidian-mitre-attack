@@ -89,36 +89,47 @@ class MarkdownGenerator:
 
                 # Create markdown file for current tactic
                 with open(file=tactic_file, mode="w", encoding="utf-8") as fd:
-                    content: str = "---\naliases:\n"
-                    content += f"  - {tactic.id}\n"
-                    content += f"  - {tactic.name}\n"
-                    content += f"  - {tactic.name} ({tactic.id})\n"
-                    content += f"  - {tactic.id} ({tactic.name})\n"
-                    content += "url: MITRE_URL\n"
-                    content += "tags:\n"
-                    content += f"  - {self.tags_prefix}tactic\n"
-                    content += f"  - {self.tags_prefix}mitre_attack\n"
-                    content += f"  - {self.tags_prefix}{tactic.domain}\n"
-                    content += "---"
+                    lines = [
+                        "---\naliases:",
+                        f"  - {tactic.id}",
+                        f"  - {tactic.name}",
+                        f"  - {tactic.name} ({tactic.id})",
+                        f"  - {tactic.id} ({tactic.name})",
+                        "url: MITRE_URL",
+                        "tags:",
+                        f"  - {self.tags_prefix}tactic",
+                        f"  - {self.tags_prefix}mitre_attack",
+                        f"  - {self.tags_prefix}{tactic.domain}",
+                        "---",
+                        "",
+                        f"## {tactic.id}",
+                        "",
+                    ]
 
-                    content += f"\n\n## {tactic.id}\n"
                     tactic_description: str = fix_description(
                         description_str=tactic.description
                     )
-                    content += f"\n{tactic_description}\n\n"
+                    lines.append(tactic_description)
+                    lines.append("")
 
                     # Tactic Information
-                    content += "> [!info]\n"
-                    content += f"> ID: {tactic.id}\n"
-                    content += (
-                        f"> Created: {str(object=tactic.created).split(sep=' ')[0]}\n"
-                    )
-                    content += f"> Last Modified: {str(object=tactic.modified).split(sep=' ')[0]}\n\n\n"
+                    lines.extend([
+                        "> [!info]",
+                        f"> ID: {tactic.id}",
+                        f"> Created: {str(object=tactic.created).split(sep=' ')[0]}",
+                        f"> Last Modified: {str(object=tactic.modified).split(sep=' ')[0]}",
+                        "",
+                        "",
+                    ])
 
                     # Techniques Used
                     if tactic.techniques_used:
-                        content += "### Techniques Used\n"
-                        content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
+                        lines.extend([
+                            "### Techniques Used",
+                            "",
+                            "| ID | Name | Use |",
+                            "| --- | --- | --- |",
+                        ])
                         for technique in sorted(
                             tactic.techniques_used, key=lambda x: x["id"]
                         ):
@@ -127,163 +138,198 @@ class MarkdownGenerator:
                             )
                             description = description[0 : description.find("\n")]
                             description = remove_references(text=description)
-                            content += f"| [[{technique['name']} - {technique['id']} \\| {technique['id']}]] | {technique['name']} | {description} |\n"
+                            lines.append(f"| [[{technique['name']} - {technique['id']} \\| {technique['id']}]] | {technique['name']} | {description} |")
 
-                    content: str = convert_to_local_links(text=content)
+                    content = "\n".join(lines)
+                    content = convert_to_local_links(text=content)
                     content = content.replace("MITRE_URL", tactic.url)
                     fd.write(content)
 
     def create_technique_notes_header(self, technique) -> str:
         """Function to create markdown headers for techniques."""
-        content: str = "---\naliases:\n"
-        content += f"  - {technique.id}\n"
-        content += f"  - {technique.name}\n"
-        content += f"  - {technique.name} ({technique.id})\n"
-        content += f"  - {technique.id} ({technique.name})\n"
-        content += "url: MITRE_URL\n"
-        content += "tags:\n"
-        content += f"  - {self.tags_prefix}technique\n"
-        content += f"  - {self.tags_prefix}mitre_attack\n"
-        content += f"  - {self.tags_prefix}{technique.domain}\n"
+        lines = [
+            "---\naliases:",
+            f"  - {technique.id}",
+            f"  - {technique.name}",
+            f"  - {technique.name} ({technique.id})",
+            f"  - {technique.id} ({technique.name})",
+            "url: MITRE_URL",
+            "tags:",
+            f"  - {self.tags_prefix}technique",
+            f"  - {self.tags_prefix}mitre_attack",
+            f"  - {self.tags_prefix}{technique.domain}",
+        ]
+
         if technique.platforms and "None" not in technique.platforms:
             for platform in technique.platforms:
                 if platform:
-                    content += f"  - {self.tags_prefix}{platform.replace(' ', '_')}\n"
+                    lines.append(f"  - {self.tags_prefix}{platform.replace(' ', '_')}")
 
         if technique.supports_remote:
-            content += f"  - {self.tags_prefix}supports_remote\n"
-        content += "---\n\n"
-        return content
+            lines.append(f"  - {self.tags_prefix}supports_remote")
+
+        lines.extend(["---", ""])
+        return "\n".join(lines)
 
     def create_technique_notes_subtechnique(self, content: str, technique) -> str:
         """Function to create markdown notes for sub-techniques."""
+        lines = []
+
         if technique.is_subtechnique:
-            content += f"## {technique.parent_name}: {technique.name}\n\n"
+            lines.append(f"## {technique.parent_name}: {technique.name}")
+            lines.append("")
         else:
-            content += f"## {technique.name}\n\n"
+            lines.append(f"## {technique.name}")
+            lines.append("")
 
         if technique.is_subtechnique:
             first = True
             for subt in sorted(technique.subtechniques, key=lambda x: x["id"]):
                 if first:
-                    content += f"> [!summary]- Other sub-techniques of {technique.parent_name} ({len(technique.subtechniques)})\n"  # TODO
-                    content += ">"
-                    content += "> | ID | Name |\n| --- | --- |\n"
+                    lines.append(f"> [!summary]- Other sub-techniques of {technique.parent_name} ({len(technique.subtechniques)})")
+                    lines.append(">")
+                    lines.append("> | ID | Name |\n| --- | --- |")
                     first = False
                 if subt["id"] == technique.id:
-                    content += f"> | {subt['id']} | {subt['name']} |\n"
+                    lines.append(f"> | {subt['id']} | {subt['name']} |")
                 else:
-                    content += f"> | [[{subt['name']} - {subt['id']} \\| {subt['id']}]] | [[{subt['name']} - {subt['id']} \\| {subt['name']}]] |\n"
-            content += "\n\n"
+                    lines.append(f"> | [[{subt['name']} - {subt['id']} \\| {subt['id']}]] | [[{subt['name']} - {subt['id']} \\| {subt['name']}]] |")
+            lines.extend(["", ""])
         elif technique.subtechniques:
             first = True
             for subt in sorted(technique.subtechniques, key=lambda x: x["id"]):
                 if first:
-                    content += f"> [!summary]- Sub-techniques ({len(technique.subtechniques)})\n"
-                    content += ">"
-                    content += "> | ID | Name |\n| --- | --- |\n"
+                    lines.append(f"> [!summary]- Sub-techniques ({len(technique.subtechniques)})")
+                    lines.append(">")
+                    lines.append("> | ID | Name |\n| --- | --- |")
                     first = False
-                content += f"> | [[{subt['name']} - {subt['id']} \\| {subt['id']}]] | {subt['name']} |\n"
-            content += "\n\n"
-        return content
+                lines.append(f"> | [[{subt['name']} - {subt['id']} \\| {subt['id']}]] | {subt['name']} |")
+            lines.extend(["", ""])
+
+        return content + "\n".join(lines)
 
     def create_technique_notes_information(self, content: str, technique) -> str:
         """Function to create markdown notes for technique information."""
+        lines = []
+
         technique_description: str = fix_description(
             description_str=technique.description
         )
-        content += f"{technique_description}\n\n\n"
+        lines.extend([technique_description, "", ""])
 
         # Information for the technique
-        content += "> [!info]\n"
-        content += f"> ID: {technique.id}\n"
+        lines.append("> [!info]")
+        lines.append(f"> ID: {technique.id}")
+
         if technique.is_subtechnique:
-            content += f"> Sub-technique of: [[{technique.parent_name} - {technique.id.split('.')[0]}|{technique.id.split('.')[0]}]]\n"
+            lines.append(f"> Sub-technique of: [[{technique.parent_name} - {technique.id.split('.')[0]}|{technique.id.split('.')[0]}]]")
         else:
-            content += "> Sub-techniques: "
-            tech_first = True
+            sub_techs = []
             for subt in sorted(self.techniques, key=lambda x: x.id):
                 if subt.is_subtechnique and technique.id in subt.id:
-                    if tech_first:
-                        content += f"[[{subt.name} - {subt.id} \\| {subt.id}]]"
-                        tech_first = False
-                    else:
-                        content += f", [[{subt.name} - {subt.id} \\| {subt.id}]]"
-            content += "\n"
-        content += f"> Tactic: [[{technique.tactic_name} - {technique.tactic_id} \\| {technique.tactic_name}]]\n"
+                    sub_techs.append(f"[[{subt.name} - {subt.id} \\| {subt.id}]]")
+            lines.append(f"> Sub-techniques: {', '.join(sub_techs) if sub_techs else ''}")
+
+        lines.append(f"> Tactic: [[{technique.tactic_name} - {technique.tactic_id} \\| {technique.tactic_name}]]")
+
         if technique.platforms and "None" not in technique.platforms:
-            content += f"> Platforms: {', '.join(technique.platforms)}\n"
+            lines.append(f"> Platforms: {', '.join(technique.platforms)}")
         if technique.permissions_required:
-            content += (
-                f"> Permissions Required: {', '.join(technique.permissions_required)}\n"
-            )
+            lines.append(f"> Permissions Required: {', '.join(technique.permissions_required)}")
         if technique.effective_permissions:
-            content += f"> Effective Permissions: {', '.join(technique.effective_permissions)}\n"
+            lines.append(f"> Effective Permissions: {', '.join(technique.effective_permissions)}")
         if technique.defense_bypassed:
-            content += f"> Defense Bypassed: {', '.join(technique.defense_bypassed)}\n"
+            lines.append(f"> Defense Bypassed: {', '.join(technique.defense_bypassed)}")
         if technique.supports_remote:
-            content += "> Remote Support: Yes\n"
-        content += f"> Version: {technique.version}\n"
-        content += f"> Created: {str(object=technique.created).split(sep=' ')[0]}\n"
-        content += (
-            f"> Last Modified: {str(object=technique.modified).split(sep=' ')[0]}\n\n\n"
-        )
-        return content
+            lines.append("> Remote Support: Yes")
+
+        lines.extend([
+            f"> Version: {technique.version}",
+            f"> Created: {str(object=technique.created).split(sep=' ')[0]}",
+            f"> Last Modified: {str(object=technique.modified).split(sep=' ')[0]}",
+            "",
+            "",
+        ])
+
+        return content + "\n".join(lines)
 
     def create_technique_notes_procedure_examples(self, content: str, technique) -> str:
         """Function to create markdown notes for procedure examples."""
         if technique.procedure_examples:
-            content += "### Procedure Examples\n"
-            content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
+            lines = [
+                "### Procedure Examples",
+                "",
+                "| ID | Name | Description |",
+                "| --- | --- | --- |",
+            ]
             for example in sorted(technique.procedure_examples, key=lambda x: x["id"]):
                 description: str = fix_description(
                     description_str=example["description"]
                 )
                 description = description.replace("\n", "<br />")
-                content += f"| [[{example['name'].replace('/', '／')} \\| {example['id']}]] | [[{example['name'].replace('/', '／')} \\| {example['name'].replace('/', '／')}]] | {description} |\n"  # noqa: RUF001
+                lines.append(f"| [[{example['name'].replace('/', '／')} \\| {example['id']}]] | [[{example['name'].replace('/', '／')} \\| {example['name'].replace('/', '／')}]] | {description} |")  # noqa: RUF001
+            return content + "\n".join(lines)
         return content
 
     def create_technique_notes_targeted_assets(self, content: str, technique) -> str:
         """Function to create markdown notes for targeted assets."""
         if technique.targeted_assets:
-            content += "\n\n### Targeted Assets\n"
-            content += "\n| ID | Asset |\n| --- | --- |\n"
+            lines = [
+                "",
+                "",
+                "### Targeted Assets",
+                "",
+                "| ID | Asset |",
+                "| --- | --- |",
+            ]
             for asset in sorted(technique.targeted_assets, key=lambda x: x["id"]):
-                content += f"| [[{asset['name']} - {asset['id']} \\| {asset['id']}]] | [[{asset['name']} - {asset['id']} \\| {asset['name']}]] |\n"
+                lines.append(f"| [[{asset['name']} - {asset['id']} \\| {asset['id']}]] | [[{asset['name']} - {asset['id']} \\| {asset['name']}]] |")
+            return content + "\n".join(lines)
         return content
 
     def create_technique_notes_mitigations(self, content: str, technique) -> str:
         """Function to create markdown notes for mitigations."""
-        content += "\n### Mitigations\n"
+        lines = ["", "### Mitigations"]
+
         if technique.mitigations:
             mitigation_first = True
             for mitigation in sorted(technique.mitigations, key=lambda x: x["id"]):
                 if mitigation["id"] == technique.id:
-                    content += "\nThis type of attack technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features.\n"
+                    lines.extend(["", "This type of attack technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features."])
                 else:
                     if mitigation_first:
-                        content += (
-                            "\n| ID | Name | Description |\n| --- | --- | --- |\n"
-                        )
+                        lines.extend([
+                            "",
+                            "| ID | Name | Description |",
+                            "| --- | --- | --- |",
+                        ])
                         mitigation_first = False
                     description = fix_description(
                         description_str=mitigation["description"]
                     )
                     description = description.replace("\n", "<br />")
-                    content += f"| [[{mitigation['name']} - {mitigation['id']} \\| {mitigation['id']}]] | [[{mitigation['name']} - {mitigation['id']} \\| {mitigation['name']}]] | {description} |\n"
+                    lines.append(f"| [[{mitigation['name']} - {mitigation['id']} \\| {mitigation['id']}]] | [[{mitigation['name']} - {mitigation['id']} \\| {mitigation['name']}]] | {description} |")
         else:
-            content += "\nThis type of attack technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features.\n"
-        return content
+            lines.extend(["", "This type of attack technique cannot be easily mitigated with preventive controls since it is based on the abuse of system features."])
+
+        return content + "\n".join(lines)
 
     def create_technique_notes_detection(self, content: str, technique) -> str:
         """Function to create markdown notes for detection."""
         if technique.detections:
-            content += "\n\n### Detection\n"
-            content += "\n| ID | Data Source | Data Source Type | Detects |\n| --- | --- | --- | --- |\n"
+            lines = [
+                "",
+                "",
+                "### Detection",
+                "",
+                "| ID | Data Source | Data Source Type | Detects |",
+                "| --- | --- | --- | --- |",
+            ]
             for detection in sorted(technique.detections, key=lambda x: x["id"]):
                 description = fix_description(description_str=detection["description"])
                 description = description.replace("\n", "<br />")
-                content += f"| {detection['id']} | {detection['data_source']} | {detection['name']} | {description} |\n"
+                lines.append(f"| {detection['id']} | {detection['data_source']} | {detection['name']} | {description} |")
+            return content + "\n".join(lines)
         return content
 
     def create_technique_notes(self, domain: str) -> None:
@@ -328,12 +374,13 @@ class MarkdownGenerator:
                 content = convert_to_local_links(text=content)
 
                 # References
-                content += "\n\n### References\n\n"
+                ref_lines = ["", "", "### References", ""]
                 for ref in technique.external_references:
                     name: str = ref["name"].replace(" ", "_")
                     if "url" in ref:
-                        content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+                        ref_lines.append(f"[^{name}]: [{ref['description']}]({ref['url']})")
 
+                content = content + "\n".join(ref_lines)
                 content = content.replace("MITRE_URL", technique.url)
 
                 # Create markdown file for current technique
@@ -354,35 +401,47 @@ class MarkdownGenerator:
 
                 # Create markdown file for current mitigation
                 with open(file=mitigation_file, mode="w", encoding="utf-8") as fd:
-                    content: str = "---\naliases:\n"
-                    content += f"  - {mitigation.id}\n"
-                    content += f"  - {mitigation.name}\n"
-                    content += f"  - {mitigation.name} ({mitigation.id})\n"
-                    content += f"  - {mitigation.id} ({mitigation.name})\n"
-                    content += "url: MITRE_URL\n"
-                    content += "tags:\n"
-                    content += f"  - {self.tags_prefix}mitigation\n"
-                    content += f"  - {self.tags_prefix}mitre_attack\n"
-                    content += f"  - {self.tags_prefix}{mitigation.domain}\n"
-                    content += "---\n\n"
+                    lines = [
+                        "---\naliases:",
+                        f"  - {mitigation.id}",
+                        f"  - {mitigation.name}",
+                        f"  - {mitigation.name} ({mitigation.id})",
+                        f"  - {mitigation.id} ({mitigation.name})",
+                        "url: MITRE_URL",
+                        "tags:",
+                        f"  - {self.tags_prefix}mitigation",
+                        f"  - {self.tags_prefix}mitre_attack",
+                        f"  - {self.tags_prefix}{mitigation.domain}",
+                        "---",
+                        "",
+                        f"## {mitigation.id}",
+                        "",
+                    ]
 
-                    content += f"## {mitigation.id}\n\n"
                     mitigation_description: str = fix_description(
                         description_str=mitigation.description
                     )
-                    content += f"{mitigation_description}\n\n\n"
+                    lines.extend([mitigation_description, "", ""])
 
                     # Mitigation Information
-                    content += "> [!info]\n"
-                    content += f"> ID: {mitigation.id}\n"
-                    content += f"> Version: {mitigation.version}\n"
-                    content += f"> Created: {str(object=mitigation.created).split(sep=' ')[0]}\n"
-                    content += f"> Last Modified: {str(object=mitigation.modified).split(sep=' ')[0]}\n\n\n"
+                    lines.extend([
+                        "> [!info]",
+                        f"> ID: {mitigation.id}",
+                        f"> Version: {mitigation.version}",
+                        f"> Created: {str(object=mitigation.created).split(sep=' ')[0]}",
+                        f"> Last Modified: {str(object=mitigation.modified).split(sep=' ')[0]}",
+                        "",
+                        "",
+                        "### Techniques Addressed by Mitigation",
+                    ])
 
                     # Techniques Addressed by Mitigation
-                    content += "### Techniques Addressed by Mitigation\n"
                     if mitigation.mitigates:
-                        content += "\n| Domain | ID | Name | Description |\n| --- | --- | --- | --- |\n"
+                        lines.extend([
+                            "",
+                            "| Domain | ID | Name | Description |",
+                            "| --- | --- | --- | --- |",
+                        ])
                         for technique in sorted(
                             mitigation.mitigates, key=lambda x: x["id"]
                         ):
@@ -397,25 +456,25 @@ class MarkdownGenerator:
                                 description_str=technique["description"]
                             )
                             description = description.replace("\n", "<br />")
-                            content += f"| {mitre_domain} | [[{technique['name']} - {technique['id']} \\| {technique['id']}]] | {technique['name']} | {description} |\n"
+                            lines.append(f"| {mitre_domain} | [[{technique['name']} - {technique['id']} \\| {technique['id']}]] | {technique['name']} | {description} |")
 
-                    content: str = convert_to_local_links(text=content)
+                    content = "\n".join(lines)
+                    content = convert_to_local_links(text=content)
 
                     # References
-                    content += "\n\n### References\n\n"
+                    ref_lines = ["", "", "### References", ""]
                     for ref in mitigation.external_references:
                         name = ref["name"].replace(" ", "_")
                         if "url" in ref:
-                            content += (
-                                f"[^{name}]: [{ref['description']}]({ref['url']})\n"
-                            )
+                            ref_lines.append(f"[^{name}]: [{ref['description']}]({ref['url']})")
 
                     if mitigation.external_references:
                         for alias in mitigation.external_references:
                             if "url" in alias:
                                 name: str = alias["name"].replace(" ", "_")
-                                content += f"[^{name}]: [{alias['description']}]({alias['url']})\n"
+                                ref_lines.append(f"[^{name}]: [{alias['description']}]({alias['url']})")
 
+                    content = content + "\n".join(ref_lines)
                     content = content.replace("MITRE_URL", mitigation.url)
                     fd.write(content)
 
@@ -427,45 +486,66 @@ class MarkdownGenerator:
         for group in self.groups:
             group_file = Path(groups_dir, f"{group.name}.md")
 
-            content: str = "---\naliases:\n"
+            lines = ["---\naliases:"]
             for alias in group.aliases:
-                content += f"  - {alias}\n"
-            content += "url: MITRE_URL\n"
-            content += "\ntags:\n"
-            content += f"  - {self.tags_prefix}group\n"
-            content += f"  - {self.tags_prefix}mitre_attack\n"
-            content += "---\n\n"
+                lines.append(f"  - {alias}")
+            lines.extend([
+                "url: MITRE_URL",
+                "",
+                "tags:",
+                f"  - {self.tags_prefix}group",
+                f"  - {self.tags_prefix}mitre_attack",
+                "---",
+                "",
+                f"## {group.name}",
+                "",
+            ])
 
-            content += f"## {group.name}\n\n"
             group_description: str = fix_description(description_str=group.description)
-            content += f"{group_description}\n\n\n"
+            lines.extend([group_description, "", ""])
+
             # Group information
-            content += "> [!info]\n"
-            content += f"> ID: {group.id}\n"
+            lines.extend([
+                "> [!info]",
+                f"> ID: {group.id}",
+            ])
             if group.aliases:
-                content += f"> Associated Groups: {', '.join(group.aliases)}\n"
+                lines.append(f"> Associated Groups: {', '.join(group.aliases)}")
             if group.contributors:
-                content += f"> Contributors: {', '.join(group.contributors)}\n"
-            content += f"> Version: {group.version}\n"
-            content += f"> Created: {str(object=group.created).split(sep=' ')[0]}\n"
-            content += (
-                f"> Last Modified: {str(object=group.modified).split(sep=' ')[0]}\n\n\n"
-            )
+                lines.append(f"> Contributors: {', '.join(group.contributors)}")
+            lines.extend([
+                f"> Version: {group.version}",
+                f"> Created: {str(object=group.created).split(sep=' ')[0]}",
+                f"> Last Modified: {str(object=group.modified).split(sep=' ')[0]}",
+                "",
+                "",
+            ])
+
             if group.aliases_references:
-                content += "\n### Associated Group Descriptions\n"
-                content += "\n| Name | Description |\n| --- | --- |\n"
+                lines.extend([
+                    "",
+                    "### Associated Group Descriptions",
+                    "",
+                    "| Name | Description |",
+                    "| --- | --- |",
+                ])
                 for alias in group.aliases_references:
                     if "url" not in alias:
                         description: str = fix_description(
                             description_str=alias["description"]
                         ).replace("\n", "<br />")
-                        content += f"| {alias['name']} | {description} |\n"
-                content += "\n\n"
+                        lines.append(f"| {alias['name']} | {description} |")
+                lines.extend(["", ""])
 
             # Techniques used by group
             if group.techniques_used:
-                content += "\n### Techniques Used\n"
-                content += "\n| Domain | ID | Name | Use |\n| --- | --- | --- | --- |\n"
+                lines.extend([
+                    "",
+                    "### Techniques Used",
+                    "",
+                    "| Domain | ID | Name | Use |",
+                    "| --- | --- | --- | --- |",
+                ])
                 for technique in sorted(
                     group.techniques_used, key=lambda x: x["technique_id"]
                 ):
@@ -480,35 +560,42 @@ class MarkdownGenerator:
                         description_str=technique["description"]
                     )
                     description = description.replace("\n", "<br />")
-                    content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"
+                    lines.append(f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | {technique['technique_name']} | {description} |")
 
             # Software used by group
             if group.software_used:
-                content += "\n\n\n### Software Used\n"
-                content += "\n| ID | Name | References | Techniques |\n| --- | --- | --- | --- |\n"
+                lines.extend([
+                    "",
+                    "",
+                    "",
+                    "### Software Used",
+                    "",
+                    "| ID | Name | References | Techniques |",
+                    "| --- | --- | --- | --- |",
+                ])
                 for software in sorted(group.software_used, key=lambda x: x["id"]):
                     description = fix_description(
                         description_str=software["description"]
                     )
-                    content += f"| [[{software['name']} \\| {software['id']}]] | [[{software['name']} \\| {software['name']}]] | {description} | {software['software_techniques']} |\n"
+                    lines.append(f"| [[{software['name']} \\| {software['id']}]] | [[{software['name']} \\| {software['name']}]] | {description} | {software['software_techniques']} |")
 
+            content = "\n".join(lines)
             content = convert_to_local_links(text=content)
 
             # References
-            content += "\n\n### References\n\n"
+            ref_lines = ["", "", "### References", ""]
             for ref in group.external_references:
                 name = ref["name"].replace(" ", "_")
                 if "url" in ref:
-                    content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+                    ref_lines.append(f"[^{name}]: [{ref['description']}]({ref['url']})")
 
             if group.aliases_references:
                 for alias in group.aliases_references:
                     if "url" in alias:
                         name: str = alias["name"].replace(" ", "_")
-                        content += (
-                            f"[^{name}]: [{alias['description']}]({alias['url']})\n"
-                        )
+                        ref_lines.append(f"[^{name}]: [{alias['description']}]({alias['url']})")
 
+            content = content + "\n".join(ref_lines)
             content = content.replace("MITRE_URL", group.url)
 
             # Create markdown file for current group
@@ -517,54 +604,66 @@ class MarkdownGenerator:
 
     def create_software_notes_header(self, software) -> str:
         """Function to create markdown headers for software."""
-        content: str = f"---\naliases:\n  - {software.id}\n"
-        content += f"  - {software.name} ({software.id})\n"
-        content += f"  - {software.id} ({software.name})\n"
-        content += "url: MITRE_URL\n"
-        content += "tags:\n"
-        content += f"  - {self.tags_prefix}software\n"
-        content += f"  - {self.tags_prefix}mitre_attack\n"
-        content += f"  - {self.tags_prefix}{software.type}\n"
+        lines = [
+            f"---\naliases:\n  - {software.id}",
+            f"  - {software.name} ({software.id})",
+            f"  - {software.id} ({software.name})",
+            "url: MITRE_URL",
+            "tags:",
+            f"  - {self.tags_prefix}software",
+            f"  - {self.tags_prefix}mitre_attack",
+            f"  - {self.tags_prefix}{software.type}",
+        ]
+
         if software.platforms and software.platforms != "":
             for platform in software.platforms:
                 if platform:
-                    content += (
-                        f"  - {self.tags_prefix}{platform[0].replace(' ', '_')}\n"
-                    )
-        content += "\n---\n\n"
+                    lines.append(f"  - {self.tags_prefix}{platform[0].replace(' ', '_')}")
 
-        content += f"## {software.name}\n\n"
+        lines.extend(["", "---", "", f"## {software.name}", ""])
+
         software_description: str = fix_description(
             description_str=software.description
         )
-        content += f"{software_description}\n\n\n"
+        lines.extend([software_description, "", ""])
 
         # Software information
-        content += "> [!info]\n"
-        content += f"> ID: {software.id}\n"
-        content += f"> Type: {software.type}\n"
+        lines.extend([
+            "> [!info]",
+            f"> ID: {software.id}",
+            f"> Type: {software.type}",
+        ])
+
         if software.platforms and software.platforms != [[]]:
             platforms: list[str] = [
                 ", ".join(platform) for platform in software.platforms
             ]
-            content += f"> Platforms: {''.join(platforms)}\n"
+            lines.append(f"> Platforms: {''.join(platforms)}")
         if software.aliases:
-            content += f"> Associated Software: {', '.join(software.aliases)}\n"
+            lines.append(f"> Associated Software: {', '.join(software.aliases)}")
         if software.contributors:
-            content += f"> Contributors: {', '.join(software.contributors)}\n"
-        content += f"> Version: {software.version}\n"
-        content += f"> Created: {str(object=software.created).split(sep=' ')[0]}\n"
-        content += (
-            f"> Last Modified: {str(object=software.modified).split(sep=' ')[0]}\n\n\n"
-        )
-        return content
+            lines.append(f"> Contributors: {', '.join(software.contributors)}")
+
+        lines.extend([
+            f"> Version: {software.version}",
+            f"> Created: {str(object=software.created).split(sep=' ')[0]}",
+            f"> Last Modified: {str(object=software.modified).split(sep=' ')[0]}",
+            "",
+            "",
+        ])
+
+        return "\n".join(lines)
 
     def create_software_notes_info(self, content: str, software) -> str:
         """Function to create markdown notes for software information."""
-        # Software information
-        content += "### Techniques Used\n"
+        lines = ["### Techniques Used"]
+
         if software.techniques_used:
-            content += "\n| Domain | ID | Name | Use |\n| --- | --- | --- | --- |\n"
+            lines.extend([
+                "",
+                "| Domain | ID | Name | Use |",
+                "| --- | --- | --- | --- |",
+            ])
             for technique in sorted(
                 software.techniques_used, key=lambda x: x["technique"].id
             ):
@@ -584,17 +683,23 @@ class MarkdownGenerator:
                 for ref in ext_refs:
                     if ref["source_name"] == "mitre-attack":
                         external_id = ref["external_id"]
-                content += f"| {domain} | [[{technique['technique'].name.replace('/', '／')} - {external_id} \\| {external_id}]] | {technique['technique'].name} | {description} |\n"  # noqa: RUF001
+                lines.append(f"| {domain} | [[{technique['technique'].name.replace('/', '／')} - {external_id} \\| {external_id}]] | {technique['technique'].name} | {description} |")  # noqa: RUF001
 
         # Groups that use this software
         if software.groups_using:
-            content += "\n### Groups That Use This Software\n"
-            content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
+            lines.extend([
+                "",
+                "### Groups That Use This Software",
+                "",
+                "| ID | Name | Use |",
+                "| --- | --- | --- |",
+            ])
             for group in sorted(software.groups_using, key=lambda x: x["group_id"]):
                 description = fix_description(description_str=group["description"])
                 description = description.replace("\n", "<br />")
-                content += f"| [[{group['group_name']} \\| {group['group_id']}]] | {group['group_name']} | {description} |\n"
-        return content
+                lines.append(f"| [[{group['group_name']} \\| {group['group_id']}]] | {group['group_name']} | {description} |")
+
+        return content + "\n".join(lines)
 
     def create_software_notes(self) -> None:
         """Function to create markdown notes for software in CTI folder."""
@@ -640,33 +745,38 @@ class MarkdownGenerator:
 
     def create_campaign_notes_header(self, campaign) -> str:
         """Function to create markdown headers for campaigns."""
-        content: str = "---\naliases:\n"
-        content += f"  - {campaign.id}\n"
-        content += "url: MITRE_URL\n"
-        content += "tags:\n"
-        content += f"  - {self.tags_prefix}campaign\n"
-        content += f"  - {self.tags_prefix}mitre_attack\n"
-        content += "---\n\n"
+        lines = [
+            "---\naliases:",
+            f"  - {campaign.id}",
+            "url: MITRE_URL",
+            "tags:",
+            f"  - {self.tags_prefix}campaign",
+            f"  - {self.tags_prefix}mitre_attack",
+            "---",
+            "",
+            f"## {campaign.name}",
+            "",
+        ]
 
-        content += f"## {campaign.name}\n\n"
         campaign_description: str = fix_description(
             description_str=campaign.description
         )
-        content += f"{campaign_description}\n\n\n"
+        lines.extend([campaign_description, "", ""])
 
         # Campaign information
-        content += "> [!info]\n"
-        content += f"> ID: {campaign.id}\n"
-        content += (
-            f"> First Seen: {str(object=campaign.first_seen).split(sep=' ')[0]}\n"
-        )
-        content += f"> Last Seen: {str(object=campaign.last_seen).split(sep=' ')[0]}\n"
-        content += f"> Version: {campaign.version}\n"
-        content += f"> Created: {str(object=campaign.created).split(sep=' ')[0]}\n"
-        content += (
-            f"> Last Modified: {str(object=campaign.modified).split(sep=' ')[0]}\n\n\n"
-        )
-        return content
+        lines.extend([
+            "> [!info]",
+            f"> ID: {campaign.id}",
+            f"> First Seen: {str(object=campaign.first_seen).split(sep=' ')[0]}",
+            f"> Last Seen: {str(object=campaign.last_seen).split(sep=' ')[0]}",
+            f"> Version: {campaign.version}",
+            f"> Created: {str(object=campaign.created).split(sep=' ')[0]}",
+            f"> Last Modified: {str(object=campaign.modified).split(sep=' ')[0]}",
+            "",
+            "",
+        ])
+
+        return "\n".join(lines)
 
     def create_campaign_notes(self) -> None:
         """Function to create markdown notes for campaigns in CTI folder."""
@@ -678,24 +788,34 @@ class MarkdownGenerator:
 
             # Create markdown file for current campaign
             with open(file=campaign_file, mode="w", encoding="utf-8") as fd:
-                content: str = self.create_campaign_notes_header(campaign=campaign)
+                lines = []
+
                 # Groups that use this campaign
                 if campaign.groups:
-                    content += "\n### Groups\n"
-                    content += "\n| ID | Name | Use |\n| --- | --- | --- |\n"
+                    lines.extend([
+                        "",
+                        "### Groups",
+                        "",
+                        "| ID | Name | Use |",
+                        "| --- | --- | --- |",
+                    ])
                     for group in sorted(campaign.groups, key=lambda x: x["group"].id):
                         description: str = fix_description(
                             description_str=group["description"]
                         )
                         description = description.replace("\n", "<br />")
-                        content += f"| [[{group['group'].name} \\| {group['group'].id}]] | {group['group'].name} | {description} |\n"
+                        lines.append(f"| [[{group['group'].name} \\| {group['group'].id}]] | {group['group'].name} | {description} |")
 
                 # Techniques used by campaign
                 if campaign.techniques_used:
-                    content += "\n\n### Techniques Used\n"
-                    content += (
-                        "\n| Domain | ID | Name | Use |\n| --- | --- | --- | --- |\n"
-                    )
+                    lines.extend([
+                        "",
+                        "",
+                        "### Techniques Used",
+                        "",
+                        "| Domain | ID | Name | Use |",
+                        "| --- | --- | --- | --- |",
+                    ])
                     for technique in sorted(
                         campaign.techniques_used, key=lambda x: x["technique_id"]
                     ):
@@ -710,12 +830,19 @@ class MarkdownGenerator:
                             description_str=technique["description"]
                         )
                         description = description.replace("\n", "<br />")
-                        content += f"| {domain} | [[{technique['technique_name'].replace('/', '／')} - {technique['technique_id']} \\| {technique['technique_id']}]] | {technique['technique_name']} | {description} |\n"  # noqa: RUF001
+                        lines.append(f"| {domain} | [[{technique['technique_name'].replace('/', '／')} - {technique['technique_id']} \\| {technique['technique_id']}]] | {technique['technique_name']} | {description} |")  # noqa: RUF001
 
                 # Software used in campaign
                 if campaign.software_used:
-                    content += "\n\n\n### Software\n"
-                    content += "\n| ID | Name | Description |\n| --- | --- | --- |\n"
+                    lines.extend([
+                        "",
+                        "",
+                        "",
+                        "### Software",
+                        "",
+                        "| ID | Name | Description |",
+                        "| --- | --- | --- |",
+                    ])
                     for software in sorted(
                         campaign.software_used, key=lambda x: x["software"].id
                     ):
@@ -727,59 +854,70 @@ class MarkdownGenerator:
                         for ref in software["software"].get("external_references", []):
                             if ref["source_name"] == "mitre-attack":
                                 external_id = ref["external_id"]
-                        content += f"| [[{software['software'].name} \\| {external_id}]] | {software['software'].name} | {description} |\n"
+                        lines.append(f"| [[{software['software'].name} \\| {external_id}]] | {software['software'].name} | {description} |")
 
+                content = self.create_campaign_notes_header(campaign=campaign) + "\n".join(lines)
                 content = convert_to_local_links(text=content)
 
                 # References
-                content += "\n\n### References\n\n"
-
+                ref_lines = ["", "", "### References", ""]
                 for ref in campaign.external_references:
                     name: str = ref["name"].replace(" ", "_")
                     if "url" in ref:
-                        content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
+                        ref_lines.append(f"[^{name}]: [{ref['description']}]({ref['url']})")
 
+                content = content + "\n".join(ref_lines)
                 content = content.replace("MITRE_URL", campaign.url)
                 fd.write(content)
 
     def create_tool_notes_header(self, asset) -> str:
         """Function to create markdown headers for tools."""
-        content: str = f"---\naliases:\n  - {asset.id}\n"
-        content += f"  - {asset.name} ({asset.id})\n"
-        content += f"  - {asset.id} ({asset.name})\n"
-        content += "url: MITRE_URL\n"
-        content += "tags:\n"
-        content += f"  - {self.tags_prefix}asset\n"
-        content += f"  - {self.tags_prefix}mitre_attack\n"
+        lines = [
+            f"---\naliases:\n  - {asset.id}",
+            f"  - {asset.name} ({asset.id})",
+            f"  - {asset.id} ({asset.name})",
+            "url: MITRE_URL",
+            "tags:",
+            f"  - {self.tags_prefix}asset",
+            f"  - {self.tags_prefix}mitre_attack",
+        ]
+
         if asset.platforms and asset.platforms != "":
             for platform in asset.platforms[0]:
                 if platform:
-                    content += f"  - {self.tags_prefix}{platform.replace(' ', '_')}\n"
+                    lines.append(f"  - {self.tags_prefix}{platform.replace(' ', '_')}")
         if asset.sectors and asset.sectors != "":
             for sector in asset.sectors[0]:
                 if sector:
-                    content += f"  - {self.tags_prefix}{sector.replace(' ', '_')}\n"
-        content += "---\n\n"
+                    lines.append(f"  - {self.tags_prefix}{sector.replace(' ', '_')}")
 
-        content += f"## {asset.name}\n\n"
+        lines.extend(["---", "", f"## {asset.name}", ""])
+
         asset_description: str = fix_description(description_str=asset.description)
-        content += f"{asset_description}\n\n\n"
+        lines.extend([asset_description, "", ""])
 
         # Asset information
-        content += "> [!info]\n"
-        content += f"> ID: {asset.id}\n"
+        lines.extend([
+            "> [!info]",
+            f"> ID: {asset.id}",
+        ])
+
         if asset.platforms and asset.platforms != [[]]:
             platforms: list[str] = [", ".join(platform) for platform in asset.platforms]
-            content += f"> Platforms: {''.join(platforms)}\n"
+            lines.append(f"> Platforms: {''.join(platforms)}")
         if asset.sectors and asset.sectors != [[]]:
             sectors: list[str] = [", ".join(sector) for sector in asset.sectors]
-            content += f"> Sectors: {''.join(sectors)}\n"
-        content += f"> Version: {asset.version}\n"
-        content += (
-            f"> Created: {str(object=asset.created).split(sep=' ')[0].split('T')[0]}\n"
-        )
-        content += f"> Last Modified: {str(object=asset.modified).split(sep=' ')[0].split('T')[0]}\n\n\n"
-        return content
+            lines.append(f"> Sectors: {''.join(sectors)}")
+
+        lines.extend([
+            f"> Version: {asset.version}",
+            f"> Created: {str(object=asset.created).split(sep=' ')[0].split('T')[0]}",
+            f"> Last Modified: {str(object=asset.modified).split(sep=' ')[0].split('T')[0]}",
+            "",
+            "",
+        ])
+
+        return "\n".join(lines)
 
     def create_asset_notes(self) -> None:
         """Function to create markdown notes for assets in Defense folder."""
@@ -791,14 +929,17 @@ class MarkdownGenerator:
 
             # Create markdown file for current asset
             with open(file=asset_file, mode="w", encoding="utf-8") as fd:
-                content: str = self.create_tool_notes_header(asset=asset)
+                lines = []
 
                 # Related assets
                 if asset.related_assets:
-                    content += "\n### Related Assets\n"
-                    content += (
-                        "\n| Name | Sectors | Description |\n| --- | --- | --- |\n"
-                    )
+                    lines.extend([
+                        "",
+                        "### Related Assets",
+                        "",
+                        "| Name | Sectors | Description |",
+                        "| --- | --- | --- |",
+                    ])
                     for related_asset in sorted(
                         asset.related_assets, key=lambda x: x["name"]
                     ):
@@ -810,16 +951,18 @@ class MarkdownGenerator:
                             sectors = [
                                 ", ".join(sector) for sector in related_asset.sectors
                             ]
-                            content += f"| {related_asset['name']} | {', '.join(sectors)} | {description} |\n"
+                            lines.append(f"| {related_asset['name']} | {', '.join(sectors)} | {description} |")
                         except AttributeError:
-                            content += (
-                                f"| {related_asset['name']} | | {description} |\n"
-                            )
+                            lines.append(f"| {related_asset['name']} | | {description} |")
 
                 # Techniques Addressed by Asset
                 if asset.techniques_used:
-                    content += "### Techniques Addressed by Asset\n"
-                    content += "\n| Domain | ID | Name |\n| --- | --- | --- |\n"
+                    lines.extend([
+                        "### Techniques Addressed by Asset",
+                        "",
+                        "| Domain | ID | Name |",
+                        "| --- | --- | --- |",
+                    ])
                     for technique in sorted(
                         asset.techniques_used, key=lambda x: x["technique_id"]
                     ):
@@ -830,19 +973,19 @@ class MarkdownGenerator:
                             .capitalize()
                             .replace("Ics ", "ICS ")
                         )
-                        content += f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_name']}]] |\n"
+                        lines.append(f"| {domain} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_name']}]] |")
 
+                content = self.create_tool_notes_header(asset=asset) + "\n".join(lines)
                 content = convert_to_local_links(text=content)
 
                 # References
                 if asset.external_references and len(asset.external_references) > 0:
-                    content += "\n\n### References\n\n"
+                    ref_lines = ["", "", "### References", ""]
                     for ref in asset.external_references:
                         name = ref["name"].replace(" ", "_")
                         if "url" in ref:
-                            content += (
-                                f"[^{name}]: [{ref['description']}]({ref['url']})\n"
-                            )
+                            ref_lines.append(f"[^{name}]: [{ref['description']}]({ref['url']})")
+                    content = content + "\n".join(ref_lines)
 
                 content = content.replace("MITRE_URL", asset.url)
 
@@ -858,51 +1001,59 @@ class MarkdownGenerator:
 
             # Create markdown file for current data source
             with open(file=data_source_file, mode="w", encoding="utf-8") as fd:
-                content: str = f"---\naliases:\n  - {data_source.id}\n"
-                content += f"  - {data_source.name} ({data_source.id})\n"
-                content += f"  - {data_source.id} ({data_source.name})\n"
-                content += "url: MITRE_URL\n"
-                content += "tags:\n"
-                content += f"  - {self.tags_prefix}data_source\n"
-                content += f"  - {self.tags_prefix}mitre_attack\n"
-                content += "---\n\n"
+                lines = [
+                    f"---\naliases:\n  - {data_source.id}",
+                    f"  - {data_source.name} ({data_source.id})",
+                    f"  - {data_source.id} ({data_source.name})",
+                    "url: MITRE_URL",
+                    "tags:",
+                    f"  - {self.tags_prefix}data_source",
+                    f"  - {self.tags_prefix}mitre_attack",
+                    "---",
+                    "",
+                    f"## {data_source.name}",
+                    "",
+                ]
 
-                content += f"## {data_source.name}\n\n"
                 data_source_description: str = fix_description(
                     description_str=data_source.description
                 )
-                content += f"{data_source_description}\n\n\n"
+                lines.extend([data_source_description, "", ""])
 
                 # Data source information
-                content += "> [!info]\n"
-                content += f"> ID: {data_source.id}\n"
+                lines.extend([
+                    "> [!info]",
+                    f"> ID: {data_source.id}",
+                ])
+
                 if data_source.platforms and data_source.platforms != [[]]:
                     platforms: list[str] = [
                         ", ".join(platform) for platform in data_source.platforms
                     ]
-                    content += f"> Platforms: {''.join(platforms)}\n"
-                if data_source.collection_layers and data_source.collection_layers != [
-                    []
-                ]:
+                    lines.append(f"> Platforms: {''.join(platforms)}")
+                if data_source.collection_layers and data_source.collection_layers != [[]]:
                     layers: list[str] = [
                         ", ".join(layer) for layer in data_source.collection_layers
                     ]
-                    content += f"> Collection Layers: {''.join(layers)}\n"
-                content += f"> Version: {data_source.version}\n"
-                content += f"> Created: {str(object=data_source.created).split(sep=' ')[0].split(sep='T')[0]}\n"
-                content += f"> Last Modified: {str(object=data_source.modified).split(sep=' ')[0].split('T')[0]}\n\n\n"
+                    lines.append(f"> Collection Layers: {''.join(layers)}")
 
-                content += "## Data Components\n"
+                lines.extend([
+                    f"> Version: {data_source.version}",
+                    f"> Created: {str(object=data_source.created).split(sep=' ')[0].split(sep='T')[0]}",
+                    f"> Last Modified: {str(object=data_source.modified).split(sep=' ')[0].split('T')[0]}",
+                    "",
+                    "",
+                    "## Data Components",
+                ])
 
                 # Data Components
+                for related_data_source in data_source.data_components[0]:
+                    lines.append(f"- [[#{related_data_source['data_component_parent']}: {related_data_source['data_component_name']} \\| {related_data_source['data_component_name']}]]")
+
+                lines.extend(["", ""])
 
                 for related_data_source in data_source.data_components[0]:
-                    content += f"- [[#{related_data_source['data_component_parent']}: {related_data_source['data_component_name']} \\| {related_data_source['data_component_name']}]]\n"
-
-                content += "\n\n"
-
-                for related_data_source in data_source.data_components[0]:
-                    content += f"### {related_data_source['data_component_parent']}: {related_data_source['data_component_name']}\n"
+                    lines.append(f"### {related_data_source['data_component_parent']}: {related_data_source['data_component_name']}")
                     if related_data_source["data_component_description"]:
                         description: str = fix_description(
                             description_str=related_data_source[
@@ -910,19 +1061,21 @@ class MarkdownGenerator:
                             ]
                         )
                         description = description.replace("\n", "<br />")
-                        content += f"{description}\n\n"
+                        lines.extend([description, ""])
 
-                    content += (
-                        "| Domain | ID | Name | Detects |\n| --- | --- | --- | --- |\n"
-                    )
+                    lines.extend([
+                        "| Domain | ID | Name | Detects |",
+                        "| --- | --- | --- | --- |",
+                    ])
 
                     for technique in related_data_source["techniques_used"]:
                         detects: str = fix_description(
                             description_str=technique["description"]
                         )
                         detects = detects.replace("\n", "<br />")
-                        content += f"| {technique['domain']} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_name']}]] | {detects} |\n"
+                        lines.append(f"| {technique['domain']} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_name']}]] | {detects} |")
 
+                content = "\n".join(lines)
                 content = convert_to_local_links(text=content)
 
                 # References
@@ -930,13 +1083,12 @@ class MarkdownGenerator:
                     data_source.external_references
                     and len(data_source.external_references) > 0
                 ):
-                    content += "\n\n### References\n\n"
+                    ref_lines = ["", "", "### References", ""]
                     for ref in data_source.external_references:
                         name: str = ref["name"].replace(" ", "_")
                         if "url" in ref:
-                            content += (
-                                f"[^{name}]: [{ref['description']}]({ref['url']})\n"
-                            )
+                            ref_lines.append(f"[^{name}]: [{ref['description']}]({ref['url']})")
+                    content = content + "\n".join(ref_lines)
 
                 content = content.replace("MITRE_URL", data_source.url)
 
