@@ -829,31 +829,59 @@ class StixParser:
             technique_cache[tech["id"]] = (tech, "ics-attack")
 
         # Cache all "uses" relationships for groups->software
-        # Get all "uses" relationships and filter in Python (faster than multiple queries)
-        all_soft_relationships_enterprise = [
-            rel
-            for rel in all_tech_relationships_enterprise
-            if "malware" in rel.get("target_ref", "")
-            or "tool" in rel.get("target_ref", "")
-        ]
-        all_soft_relationships_mobile = [
-            rel
-            for rel in all_tech_relationships_mobile
-            if "malware" in rel.get("target_ref", "")
-            or "tool" in rel.get("target_ref", "")
-        ]
-        all_soft_relationships_ics = [
-            rel
-            for rel in all_tech_relationships_ics
-            if "malware" in rel.get("target_ref", "")
-            or "tool" in rel.get("target_ref", "")
-        ]
+        # Query separately for malware relationships
+        all_soft_relationships_enterprise_malware = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="malware"),
+            ]
+        )
+        # Query separately for tool relationships
+        all_soft_relationships_enterprise_tool = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="tool"),
+            ]
+        )
+        all_soft_relationships_mobile_malware = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="malware"),
+            ]
+        )
+        all_soft_relationships_mobile_tool = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="tool"),
+            ]
+        )
+        all_soft_relationships_ics_malware = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="malware"),
+            ]
+        )
+        all_soft_relationships_ics_tool = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="tool"),
+            ]
+        )
 
         soft_relationships_by_source = {}
         for rel in (
-            all_soft_relationships_enterprise
-            + all_soft_relationships_mobile
-            + all_soft_relationships_ics
+            all_soft_relationships_enterprise_malware
+            + all_soft_relationships_enterprise_tool
+            + all_soft_relationships_mobile_malware
+            + all_soft_relationships_mobile_tool
+            + all_soft_relationships_ics_malware
+            + all_soft_relationships_ics_tool
         ):
             source = rel.get("source_ref")
             if source:
