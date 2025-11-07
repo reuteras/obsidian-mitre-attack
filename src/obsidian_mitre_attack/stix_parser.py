@@ -1656,8 +1656,8 @@ class StixParser:
                     or not campaign["x_mitre_deprecated"]
                 ) and ("revoked" not in campaign or not campaign["revoked"]):
                     campaign_obj = MITRECampaign(name=campaign["name"])
-                    groups_added = []
                     external_references_added = set()
+                    groups_added = []
 
                     # Add attributes to the campaign object
                     campaign_obj.internal_id = campaign["id"]
@@ -1832,6 +1832,7 @@ class StixParser:
                     softwares = software_malware + software_tool
 
                     software_added = []
+                    external_references_added = set()
                     for relationship in software_relationships:
                         if campaign_obj.internal_id == relationship["source_ref"]:
                             for software in softwares:
