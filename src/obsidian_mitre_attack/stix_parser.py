@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from time import gmtime, strftime
 
 import requests
@@ -40,29 +41,49 @@ class StixParser:
         self.verbose_log(
             message=f"Getting STIX data from {self.url} for version {self.version}"
         )
-        stix_json = requests.get(
-            url=f"{self.url}/enterprise-attack/enterprise-attack-{version}.json",
-            timeout=30,
-        ).json()
-        self.enterprise_attack = MemoryStore(stix_data=stix_json["objects"])
 
-        stix_json = requests.get(
-            url=f"{self.url}/mobile-attack/mobile-attack-{version}.json",
-            timeout=30,
-        ).json()
-        self.mobile_attack = MemoryStore(stix_data=stix_json["objects"])
+        # Parallelize STIX data downloads for all three domains
+        domains = ["enterprise-attack", "mobile-attack", "ics-attack"]
 
-        stix_json = requests.get(
-            url=f"{self.url}/ics-attack/ics-attack-{version}.json",
-            timeout=30,
-        ).json()
-        self.ics_attack = MemoryStore(stix_data=stix_json["objects"])
+        def download_domain(domain: str) -> tuple[str, dict]:
+            """Download STIX data for a specific domain."""
+            url = f"{self.url}/{domain}/{domain}-{version}.json"
+            response = requests.get(url=url, timeout=30)
+            return domain, response.json()
+
+        # Download all domains in parallel using thread pool
+        domain_data = {}
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            futures = {executor.submit(download_domain, domain): domain for domain in domains}
+            for future in as_completed(futures):
+                domain, stix_json = future.result()
+                domain_data[domain] = stix_json
+
+        # Create MemoryStore instances for each domain
+        self.enterprise_attack = MemoryStore(stix_data=domain_data["enterprise-attack"]["objects"])
+        self.mobile_attack = MemoryStore(stix_data=domain_data["mobile-attack"]["objects"])
+        self.ics_attack = MemoryStore(stix_data=domain_data["ics-attack"]["objects"])
+
         self.verbose_log(message="STIX data loaded successfully")
 
     def verbose_log(self, message) -> None:
         """Print a message if verbose mode is enabled."""
         if self.verbose:
             print(f"{strftime('%Y-%m-%d %H:%M:%S', gmtime())} - {message}", flush=True)
+
+    @staticmethod
+    def is_valid_stix_object(obj: dict) -> bool:
+        """Check if STIX object is not deprecated or revoked.
+
+        Args:
+            obj: STIX object dictionary
+
+        Returns:
+            True if object is valid (not deprecated and not revoked), False otherwise
+        """
+        is_not_deprecated = "x_mitre_deprecated" not in obj or not obj["x_mitre_deprecated"]
+        is_not_revoked = "revoked" not in obj or not obj["revoked"]
+        return is_not_deprecated and is_not_revoked
 
     def get_domain_data(self, domain) -> None:
         """Get and parse tactics, techniques, and mitigations from STIX data."""
@@ -104,17 +125,23 @@ class StixParser:
 
     def _get_tactics(self, domain) -> None:  # noqa: PLR0912
         """Get and parse tactics from STIX data."""
+        # Set the appropriate data source for the domain
+        if domain == "enterprise-attack":
+            self.src = self.enterprise_attack
+        elif domain == "mobile-attack":
+            self.src = self.mobile_attack
+        elif domain == "ics-attack":
+            self.src = self.ics_attack
+
         # Extract tactics
         tactics_stix = self.src.query(
             [Filter(prop="type", op="=", value="x-mitre-tactic")]
         )
 
         for tactic in tactics_stix:
-            if (
-                "x_mitre_deprecated" not in tactic or not tactic["x_mitre_deprecated"]
-            ) and ("revoked" not in tactic or not tactic["revoked"]):
+            if self.is_valid_stix_object(tactic):
                 tactic_obj = MITRETactic(name=tactic["name"])
-                external_references_added = []
+                external_references_added = set()
 
                 # Add attributes to the tactic object
                 tactic_obj.description = tactic["description"]
@@ -138,7 +165,7 @@ class StixParser:
                         }
                         if ext_ref["source_name"] not in external_references_added:
                             tactic_obj.external_references = item
-                            external_references_added.append(ext_ref["source_name"])
+                            external_references_added.add(ext_ref["source_name"])
 
                 # Extract external references from relationships
                 techniques_stix = self.src.query(
@@ -146,10 +173,7 @@ class StixParser:
                 )
 
                 for technique in techniques_stix:
-                    if (
-                        "x_mitre_deprecated" not in technique
-                        or not technique["x_mitre_deprecated"]
-                    ) and ("revoked" not in technique or not technique["revoked"]):
+                    if self.is_valid_stix_object(technique):
                         kill_chain_phase = technique.get("kill_chain_phases", [])
                         for phase in kill_chain_phase:
                             if phase["phase_name"] == tactic_obj.shortname:
@@ -169,7 +193,7 @@ class StixParser:
                                             not in external_references_added
                                         ):
                                             tactic_obj.external_references = item
-                                            external_references_added.append(
+                                            external_references_added.add(
                                                 ext_ref["source_name"]
                                             )
                                 tactic_obj.techniques_used = {
@@ -182,9 +206,17 @@ class StixParser:
 
     def _get_techniques(self, domain):  # noqa: PLR0912, PLR0915
         """Get and parse techniques from STIX data."""
+        # Set the appropriate data source for the domain
+        if domain == "enterprise-attack":
+            self.src = self.enterprise_attack
+        elif domain == "mobile-attack":
+            self.src = self.mobile_attack
+        elif domain == "ics-attack":
+            self.src = self.ics_attack
+
         # Extract techniques
         techniques_stix = self.src.query([Filter("type", "=", "attack-pattern")])
-        external_references_added = []
+        external_references_added = set()
 
         # Extract tactics to build relationship between techniques and tactics
         tactics_stix = self.src.query([Filter("type", "=", "x-mitre-tactic")])
@@ -254,7 +286,7 @@ class StixParser:
                         }
                         if ext_ref["source_name"] not in external_references_added:
                             technique_obj.external_references = item
-                            external_references_added.append(ext_ref["source_name"])
+                            external_references_added.add(ext_ref["source_name"])
 
                 # Get technique main id
                 if technique_obj.is_subtechnique:
@@ -291,7 +323,7 @@ class StixParser:
                                         not in external_references_added
                                     ):
                                         technique_obj.external_references = item
-                                        external_references_added.append(
+                                        external_references_added.add(
                                             ext_ref["source_name"]
                                         )
 
@@ -356,7 +388,7 @@ class StixParser:
                                             not in external_references_added
                                         ):
                                             technique_obj.external_references = item
-                                            external_references_added.append(
+                                            external_references_added.add(
                                                 ext_ref["source_name"]
                                             )
 
@@ -387,7 +419,7 @@ class StixParser:
                             }
                             if ext_ref["source_name"] not in external_references_added:
                                 technique_obj.external_references = item
-                                external_references_added.append(ext_ref["source_name"])
+                                external_references_added.add(ext_ref["source_name"])
                     # Get mitigation id
                     mitigation = self.src.query(
                         [
@@ -460,7 +492,7 @@ class StixParser:
                             }
                             if ext_ref["source_name"] not in external_references_added:
                                 technique_obj.external_references = item
-                                external_references_added.append(ext_ref["source_name"])
+                                external_references_added.add(ext_ref["source_name"])
 
                     item = {
                         "name": data_component_name,
@@ -555,7 +587,7 @@ class StixParser:
                             }
                             if ext_ref["source_name"] not in external_references_added:
                                 technique_obj.external_references = item
-                                external_references_added.append(ext_ref["source_name"])
+                                external_references_added.add(ext_ref["source_name"])
                     item = {
                         "name": targeted_assets_name.replace("/", "／"),  # noqa: RUF001
                         "id": targeted_assets_id,
@@ -568,6 +600,14 @@ class StixParser:
 
     def _get_mitigations(self, domain) -> None:  # noqa: PLR0912
         """Get and parse techniques from STIX data."""
+        # Set the appropriate data source for the domain
+        if domain == "enterprise-attack":
+            self.src = self.enterprise_attack
+        elif domain == "mobile-attack":
+            self.src = self.mobile_attack
+        elif domain == "ics-attack":
+            self.src = self.ics_attack
+
         # Extract mitigations
         mitigations_stix = self.src.query(
             [Filter(prop="type", op="=", value="course-of-action")]
@@ -583,7 +623,7 @@ class StixParser:
                 and (domain in mitigation["x_mitre_domains"])
             ):
                 mitigation_obj = MITREMitigation(name=mitigation["name"])
-                external_references_added = []
+                external_references_added = set()
 
                 # Add attributes to the mitigation object
                 mitigation_obj.internal_id = mitigation["id"]
@@ -607,7 +647,7 @@ class StixParser:
                         }
                         if ext_ref["source_name"] not in external_references_added:
                             mitigation_obj.external_references = item
-                            external_references_added.append(ext_ref["source_name"])
+                            external_references_added.add(ext_ref["source_name"])
 
                 mitigation_relationships = self.src.query(
                     [
@@ -649,7 +689,7 @@ class StixParser:
                                     not in external_references_added
                                 ):
                                     mitigation_obj.external_references = item
-                                    external_references_added.append(
+                                    external_references_added.add(
                                         ext_ref["source_name"]
                                     )
                         mitigation_obj.mitigates = {
@@ -682,7 +722,7 @@ class StixParser:
                 "x_mitre_deprecated" not in group or not group["x_mitre_deprecated"]
             ) and ("revoked" not in group or not group["revoked"]):
                 group_obj = MITREGroup(name=group["name"])
-                external_references_added = []
+                external_references_added = set()
                 added = []
 
                 # Add attributes to the group object
@@ -709,7 +749,7 @@ class StixParser:
                         }
                         if ext_ref["source_name"] not in external_references_added:
                             group_obj.external_references = item
-                            external_references_added.append(ext_ref["source_name"])
+                            external_references_added.add(ext_ref["source_name"])
                     elif ext_ref["source_name"] != group_obj.name:
                         group_obj.aliases_references = {
                             "name": ext_ref["source_name"],
@@ -813,7 +853,7 @@ class StixParser:
                                     not in external_references_added
                                 ):
                                     group_obj.external_references = item
-                                    external_references_added.append(
+                                    external_references_added.add(
                                         ext_ref["source_name"]
                                     )
 
@@ -1202,7 +1242,7 @@ class StixParser:
             ) and ("revoked" not in software or not software["revoked"]):
                 software_obj = MITRESoftware(name=software["name"])
                 added = []
-                external_references_added = []
+                external_references_added = set()
 
                 # Add simple attributes to the software object
                 software_obj.internal_id = software["id"]
@@ -1230,7 +1270,7 @@ class StixParser:
                         }
                         if ext_ref["source_name"] not in external_references_added:
                             software_obj.external_references = item
-                            external_references_added.append(ext_ref["source_name"])
+                            external_references_added.add(ext_ref["source_name"])
 
                 # Techniques used by software
                 source_relationships_enterprise = self.enterprise_attack.query(
@@ -1318,7 +1358,7 @@ class StixParser:
                                             not in external_references_added
                                         ):
                                             software_obj.external_references = item
-                                            external_references_added.append(
+                                            external_references_added.add(
                                                 ext_ref["source_name"]
                                             )
 
@@ -1412,7 +1452,7 @@ class StixParser:
                                             not in external_references_added
                                         ):
                                             software_obj.external_references = item
-                                            external_references_added.append(
+                                            external_references_added.add(
                                                 ext_ref["source_name"]
                                             )
                                 ext_refs = relationship.get("external_references", [])
@@ -1428,7 +1468,7 @@ class StixParser:
                                             not in external_references_added
                                         ):
                                             software_obj.external_references = item
-                                            external_references_added.append(
+                                            external_references_added.add(
                                                 ext_ref["source_name"]
                                             )
                                 item = {
@@ -1536,7 +1576,7 @@ class StixParser:
                                             not in external_references_added
                                         ):
                                             software_obj.external_references = item
-                                            external_references_added.append(
+                                            external_references_added.add(
                                                 ext_ref["source_name"]
                                             )
                             if "external_references" in relationship:
@@ -1553,7 +1593,7 @@ class StixParser:
                                             not in external_references_added
                                         ):
                                             software_obj.external_references = item
-                                            external_references_added.append(
+                                            external_references_added.add(
                                                 ext_ref["source_name"]
                                             )
 
@@ -1657,7 +1697,7 @@ class StixParser:
                                                     software_obj.external_references = (
                                                         item
                                                     )
-                                                    external_references_added.append(
+                                                    external_references_added.add(
                                                         ext_ref["source_name"]
                                                     )
                                         description: str = campaign.get(
@@ -2020,7 +2060,7 @@ class StixParser:
             ) and ("revoked" not in asset or not asset["revoked"]):
                 asset_obj = MITREAsset(name=asset["name"])
 
-                external_references_added = []
+                external_references_added = set()
 
                 # Add attributes to the asset object
                 asset_obj.internal_id = asset["id"]
@@ -2046,7 +2086,7 @@ class StixParser:
                         }
                         if ext_ref["source_name"] not in external_references_added:
                             asset_obj.external_references = item
-                            external_references_added.append(ext_ref["source_name"])
+                            external_references_added.add(ext_ref["source_name"])
 
                 related_assets = asset.get("x_mitre_related_assets", [])
 
@@ -2173,7 +2213,7 @@ class StixParser:
             ) and ("revoked" not in data_source or not data_source["revoked"]):
                 data_source_obj = MITREDataSource(name=data_source["name"])
 
-                external_references_added = []
+                external_references_added = set()
 
                 # Add attributes to the data source object
                 data_source_obj.internal_id = data_source["id"]
@@ -2204,7 +2244,7 @@ class StixParser:
                         }
                         if ext_ref["source_name"] not in external_references_added:
                             data_source_obj.external_references = item
-                            external_references_added.append(ext_ref["source_name"])
+                            external_references_added.add(ext_ref["source_name"])
 
                 # Get data components used by data source
                 data_source_relationships_enterprise = self.enterprise_attack.query(
@@ -2268,7 +2308,7 @@ class StixParser:
                                     not in external_references_added
                                 ):
                                     data_source_obj.external_references = item
-                                    external_references_added.append(
+                                    external_references_added.add(
                                         ext_ref["source_name"]
                                     )
 
@@ -2336,7 +2376,7 @@ class StixParser:
                                         not in external_references_added
                                     ):
                                         data_source_obj.external_references = item
-                                        external_references_added.append(
+                                        external_references_added.add(
                                             ext_ref["source_name"]
                                         )
 
