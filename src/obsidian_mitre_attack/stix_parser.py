@@ -175,7 +175,7 @@ class StixParser:
                             tactic_obj.external_references = item
                             external_references_added.add(ext_ref["source_name"])
 
-                # Extract external references from relationships
+                # Get techniques used in this tactic
                 techniques_stix = self.src.query(
                     [Filter(prop="type", op="=", value="attack-pattern")]
                 )
@@ -190,20 +190,7 @@ class StixParser:
                                 for ext_ref in ext_refs:
                                     if ext_ref["source_name"] == "mitre-attack":
                                         technique_id = ext_ref["external_id"]
-                                    elif "url" in ext_ref and "description" in ext_ref:
-                                        item = {
-                                            "name": ext_ref["source_name"],
-                                            "url": ext_ref["url"],
-                                            "description": ext_ref["description"],
-                                        }
-                                        if (
-                                            ext_ref["source_name"]
-                                            not in external_references_added
-                                        ):
-                                            tactic_obj.external_references = item
-                                            external_references_added.add(
-                                                ext_ref["source_name"]
-                                            )
+                                        break
                                 tactic_obj.techniques_used = {
                                     "id": technique_id,
                                     "name": technique["name"].replace("/", "／"),  # noqa: RUF001
@@ -1053,24 +1040,6 @@ class StixParser:
                         if not software_id:
                             continue
 
-                        # Extract external references from software relationship
-                        ext_refs = group_software_rel.get("external_references", [])
-                        for ext_ref in ext_refs:
-                            if "url" in ext_ref and "description" in ext_ref:
-                                item = {
-                                    "name": ext_ref["source_name"].replace("/", "／"),  # noqa: RUF001
-                                    "url": ext_ref["url"],
-                                    "description": ext_ref["description"],
-                                }
-                                if (
-                                    ext_ref["source_name"]
-                                    not in external_references_added
-                                ):
-                                    group_obj.external_references = item
-                                    external_references_added.add(
-                                        ext_ref["source_name"]
-                                    )
-
                         # Get techniques used by this software (using cache)
                         source_relationships = tech_relationships_by_source.get(
                             target_ref, []
@@ -1854,31 +1823,6 @@ class StixParser:
                                     if item not in software_added:
                                         campaign_obj.software_used = item
                                         software_added.append(item)
-
-                                    # Extract external references from software relationship
-                                    ext_refs = relationship.get(
-                                        "external_references", []
-                                    )
-                                    for ext_ref in ext_refs:
-                                        if (
-                                            "url" in ext_ref
-                                            and "description" in ext_ref
-                                        ):
-                                            ref_item = {
-                                                "name": ext_ref["source_name"],
-                                                "url": ext_ref["url"],
-                                                "description": ext_ref["description"],
-                                            }
-                                            if (
-                                                ext_ref["source_name"]
-                                                not in external_references_added
-                                            ):
-                                                campaign_obj.external_references = (
-                                                    ref_item
-                                                )
-                                                external_references_added.add(
-                                                    ext_ref["source_name"]
-                                                )
 
                     # Get techniques used in the campaign
                     source_relationships_enterprise = self.enterprise_attack.query(
