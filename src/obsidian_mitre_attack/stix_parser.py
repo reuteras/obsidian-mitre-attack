@@ -467,42 +467,46 @@ class StixParser:
                             Filter(prop="id", op="=", value=relation["source_ref"]),
                         ]
                     )
-                    if not data_component_result:
-                        continue
 
-                    data_component = data_component_result[0]
-                    data_component_name = data_component.get("name", "")
-                    data_component_source_ref = data_component.get(
-                        "x_mitre_data_source_ref", ""
-                    )
-
-                    data_source_result = self.src.query(
-                        [
-                            Filter(prop="type", op="=", value="x-mitre-data-source"),
-                            Filter(prop="id", op="=", value=data_component_source_ref),
-                        ]
-                    )
-                    if not data_source_result:
-                        continue
-
-                    data_source = data_source_result[0]
-                    data_source_name = data_source.get("name", "")
+                    # Set defaults in case lookups fail
+                    data_component_name = "Unknown"
+                    data_source_name = "Unknown"
                     data_source_id = ""
-                    ext_refs = data_source.get("external_references", [])
 
-                    for ext_ref in ext_refs:
-                        if ext_ref["source_name"] == "mitre-attack":
-                            data_source_id = ext_ref["external_id"]
-                        if "url" in ext_ref and "description" in ext_ref:
-                            item = {
-                                "name": ext_ref["source_name"],
-                                "url": ext_ref["url"],
-                                "description": ext_ref["description"],
-                            }
-                            if ext_ref["source_name"] not in external_references_added:
-                                technique_obj.external_references = item
-                                external_references_added.add(ext_ref["source_name"])
+                    if data_component_result:
+                        data_component = data_component_result[0]
+                        data_component_name = data_component.get("name", "Unknown")
+                        data_component_source_ref = data_component.get(
+                            "x_mitre_data_source_ref", ""
+                        )
 
+                        if data_component_source_ref:
+                            data_source_result = self.src.query(
+                                [
+                                    Filter(prop="type", op="=", value="x-mitre-data-source"),
+                                    Filter(prop="id", op="=", value=data_component_source_ref),
+                                ]
+                            )
+
+                            if data_source_result:
+                                data_source = data_source_result[0]
+                                data_source_name = data_source.get("name", "Unknown")
+                                ext_refs = data_source.get("external_references", [])
+
+                                for ext_ref in ext_refs:
+                                    if ext_ref["source_name"] == "mitre-attack":
+                                        data_source_id = ext_ref["external_id"]
+                                    if "url" in ext_ref and "description" in ext_ref:
+                                        item = {
+                                            "name": ext_ref["source_name"],
+                                            "url": ext_ref["url"],
+                                            "description": ext_ref["description"],
+                                        }
+                                        if ext_ref["source_name"] not in external_references_added:
+                                            technique_obj.external_references = item
+                                            external_references_added.add(ext_ref["source_name"])
+
+                    # Always add the detection, even if some lookups failed
                     item = {
                         "name": data_component_name,
                         "data_source": data_source_name,
