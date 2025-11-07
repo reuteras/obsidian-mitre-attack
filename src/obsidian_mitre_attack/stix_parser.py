@@ -357,7 +357,9 @@ class StixParser:
                 "x_mitre_deprecated" not in tech or not tech["x_mitre_deprecated"]
             ) and ("revoked" not in tech or not tech["revoked"]):
                 technique_obj = MITRETechnique(name=tech["name"])
-                added = []
+                mitigations_added = set()
+                detections_added = set()
+                targeted_assets_added = set()
                 external_references_added = set()
 
                 # Add attributes to the technique object
@@ -514,7 +516,7 @@ class StixParser:
                         "id": mitigation_id,
                     }
                     if (
-                        item not in added
+                        mitigation_id not in mitigations_added
                         and (
                             "x_mitre_deprecated" not in mitigation
                             or not mitigation["x_mitre_deprecated"]
@@ -522,7 +524,7 @@ class StixParser:
                         and ("revoked" not in mitigation or not mitigation["revoked"])
                     ):
                         technique_obj.mitigations = item
-                        added.append(item)
+                        mitigations_added.add(mitigation_id)
 
                 # Detection (using cache)
                 detections_relationships = detects_by_target.get(
@@ -576,9 +578,15 @@ class StixParser:
                         "id": data_source_id,
                         "description": relation.get("description", ""),
                     }
-                    if item not in added:
+                    # Use data_source_id as unique key, or fall back to combination if id is empty
+                    detection_key = (
+                        data_source_id
+                        if data_source_id
+                        else f"{data_source_name}:{data_component_name}"
+                    )
+                    if detection_key not in detections_added:
                         technique_obj.detections = item
-                        added.append(item)
+                        detections_added.add(detection_key)
 
                 # Subtechniques (using cache)
                 subtechniques = subtechniques_by_main_id.get(technique_obj.main_id, [])
@@ -659,9 +667,9 @@ class StixParser:
                         "id": targeted_assets_id,
                         "description": targeted_assets_description,
                     }
-                    if item not in added:
+                    if targeted_assets_id not in targeted_assets_added:
                         technique_obj.targeted_assets = item
-                        added.append(item)
+                        targeted_assets_added.add(targeted_assets_id)
                 self.techniques.append(technique_obj)
 
     def _get_mitigations(self, domain) -> None:  # noqa: PLR0912
@@ -926,7 +934,7 @@ class StixParser:
             ) and ("revoked" not in group or not group["revoked"]):
                 group_obj = MITREGroup(name=group["name"])
                 external_references_added = set()
-                added = []
+                software_used_added = set()
 
                 # Add attributes to the group object
                 group_obj.internal_id = group["id"]
@@ -990,7 +998,7 @@ class StixParser:
                                         item = {
                                             "name": ext_ref["source_name"].replace(
                                                 "/", "／"
-                                            ),  # noqa: RUF001
+                                            ),
                                             "url": ext_ref["url"],
                                             "description": ext_ref["description"],
                                         }
@@ -1006,7 +1014,7 @@ class StixParser:
                                 group_obj.techniques_used = {
                                     "technique_name": technique["name"].replace(
                                         "/", "／"
-                                    ),  # noqa: RUF001
+                                    ),
                                     "technique_id": technique_id,
                                     "description": tech_group_rel.get(
                                         "description", ""
@@ -1167,9 +1175,9 @@ class StixParser:
                             "description": relationship.get("description", ""),
                             "software_techniques": markdown_links,
                         }
-                        if item not in added:
+                        if software_id not in software_used_added:
                             group_obj.software_used = item
-                            added.append(item)
+                            software_used_added.add(software_id)
 
                 self.groups.append(group_obj)
 
@@ -1376,7 +1384,7 @@ class StixParser:
                 or not software["x_mitre_deprecated"]
             ) and ("revoked" not in software or not software["revoked"]):
                 software_obj = MITRESoftware(name=software["name"])
-                added = []
+                campaigns_using_added = set()
                 external_references_added = set()
 
                 # Add simple attributes to the software object
@@ -1500,9 +1508,9 @@ class StixParser:
                                 "description": relationship.get("description", ""),
                                 "campaign_internal_id": campaign["id"],
                             }
-                            if item not in added:
+                            if campaign["id"] not in campaigns_using_added:
                                 software_obj.campaigns_using = item
-                                added.append(item)
+                                campaigns_using_added.add(campaign["id"])
 
                 # Groups using the software (using cache)
                 group_relationships = uses_by_target.get(software_obj.internal_id, [])
@@ -1656,7 +1664,7 @@ class StixParser:
                     or not campaign["x_mitre_deprecated"]
                 ) and ("revoked" not in campaign or not campaign["revoked"]):
                     campaign_obj = MITRECampaign(name=campaign["name"])
-                    added = []
+                    external_references_added = set()
                     groups_added = []
 
                     # Add attributes to the campaign object
@@ -1682,9 +1690,9 @@ class StixParser:
                                 "url": ext_ref["url"],
                                 "description": ext_ref["description"],
                             }
-                            if item not in added:
+                            if ext_ref["source_name"] not in external_references_added:
                                 campaign_obj.external_references = item
-                                added.append(item)
+                                external_references_added.add(ext_ref["source_name"])
 
                     # Get group(s) associated with the campaign
                     group_relationships_enterprise = self.enterprise_attack.query(
@@ -1848,9 +1856,14 @@ class StixParser:
                                         software_added.append(item)
 
                                     # Extract external references from software relationship
-                                    ext_refs = relationship.get("external_references", [])
+                                    ext_refs = relationship.get(
+                                        "external_references", []
+                                    )
                                     for ext_ref in ext_refs:
-                                        if "url" in ext_ref and "description" in ext_ref:
+                                        if (
+                                            "url" in ext_ref
+                                            and "description" in ext_ref
+                                        ):
                                             ref_item = {
                                                 "name": ext_ref["source_name"],
                                                 "url": ext_ref["url"],
@@ -1860,7 +1873,9 @@ class StixParser:
                                                 ext_ref["source_name"]
                                                 not in external_references_added
                                             ):
-                                                campaign_obj.external_references = ref_item
+                                                campaign_obj.external_references = (
+                                                    ref_item
+                                                )
                                                 external_references_added.add(
                                                     ext_ref["source_name"]
                                                 )
@@ -1948,9 +1963,14 @@ class StixParser:
                                         "url": ext_ref["url"],
                                         "description": ext_ref["description"],
                                     }
-                                    if item not in added:
+                                    if (
+                                        ext_ref["source_name"]
+                                        not in external_references_added
+                                    ):
                                         campaign_obj.external_references = item
-                                        added.append(item)
+                                        external_references_added.add(
+                                            ext_ref["source_name"]
+                                        )
 
                     self.campaigns.append(campaign_obj)
 
