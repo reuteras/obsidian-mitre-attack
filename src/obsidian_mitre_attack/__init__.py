@@ -102,7 +102,7 @@ def main() -> None:
         args.verbose = config["verbose"]
 
     start_time = time.time()
-    print("Starting STIX data download and parsing...")
+    print(f"Downloading MITRE ATT&CK STIX data version {config['version']}...")
 
     stix_data = StixParser(
         repo_url=config["repository_url"],
@@ -137,7 +137,9 @@ def main() -> None:
     domain_gen_start = time.time()
     with ThreadPoolExecutor(max_workers=3) as executor:
         domain_futures = {
-            executor.submit(generate_domain_markdown, markdown_generator, domain): domain
+            executor.submit(
+                generate_domain_markdown, markdown_generator, domain
+            ): domain
             for domain in domains
         }
         for future in as_completed(domain_futures):
@@ -159,7 +161,9 @@ def main() -> None:
             executor.submit(markdown_generator.create_group_notes): "groups",
             executor.submit(markdown_generator.create_campaign_notes): "campaigns",
             executor.submit(markdown_generator.create_asset_notes): "assets",
-            executor.submit(markdown_generator.create_data_source_notes): "data_sources",
+            executor.submit(
+                markdown_generator.create_data_source_notes
+            ): "data_sources",
         }
         for future in as_completed(cti_futures):
             entity_type = cti_futures[future]
@@ -178,6 +182,8 @@ def main() -> None:
     create_main_readme(arguments=args, domains=domains, config=config)
     print(f"✓ README generated ({time.time() - readme_start:.2f}s)")
 
-    print(f"\n{'='*60}")
-    print(f"TOTAL TIME: {time.time() - start_time:.2f}s ({(time.time() - start_time)/60:.2f} minutes)")
-    print(f"{'='*60}")
+    print(f"\n{'=' * 60}")
+    print(
+        f"TOTAL TIME: {time.time() - start_time:.2f}s ({(time.time() - start_time) / 60:.2f} minutes)"
+    )
+    print(f"{'=' * 60}")

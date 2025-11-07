@@ -5,7 +5,6 @@ from __future__ import annotations
 import sys
 import time as time_module
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from time import gmtime, strftime
 
 import requests
 from stix2 import Filter, MemoryStore
@@ -55,14 +54,20 @@ class StixParser:
         # Download all domains in parallel using thread pool
         domain_data = {}
         with ThreadPoolExecutor(max_workers=3) as executor:
-            futures = {executor.submit(download_domain, domain): domain for domain in domains}
+            futures = {
+                executor.submit(download_domain, domain): domain for domain in domains
+            }
             for future in as_completed(futures):
                 domain, stix_json = future.result()
                 domain_data[domain] = stix_json
 
         # Create MemoryStore instances for each domain
-        self.enterprise_attack = MemoryStore(stix_data=domain_data["enterprise-attack"]["objects"])
-        self.mobile_attack = MemoryStore(stix_data=domain_data["mobile-attack"]["objects"])
+        self.enterprise_attack = MemoryStore(
+            stix_data=domain_data["enterprise-attack"]["objects"]
+        )
+        self.mobile_attack = MemoryStore(
+            stix_data=domain_data["mobile-attack"]["objects"]
+        )
         self.ics_attack = MemoryStore(stix_data=domain_data["ics-attack"]["objects"])
 
         self.verbose_log(message="STIX data loaded successfully")
@@ -70,7 +75,7 @@ class StixParser:
     def verbose_log(self, message) -> None:
         """Print a message if verbose mode is enabled."""
         if self.verbose:
-            print(f"{strftime('%Y-%m-%d %H:%M:%S', gmtime())} - {message}", flush=True)
+            print(message, flush=True)
 
     @staticmethod
     def is_valid_stix_object(obj: dict) -> bool:
@@ -82,7 +87,9 @@ class StixParser:
         Returns:
             True if object is valid (not deprecated and not revoked), False otherwise
         """
-        is_not_deprecated = "x_mitre_deprecated" not in obj or not obj["x_mitre_deprecated"]
+        is_not_deprecated = (
+            "x_mitre_deprecated" not in obj or not obj["x_mitre_deprecated"]
+        )
         is_not_revoked = "revoked" not in obj or not obj["revoked"]
         return is_not_deprecated and is_not_revoked
 
@@ -240,10 +247,12 @@ class StixParser:
             shortname_id[tactic["x_mitre_shortname"]] = tactic_id
 
         # Cache all "uses" relationships by target_ref
-        all_uses_relationships = self.src.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="uses"),
-        ])
+        all_uses_relationships = self.src.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+            ]
+        )
         uses_by_target = {}
         for rel in all_uses_relationships:
             target = rel.get("target_ref")
@@ -253,10 +262,12 @@ class StixParser:
                 uses_by_target[target].append(rel)
 
         # Cache all "mitigates" relationships by target_ref
-        all_mitigates_relationships = self.src.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="mitigates"),
-        ])
+        all_mitigates_relationships = self.src.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="mitigates"),
+            ]
+        )
         mitigates_by_target = {}
         for rel in all_mitigates_relationships:
             target = rel.get("target_ref")
@@ -266,10 +277,12 @@ class StixParser:
                 mitigates_by_target[target].append(rel)
 
         # Cache all "detects" relationships by target_ref
-        all_detects_relationships = self.src.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="detects"),
-        ])
+        all_detects_relationships = self.src.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="detects"),
+            ]
+        )
         detects_by_target = {}
         for rel in all_detects_relationships:
             target = rel.get("target_ref")
@@ -286,7 +299,9 @@ class StixParser:
             software_cache[soft["id"]] = soft
 
         # Cache all groups by ID
-        all_groups = self.src.query([Filter(prop="type", op="=", value="intrusion-set")])
+        all_groups = self.src.query(
+            [Filter(prop="type", op="=", value="intrusion-set")]
+        )
         group_cache = {}
         for group in all_groups:
             group_cache[group["id"]] = group
@@ -298,19 +313,25 @@ class StixParser:
             campaign_cache[camp["id"]] = camp
 
         # Cache all mitigations by ID
-        all_mitigations = self.src.query([Filter(prop="type", op="=", value="course-of-action")])
+        all_mitigations = self.src.query(
+            [Filter(prop="type", op="=", value="course-of-action")]
+        )
         mitigation_cache = {}
         for mit in all_mitigations:
             mitigation_cache[mit["id"]] = mit
 
         # Cache all data components by ID
-        all_data_components = self.src.query([Filter(prop="type", op="=", value="x-mitre-data-component")])
+        all_data_components = self.src.query(
+            [Filter(prop="type", op="=", value="x-mitre-data-component")]
+        )
         data_component_cache = {}
         for dc in all_data_components:
             data_component_cache[dc["id"]] = dc
 
         # Cache all data sources by ID
-        all_data_sources = self.src.query([Filter(prop="type", op="=", value="x-mitre-data-source")])
+        all_data_sources = self.src.query(
+            [Filter(prop="type", op="=", value="x-mitre-data-source")]
+        )
         data_source_cache = {}
         for ds in all_data_sources:
             data_source_cache[ds["id"]] = ds
@@ -392,7 +413,9 @@ class StixParser:
                     technique_obj.main_id = technique_obj.id
 
                 # Procedure examples (using cache)
-                procedure_examples_stix = uses_by_target.get(technique_obj.internal_id, [])
+                procedure_examples_stix = uses_by_target.get(
+                    technique_obj.internal_id, []
+                )
                 for relation in procedure_examples_stix:
                     if (
                         "x_mitre_deprecated" not in relation
@@ -460,7 +483,9 @@ class StixParser:
                                 }
 
                 # Mitigations (using cache)
-                mitigations_relationships = mitigates_by_target.get(technique_obj.internal_id, [])
+                mitigations_relationships = mitigates_by_target.get(
+                    technique_obj.internal_id, []
+                )
                 for relation in mitigations_relationships:
                     ext_refs = relation.get("external_references", [])
                     for ext_ref in ext_refs:
@@ -500,7 +525,9 @@ class StixParser:
                         added.append(item)
 
                 # Detection (using cache)
-                detections_relationships = detects_by_target.get(technique_obj.internal_id, [])
+                detections_relationships = detects_by_target.get(
+                    technique_obj.internal_id, []
+                )
                 for relation in detections_relationships:
                     data_component = data_component_cache.get(relation["source_ref"])
 
@@ -516,7 +543,9 @@ class StixParser:
                         )
 
                         if data_component_source_ref:
-                            data_source = data_source_cache.get(data_component_source_ref)
+                            data_source = data_source_cache.get(
+                                data_component_source_ref
+                            )
 
                             if data_source:
                                 data_source_name = data_source.get("name", "Unknown")
@@ -531,9 +560,14 @@ class StixParser:
                                             "url": ext_ref["url"],
                                             "description": ext_ref["description"],
                                         }
-                                        if ext_ref["source_name"] not in external_references_added:
+                                        if (
+                                            ext_ref["source_name"]
+                                            not in external_references_added
+                                        ):
                                             technique_obj.external_references = item
-                                            external_references_added.add(ext_ref["source_name"])
+                                            external_references_added.add(
+                                                ext_ref["source_name"]
+                                            )
 
                     # Always add the detection, even if some lookups failed
                     item = {
@@ -740,25 +774,35 @@ class StixParser:
         cache_start = time_module.time()
 
         # Cache all "uses" relationships for groups->techniques
-        all_tech_relationships_enterprise = self.enterprise_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="uses"),
-            Filter(prop="target_ref", op="contains", value="attack-pattern"),
-        ])
-        all_tech_relationships_mobile = self.mobile_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="uses"),
-            Filter(prop="target_ref", op="contains", value="attack-pattern"),
-        ])
-        all_tech_relationships_ics = self.ics_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="uses"),
-            Filter(prop="target_ref", op="contains", value="attack-pattern"),
-        ])
+        all_tech_relationships_enterprise = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="attack-pattern"),
+            ]
+        )
+        all_tech_relationships_mobile = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="attack-pattern"),
+            ]
+        )
+        all_tech_relationships_ics = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="attack-pattern"),
+            ]
+        )
 
         # Build a dict mapping source_ref -> list of relationships
         tech_relationships_by_source = {}
-        for rel in (all_tech_relationships_enterprise + all_tech_relationships_mobile + all_tech_relationships_ics):
+        for rel in (
+            all_tech_relationships_enterprise
+            + all_tech_relationships_mobile
+            + all_tech_relationships_ics
+        ):
             source = rel.get("source_ref")
             if source:
                 if source not in tech_relationships_by_source:
@@ -766,9 +810,15 @@ class StixParser:
                 tech_relationships_by_source[source].append(rel)
 
         # Cache all techniques by their ID for O(1) lookup
-        all_techniques_enterprise = self.enterprise_attack.query([Filter(prop="type", op="=", value="attack-pattern")])
-        all_techniques_mobile = self.mobile_attack.query([Filter(prop="type", op="=", value="attack-pattern")])
-        all_techniques_ics = self.ics_attack.query([Filter(prop="type", op="=", value="attack-pattern")])
+        all_techniques_enterprise = self.enterprise_attack.query(
+            [Filter(prop="type", op="=", value="attack-pattern")]
+        )
+        all_techniques_mobile = self.mobile_attack.query(
+            [Filter(prop="type", op="=", value="attack-pattern")]
+        )
+        all_techniques_ics = self.ics_attack.query(
+            [Filter(prop="type", op="=", value="attack-pattern")]
+        )
 
         technique_cache = {}
         for tech in all_techniques_enterprise:
@@ -779,22 +829,60 @@ class StixParser:
             technique_cache[tech["id"]] = (tech, "ics-attack")
 
         # Cache all "uses" relationships for groups->software
-        # Get all "uses" relationships and filter in Python (faster than multiple queries)
-        all_soft_relationships_enterprise = [
-            rel for rel in all_tech_relationships_enterprise
-            if "malware" in rel.get("target_ref", "") or "tool" in rel.get("target_ref", "")
-        ]
-        all_soft_relationships_mobile = [
-            rel for rel in all_tech_relationships_mobile
-            if "malware" in rel.get("target_ref", "") or "tool" in rel.get("target_ref", "")
-        ]
-        all_soft_relationships_ics = [
-            rel for rel in all_tech_relationships_ics
-            if "malware" in rel.get("target_ref", "") or "tool" in rel.get("target_ref", "")
-        ]
+        # Query separately for malware relationships
+        all_soft_relationships_enterprise_malware = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="malware"),
+            ]
+        )
+        # Query separately for tool relationships
+        all_soft_relationships_enterprise_tool = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="tool"),
+            ]
+        )
+        all_soft_relationships_mobile_malware = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="malware"),
+            ]
+        )
+        all_soft_relationships_mobile_tool = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="tool"),
+            ]
+        )
+        all_soft_relationships_ics_malware = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="malware"),
+            ]
+        )
+        all_soft_relationships_ics_tool = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+                Filter(prop="target_ref", op="contains", value="tool"),
+            ]
+        )
 
         soft_relationships_by_source = {}
-        for rel in (all_soft_relationships_enterprise + all_soft_relationships_mobile + all_soft_relationships_ics):
+        for rel in (
+            all_soft_relationships_enterprise_malware
+            + all_soft_relationships_enterprise_tool
+            + all_soft_relationships_mobile_malware
+            + all_soft_relationships_mobile_tool
+            + all_soft_relationships_ics_malware
+            + all_soft_relationships_ics_tool
+        ):
             source = rel.get("source_ref")
             if source:
                 if source not in soft_relationships_by_source:
@@ -802,18 +890,18 @@ class StixParser:
                 soft_relationships_by_source[source].append(rel)
 
         # Cache all software by ID (combined query for malware and tool)
-        all_software_enterprise = self.enterprise_attack.query([
-            Filter(prop="type", op="in", value=["malware", "tool"])
-        ])
-        all_software_mobile = self.mobile_attack.query([
-            Filter(prop="type", op="in", value=["malware", "tool"])
-        ])
-        all_software_ics = self.ics_attack.query([
-            Filter(prop="type", op="in", value=["malware", "tool"])
-        ])
+        all_software_enterprise = self.enterprise_attack.query(
+            [Filter(prop="type", op="in", value=["malware", "tool"])]
+        )
+        all_software_mobile = self.mobile_attack.query(
+            [Filter(prop="type", op="in", value=["malware", "tool"])]
+        )
+        all_software_ics = self.ics_attack.query(
+            [Filter(prop="type", op="in", value=["malware", "tool"])]
+        )
 
         software_cache = {}
-        for soft in (all_software_enterprise + all_software_mobile + all_software_ics):
+        for soft in all_software_enterprise + all_software_mobile + all_software_ics:
             software_cache[soft["id"]] = soft
 
         print(f"  Cache built in {time_module.time() - cache_start:.2f}s")
@@ -872,7 +960,9 @@ class StixParser:
                         }
 
                 # Get techniques used by group (using cache)
-                tech_group_relationships = tech_relationships_by_source.get(group_obj.internal_id, [])
+                tech_group_relationships = tech_relationships_by_source.get(
+                    group_obj.internal_id, []
+                )
 
                 for tech_group_rel in tech_group_relationships:
                     if (
@@ -898,23 +988,36 @@ class StixParser:
                                 for ext_ref in ext_refs:
                                     if "url" in ext_ref and "description" in ext_ref:
                                         item = {
-                                            "name": ext_ref["source_name"].replace("/", "／"),  # noqa: RUF001
+                                            "name": ext_ref["source_name"].replace(
+                                                "/", "／"
+                                            ),  # noqa: RUF001
                                             "url": ext_ref["url"],
                                             "description": ext_ref["description"],
                                         }
-                                        if ext_ref["source_name"] not in external_references_added:
+                                        if (
+                                            ext_ref["source_name"]
+                                            not in external_references_added
+                                        ):
                                             group_obj.external_references = item
-                                            external_references_added.add(ext_ref["source_name"])
+                                            external_references_added.add(
+                                                ext_ref["source_name"]
+                                            )
 
                                 group_obj.techniques_used = {
-                                    "technique_name": technique["name"].replace("/", "／"),  # noqa: RUF001
+                                    "technique_name": technique["name"].replace(
+                                        "/", "／"
+                                    ),  # noqa: RUF001
                                     "technique_id": technique_id,
-                                    "description": tech_group_rel.get("description", ""),
+                                    "description": tech_group_rel.get(
+                                        "description", ""
+                                    ),
                                     "domain": domain,
                                 }
 
                 # Get software used by group (using cache)
-                software_relationships = soft_relationships_by_source.get(group_obj.internal_id, [])
+                software_relationships = soft_relationships_by_source.get(
+                    group_obj.internal_id, []
+                )
 
                 for group_software_rel in software_relationships:
                     if (
@@ -943,7 +1046,9 @@ class StixParser:
                             continue
 
                         # Get techniques used by this software (using cache)
-                        source_relationships = tech_relationships_by_source.get(target_ref, [])
+                        source_relationships = tech_relationships_by_source.get(
+                            target_ref, []
+                        )
                         markdown_links: str = ""
 
                         for relationship in source_relationships:
@@ -953,7 +1058,9 @@ class StixParser:
                                 technique, _ = technique_cache[technique_ref]
 
                                 # Check if deprecated/revoked
-                                if technique.get("x_mitre_deprecated") or technique.get("revoked"):
+                                if technique.get("x_mitre_deprecated") or technique.get(
+                                    "revoked"
+                                ):
                                     continue
 
                                 technique_name = technique["name"]
@@ -1096,23 +1203,33 @@ class StixParser:
         )
 
         # Cache all "uses" relationships: software->techniques and campaigns/groups->software
-        all_uses_relationships_enterprise = self.enterprise_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="uses"),
-        ])
-        all_uses_relationships_mobile = self.mobile_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="uses"),
-        ])
-        all_uses_relationships_ics = self.ics_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="uses"),
-        ])
+        all_uses_relationships_enterprise = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+            ]
+        )
+        all_uses_relationships_mobile = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+            ]
+        )
+        all_uses_relationships_ics = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="uses"),
+            ]
+        )
 
         # Build dictionaries: source_ref -> list of relationships
         uses_by_source = {}
         uses_by_target = {}
-        for rel in (all_uses_relationships_enterprise + all_uses_relationships_mobile + all_uses_relationships_ics):
+        for rel in (
+            all_uses_relationships_enterprise
+            + all_uses_relationships_mobile
+            + all_uses_relationships_ics
+        ):
             source = rel.get("source_ref")
             target = rel.get("target_ref")
             if source:
@@ -1125,15 +1242,21 @@ class StixParser:
                 uses_by_target[target].append(rel)
 
         # Cache all techniques by ID
-        all_techniques_enterprise = self.enterprise_attack.query([
-            Filter(prop="type", op="=", value="attack-pattern"),
-        ])
-        all_techniques_mobile = self.mobile_attack.query([
-            Filter(prop="type", op="=", value="attack-pattern"),
-        ])
-        all_techniques_ics = self.ics_attack.query([
-            Filter(prop="type", op="=", value="attack-pattern"),
-        ])
+        all_techniques_enterprise = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="attack-pattern"),
+            ]
+        )
+        all_techniques_mobile = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="attack-pattern"),
+            ]
+        )
+        all_techniques_ics = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="attack-pattern"),
+            ]
+        )
 
         technique_cache = {}
         for tech in all_techniques_enterprise:
@@ -1144,15 +1267,21 @@ class StixParser:
             technique_cache[tech["id"]] = (tech, "ics-attack")
 
         # Cache all campaigns by ID
-        all_campaigns_enterprise = self.enterprise_attack.query([
-            Filter(prop="type", op="=", value="campaign"),
-        ])
-        all_campaigns_mobile = self.mobile_attack.query([
-            Filter(prop="type", op="=", value="campaign"),
-        ])
-        all_campaigns_ics = self.ics_attack.query([
-            Filter(prop="type", op="=", value="campaign"),
-        ])
+        all_campaigns_enterprise = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="campaign"),
+            ]
+        )
+        all_campaigns_mobile = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="campaign"),
+            ]
+        )
+        all_campaigns_ics = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="campaign"),
+            ]
+        )
 
         campaign_cache = {}
         for camp in all_campaigns_enterprise:
@@ -1163,15 +1292,21 @@ class StixParser:
             campaign_cache[camp["id"]] = camp
 
         # Cache all groups by ID
-        all_groups_enterprise = self.enterprise_attack.query([
-            Filter(prop="type", op="=", value="intrusion-set"),
-        ])
-        all_groups_mobile = self.mobile_attack.query([
-            Filter(prop="type", op="=", value="intrusion-set"),
-        ])
-        all_groups_ics = self.ics_attack.query([
-            Filter(prop="type", op="=", value="intrusion-set"),
-        ])
+        all_groups_enterprise = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="intrusion-set"),
+            ]
+        )
+        all_groups_mobile = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="intrusion-set"),
+            ]
+        )
+        all_groups_ics = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="intrusion-set"),
+            ]
+        )
 
         group_cache = {}
         for group in all_groups_enterprise:
@@ -1182,22 +1317,32 @@ class StixParser:
             group_cache[group["id"]] = group
 
         # Cache "attributed-to" relationships: campaign->group
-        all_attributed_relationships_enterprise = self.enterprise_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="attributed-to"),
-        ])
-        all_attributed_relationships_mobile = self.mobile_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="attributed-to"),
-        ])
-        all_attributed_relationships_ics = self.ics_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="attributed-to"),
-        ])
+        all_attributed_relationships_enterprise = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="attributed-to"),
+            ]
+        )
+        all_attributed_relationships_mobile = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="attributed-to"),
+            ]
+        )
+        all_attributed_relationships_ics = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="attributed-to"),
+            ]
+        )
 
         # Build dictionary: (campaign_id, group_id) -> relationship
         attributed_by_campaign_group = {}
-        for rel in (all_attributed_relationships_enterprise + all_attributed_relationships_mobile + all_attributed_relationships_ics):
+        for rel in (
+            all_attributed_relationships_enterprise
+            + all_attributed_relationships_mobile
+            + all_attributed_relationships_ics
+        ):
             source = rel.get("source_ref")
             target = rel.get("target_ref")
             if source and target:
@@ -1281,18 +1426,21 @@ class StixParser:
                                             )
 
                 # Software has been used in these campaigns (using cache)
-                campaign_relationships = uses_by_target.get(software_obj.internal_id, [])
+                campaign_relationships = uses_by_target.get(
+                    software_obj.internal_id, []
+                )
 
                 for relationship in campaign_relationships:
                     source_ref = relationship["source_ref"]
-                    if source_ref.startswith("campaign") and source_ref in campaign_cache:
+                    if (
+                        source_ref.startswith("campaign")
+                        and source_ref in campaign_cache
+                    ):
                         campaign = campaign_cache[source_ref]
                         if (
                             "x_mitre_deprecated" not in campaign
                             or not campaign["x_mitre_deprecated"]
-                        ) and (
-                            "revoked" not in campaign or not campaign["revoked"]
-                        ):
+                        ) and ("revoked" not in campaign or not campaign["revoked"]):
                             ext_refs = campaign.get("external_references", [])
                             campaign_id = ""
                             for ext_ref in ext_refs:
@@ -1399,8 +1547,13 @@ class StixParser:
                         for software_campaign in software_obj.campaigns_using:
                             campaign_id = software_campaign.get("campaign_internal_id")
                             # Use cache to check if this campaign is attributed to this group
-                            if (campaign_id, groupinfo["id"]) in attributed_by_campaign_group:
-                                campaign_rel = attributed_by_campaign_group[(campaign_id, groupinfo["id"])]
+                            if (
+                                campaign_id,
+                                groupinfo["id"],
+                            ) in attributed_by_campaign_group:
+                                campaign_rel = attributed_by_campaign_group[
+                                    (campaign_id, groupinfo["id"])
+                                ]
                                 if campaign_id in campaign_cache:
                                     campaign = campaign_cache[campaign_id]
                                     if (
@@ -1410,22 +1563,33 @@ class StixParser:
                                         "revoked" not in campaign
                                         or not campaign["revoked"]
                                     ):
-                                        for ext_ref in campaign.get("external_references", []):
-                                            if "url" in ext_ref and "description" in ext_ref:
+                                        for ext_ref in campaign.get(
+                                            "external_references", []
+                                        ):
+                                            if (
+                                                "url" in ext_ref
+                                                and "description" in ext_ref
+                                            ):
                                                 item = {
                                                     "name": ext_ref["source_name"],
                                                     "url": ext_ref["url"],
-                                                    "description": ext_ref["description"],
+                                                    "description": ext_ref[
+                                                        "description"
+                                                    ],
                                                 }
                                                 if (
                                                     ext_ref["source_name"]
                                                     not in external_references_added
                                                 ):
-                                                    software_obj.external_references = item
+                                                    software_obj.external_references = (
+                                                        item
+                                                    )
                                                     external_references_added.add(
                                                         ext_ref["source_name"]
                                                     )
-                                        description: str = campaign.get("description", "")
+                                        description: str = campaign.get(
+                                            "description", ""
+                                        )
                                         if description not in descriptions:
                                             descriptions += description
 
@@ -1931,18 +2095,28 @@ class StixParser:
         )
 
         # Cache all data components by x_mitre_data_source_ref
-        all_data_components_enterprise = self.enterprise_attack.query([
-            Filter(prop="type", op="=", value="x-mitre-data-component"),
-        ])
-        all_data_components_mobile = self.mobile_attack.query([
-            Filter(prop="type", op="=", value="x-mitre-data-component"),
-        ])
-        all_data_components_ics = self.ics_attack.query([
-            Filter(prop="type", op="=", value="x-mitre-data-component"),
-        ])
+        all_data_components_enterprise = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="x-mitre-data-component"),
+            ]
+        )
+        all_data_components_mobile = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="x-mitre-data-component"),
+            ]
+        )
+        all_data_components_ics = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="x-mitre-data-component"),
+            ]
+        )
 
         data_components_by_source = {}
-        for dc in (all_data_components_enterprise + all_data_components_mobile + all_data_components_ics):
+        for dc in (
+            all_data_components_enterprise
+            + all_data_components_mobile
+            + all_data_components_ics
+        ):
             source_ref = dc.get("x_mitre_data_source_ref")
             if source_ref:
                 if source_ref not in data_components_by_source:
@@ -1950,21 +2124,27 @@ class StixParser:
                 data_components_by_source[source_ref].append(dc)
 
         # Cache all "detects" relationships by source_ref
-        all_detects_enterprise = self.enterprise_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="detects"),
-        ])
-        all_detects_mobile = self.mobile_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="detects"),
-        ])
-        all_detects_ics = self.ics_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="detects"),
-        ])
+        all_detects_enterprise = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="detects"),
+            ]
+        )
+        all_detects_mobile = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="detects"),
+            ]
+        )
+        all_detects_ics = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="detects"),
+            ]
+        )
 
         detects_by_source = {}
-        for rel in (all_detects_enterprise + all_detects_mobile + all_detects_ics):
+        for rel in all_detects_enterprise + all_detects_mobile + all_detects_ics:
             source = rel.get("source_ref")
             if source:
                 if source not in detects_by_source:
@@ -1972,15 +2152,21 @@ class StixParser:
                 detects_by_source[source].append(rel)
 
         # Cache all techniques by ID (across all domains)
-        all_techniques_enterprise = self.enterprise_attack.query([
-            Filter(prop="type", op="=", value="attack-pattern"),
-        ])
-        all_techniques_mobile = self.mobile_attack.query([
-            Filter(prop="type", op="=", value="attack-pattern"),
-        ])
-        all_techniques_ics = self.ics_attack.query([
-            Filter(prop="type", op="=", value="attack-pattern"),
-        ])
+        all_techniques_enterprise = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="attack-pattern"),
+            ]
+        )
+        all_techniques_mobile = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="attack-pattern"),
+            ]
+        )
+        all_techniques_ics = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="attack-pattern"),
+            ]
+        )
 
         technique_cache = {}
         for tech in all_techniques_enterprise:
@@ -2035,7 +2221,9 @@ class StixParser:
                             external_references_added.add(ext_ref["source_name"])
 
                 # Get data components used by data source (using cache)
-                data_source_relationships = data_components_by_source.get(data_source_obj.internal_id, [])
+                data_source_relationships = data_components_by_source.get(
+                    data_source_obj.internal_id, []
+                )
 
                 data_components = []
                 for relationship in data_source_relationships:
@@ -2069,7 +2257,9 @@ class StixParser:
                                     )
 
                         # Get techniques used by data source (using cache)
-                        techniques_used_stix = detects_by_source.get(relationship["id"], [])
+                        techniques_used_stix = detects_by_source.get(
+                            relationship["id"], []
+                        )
 
                         techniques_used = []
                         for techniques_relationship in techniques_used_stix:
