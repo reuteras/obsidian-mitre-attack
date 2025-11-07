@@ -298,7 +298,7 @@ class MarkdownGenerator:
                 description = description.replace("\n", "<br />")
                 lines.append(
                     f"| [[{example['name'].replace('/', '／')} \\| {example['id']}]] | [[{example['name'].replace('/', '／')} \\| {example['name'].replace('/', '／')}]] | {description} |"
-                )  # noqa: RUF001
+                )
             return content + "\n".join(lines)
         return content
 
@@ -785,7 +785,7 @@ class MarkdownGenerator:
                         external_id = ref["external_id"]
                 lines.append(
                     f"| {domain} | [[{technique['technique'].name.replace('/', '／')} - {external_id} \\| {external_id}]] | {technique['technique'].name} | {description} |"
-                )  # noqa: RUF001
+                )
 
         # Groups that use this software
         if software.groups_using:
@@ -951,7 +951,7 @@ class MarkdownGenerator:
                         description = description.replace("\n", "<br />")
                         lines.append(
                             f"| {domain} | [[{technique['technique_name'].replace('/', '／')} - {technique['technique_id']} \\| {technique['technique_id']}]] | {technique['technique_name']} | {description} |"
-                        )  # noqa: RUF001
+                        )
 
                 # Software used in campaign
                 if campaign.software_used:
