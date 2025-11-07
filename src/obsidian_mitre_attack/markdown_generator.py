@@ -77,6 +77,8 @@ class MarkdownGenerator:
         self.campaigns = stix_data.campaigns
         self.assets = stix_data.assets
         self.data_sources = stix_data.data_sources
+        self.detection_strategies = stix_data.detection_strategies
+        self.analytics = stix_data.analytics
         self.tags_prefix = arguments.tags
 
     def create_tactic_notes(self, domain: str) -> None:
@@ -1308,6 +1310,200 @@ class MarkdownGenerator:
                     content = content + "\n".join(ref_lines)
 
                 content = content.replace("MITRE_URL", data_source.url)
+
+                fd.write(content)
+                if not content.endswith("\n"):
+                    fd.write("\n")
+
+    def create_detection_strategy_notes(self) -> None:
+        """Function to create markdown notes for detection strategies in Defense folder."""
+        detection_strategies_dir = Path(self.output_dir, "Defenses", "Detection_Strategies")
+        detection_strategies_dir.mkdir(parents=True, exist_ok=True)
+
+        # Group detection strategies by domain
+        for detection_strategy in self.detection_strategies:
+            dirname: str = detection_strategy.domain.replace("-", " ").capitalize().replace("Ics ", "ICS ")
+            domain_dir = Path(detection_strategies_dir, dirname)
+            domain_dir.mkdir(parents=True, exist_ok=True)
+
+            ds_file = Path(domain_dir, f"{detection_strategy.name} - {detection_strategy.id}.md")
+
+            # Create markdown file for current detection strategy
+            with open(file=ds_file, mode="w", encoding="utf-8") as fd:
+                lines = [
+                    f"---\naliases:\n  - {detection_strategy.id}",
+                    f"  - {detection_strategy.name}",
+                    f"  - {detection_strategy.name} ({detection_strategy.id})",
+                    f"  - {detection_strategy.id} ({detection_strategy.name})",
+                    "url: MITRE_URL",
+                    "tags:",
+                    f"  - {self.tags_prefix}detection_strategy",
+                    f"  - {self.tags_prefix}mitre_attack",
+                    f"  - {self.tags_prefix}{detection_strategy.domain}",
+                    "---",
+                    "",
+                    f"## {detection_strategy.name}",
+                    "",
+                ]
+
+                # Detection Strategy information
+                lines.extend(
+                    [
+                        "> [!info]",
+                        f"> ID: {detection_strategy.id}",
+                        f"> Version: {detection_strategy.version}",
+                        f"> Created: {str(object=detection_strategy.created).split(sep=' ')[0]}",
+                        f"> Last Modified: {str(object=detection_strategy.modified).split(sep=' ')[0]}",
+                        "",
+                        "",
+                    ]
+                )
+
+                # Techniques detected by this strategy
+                if detection_strategy.techniques:
+                    lines.extend(
+                        [
+                            "### Techniques Detected",
+                            "",
+                            "| ID | Name |",
+                            "| --- | --- |",
+                        ]
+                    )
+                    for technique in sorted(
+                        detection_strategy.techniques, key=lambda x: x["technique_id"]
+                    ):
+                        lines.append(
+                            f"| [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_name']}]] |"
+                        )
+
+                # Analytics associated with this strategy
+                if detection_strategy.analytic_refs:
+                    lines.extend(
+                        [
+                            "",
+                            "",
+                            "### Associated Analytics",
+                            "",
+                            "| ID | Name |",
+                            "| --- | --- |",
+                        ]
+                    )
+                    for analytic_ref in detection_strategy.analytic_refs:
+                        # Find the analytic object
+                        for analytic in self.analytics:
+                            if analytic.internal_id == analytic_ref:
+                                lines.append(
+                                    f"| [[{analytic.name} - {analytic.id} \\| {analytic.id}]] | [[{analytic.name} - {analytic.id} \\| {analytic.name}]] |"
+                                )
+                                break
+
+                content = "\n".join(lines)
+                content = convert_to_local_links(text=content)
+                content = content.replace("MITRE_URL", detection_strategy.url)
+
+                fd.write(content)
+                if not content.endswith("\n"):
+                    fd.write("\n")
+
+    def create_analytic_notes(self) -> None:
+        """Function to create markdown notes for analytics in Defense folder."""
+        analytics_dir = Path(self.output_dir, "Defenses", "Analytics")
+        analytics_dir.mkdir(parents=True, exist_ok=True)
+
+        # Group analytics by domain
+        for analytic in self.analytics:
+            dirname: str = analytic.domain.replace("-", " ").capitalize().replace("Ics ", "ICS ")
+            domain_dir = Path(analytics_dir, dirname)
+            domain_dir.mkdir(parents=True, exist_ok=True)
+
+            analytic_file = Path(domain_dir, f"{analytic.name} - {analytic.id}.md")
+
+            # Create markdown file for current analytic
+            with open(file=analytic_file, mode="w", encoding="utf-8") as fd:
+                lines = [
+                    f"---\naliases:\n  - {analytic.id}",
+                    f"  - {analytic.name}",
+                    f"  - {analytic.name} ({analytic.id})",
+                    f"  - {analytic.id} ({analytic.name})",
+                    "url: MITRE_URL",
+                    "tags:",
+                    f"  - {self.tags_prefix}analytic",
+                    f"  - {self.tags_prefix}mitre_attack",
+                    f"  - {self.tags_prefix}{analytic.domain}",
+                ]
+
+                # Add platform tags
+                if analytic.platforms:
+                    for platform in analytic.platforms:
+                        if platform:
+                            lines.append(f"  - {self.tags_prefix}{platform.replace(' ', '_')}")
+
+                lines.extend(["---", "", f"## {analytic.name}", ""])
+
+                # Analytic description
+                if analytic.description:
+                    analytic_description: str = fix_description(
+                        description_str=analytic.description
+                    )
+                    lines.extend([analytic_description, ""])
+
+                # Analytic information
+                lines.extend(
+                    [
+                        "> [!info]",
+                        f"> ID: {analytic.id}",
+                    ]
+                )
+
+                if analytic.platforms:
+                    lines.append(f"> Platforms: {', '.join(analytic.platforms)}")
+
+                lines.extend(
+                    [
+                        f"> Version: {analytic.version}",
+                        f"> Created: {str(object=analytic.created).split(sep=' ')[0]}",
+                        f"> Last Modified: {str(object=analytic.modified).split(sep=' ')[0]}",
+                        "",
+                        "",
+                    ]
+                )
+
+                # Log sources
+                if analytic.log_source_references:
+                    lines.extend(
+                        [
+                            "### Log Sources",
+                            "",
+                            "| Name | Data Component | Channel |",
+                            "| --- | --- | --- |",
+                        ]
+                    )
+                    for log_source in analytic.log_source_references:
+                        data_component_name = log_source.get("data_component_name", "")
+                        name = log_source.get("name", "")
+                        channel = log_source.get("channel", "")
+                        lines.append(f"| {name} | {data_component_name} | {channel} |")
+
+                # Mutable elements
+                if analytic.mutable_elements:
+                    lines.extend(
+                        [
+                            "",
+                            "",
+                            "### Mutable Elements",
+                            "",
+                            "| Field | Description |",
+                            "| --- | --- |",
+                        ]
+                    )
+                    for element in analytic.mutable_elements:
+                        field = element.get("field", "")
+                        description = element.get("description", "")
+                        lines.append(f"| {field} | {description} |")
+
+                content = "\n".join(lines)
+                content = convert_to_local_links(text=content)
+                content = content.replace("MITRE_URL", analytic.url)
 
                 fd.write(content)
                 if not content.endswith("\n"):

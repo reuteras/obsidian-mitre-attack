@@ -10,9 +10,11 @@ import requests
 from stix2 import Filter, MemoryStore
 
 from .models import (
+    MITREAnalytic,
     MITREAsset,
     MITRECampaign,
     MITREDataSource,
+    MITREDetectionStrategy,
     MITREGroup,
     MITREMitigation,
     MITRESoftware,
@@ -37,6 +39,8 @@ class StixParser:
         self.techniques = list()
         self.tactics = list()
         self.mitigations = list()
+        self.detection_strategies = list()
+        self.analytics = list()
 
         self.verbose_log(
             message=f"Getting STIX data from {self.url} for version {self.version}"
@@ -118,6 +122,8 @@ class StixParser:
         - Software
         - Data sources
         - Assets
+        - Detection Strategies
+        - Analytics
         """
         self.verbose_log(message="Getting data sources data")
         self._get_data_sources()
@@ -129,6 +135,10 @@ class StixParser:
         self._get_campaigns()
         self.verbose_log(message="Getting software data")
         self._get_software()
+        self.verbose_log(message="Getting detection strategies data")
+        self._get_detection_strategies()
+        self.verbose_log(message="Getting analytics data")
+        self._get_analytics()
         self.verbose_log(message="CTI data loaded successfully")
 
     def _get_tactics(self, domain) -> None:  # noqa: PLR0912
@@ -2322,3 +2332,229 @@ class StixParser:
                 data_source_obj.data_components = data_components
 
                 self.data_sources.append(data_source_obj)
+
+    def _get_detection_strategies(self) -> None:  # noqa: PLR0912
+        """Get and parse detection strategies from STIX data."""
+        # Extract detection strategies from all domains
+        detection_strategies_enterprise = self.enterprise_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-detection-strategy")]
+        )
+        detection_strategies_mobile = self.mobile_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-detection-strategy")]
+        )
+        detection_strategies_ics = self.ics_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-detection-strategy")]
+        )
+
+        detection_strategies_stix = (
+            detection_strategies_enterprise
+            + detection_strategies_mobile
+            + detection_strategies_ics
+        )
+
+        # Pre-cache analytics by ID for faster lookups
+        all_analytics_enterprise = self.enterprise_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-analytic")]
+        )
+        all_analytics_mobile = self.mobile_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-analytic")]
+        )
+        all_analytics_ics = self.ics_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-analytic")]
+        )
+
+        analytics_cache = {}
+        for analytic in (
+            all_analytics_enterprise + all_analytics_mobile + all_analytics_ics
+        ):
+            analytics_cache[analytic["id"]] = analytic
+
+        # Pre-cache techniques by ID for faster lookups
+        all_techniques_enterprise = self.enterprise_attack.query(
+            [Filter(prop="type", op="=", value="attack-pattern")]
+        )
+        all_techniques_mobile = self.mobile_attack.query(
+            [Filter(prop="type", op="=", value="attack-pattern")]
+        )
+        all_techniques_ics = self.ics_attack.query(
+            [Filter(prop="type", op="=", value="attack-pattern")]
+        )
+
+        technique_cache = {}
+        for tech in (
+            all_techniques_enterprise + all_techniques_mobile + all_techniques_ics
+        ):
+            technique_cache[tech["id"]] = tech
+
+        # Cache "detects" relationships by source_ref (detection strategy)
+        all_detects_relationships_enterprise = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="detects"),
+            ]
+        )
+        all_detects_relationships_mobile = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="detects"),
+            ]
+        )
+        all_detects_relationships_ics = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="detects"),
+            ]
+        )
+
+        detects_by_source = {}
+        for rel in (
+            all_detects_relationships_enterprise
+            + all_detects_relationships_mobile
+            + all_detects_relationships_ics
+        ):
+            source = rel.get("source_ref")
+            if source and "detection-strategy" in source:
+                if source not in detects_by_source:
+                    detects_by_source[source] = []
+                detects_by_source[source].append(rel)
+
+        self.detection_strategies = list()
+
+        for detection_strategy in detection_strategies_stix:
+            if self.is_valid_stix_object(detection_strategy):
+                ds_obj = MITREDetectionStrategy(name=detection_strategy["name"])
+
+                # Add basic attributes
+                ds_obj.internal_id = detection_strategy["id"]
+                ds_obj.version = detection_strategy.get("x_mitre_version", "")
+                ds_obj.created = detection_strategy.get("created", "")
+                ds_obj.modified = detection_strategy.get("modified", "")
+                ds_obj.domain = detection_strategy.get("x_mitre_domains", [""])[0]
+
+                # Get external references
+                ext_refs = detection_strategy.get("external_references", [])
+                for ext_ref in ext_refs:
+                    if ext_ref["source_name"] == "mitre-attack":
+                        ds_obj.id = ext_ref["external_id"]
+                        ds_obj.url = ext_ref["url"]
+                    elif "url" in ext_ref and "description" in ext_ref:
+                        ds_obj.external_references = {
+                            "name": ext_ref["source_name"],
+                            "url": ext_ref["url"],
+                            "description": ext_ref["description"],
+                        }
+
+                # Get analytic references
+                analytic_refs = detection_strategy.get("x_mitre_analytic_refs", [])
+                for analytic_ref in analytic_refs:
+                    ds_obj.analytic_refs = analytic_ref
+
+                # Get techniques detected by this strategy (using cache)
+                technique_relationships = detects_by_source.get(
+                    detection_strategy["id"], []
+                )
+
+                for relationship in technique_relationships:
+                    target_ref = relationship.get("target_ref")
+                    if target_ref and target_ref in technique_cache:
+                        technique = technique_cache[target_ref]
+                        ext_refs = technique.get("external_references", [])
+                        technique_id = ""
+                        for ext_ref in ext_refs:
+                            if ext_ref["source_name"] == "mitre-attack":
+                                technique_id = ext_ref["external_id"]
+                                break
+
+                        if technique_id:
+                            ds_obj.techniques = {
+                                "technique_id": technique_id,
+                                "technique_name": technique["name"].replace("/", "／"),  # noqa: RUF001
+                            }
+
+                self.detection_strategies.append(ds_obj)
+
+    def _get_analytics(self) -> None:
+        """Get and parse analytics from STIX data."""
+        # Extract analytics from all domains
+        analytics_enterprise = self.enterprise_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-analytic")]
+        )
+        analytics_mobile = self.mobile_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-analytic")]
+        )
+        analytics_ics = self.ics_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-analytic")]
+        )
+
+        analytics_stix = analytics_enterprise + analytics_mobile + analytics_ics
+
+        # Pre-cache data components by ID for faster lookups
+        all_data_components_enterprise = self.enterprise_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-data-component")]
+        )
+        all_data_components_mobile = self.mobile_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-data-component")]
+        )
+        all_data_components_ics = self.ics_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-data-component")]
+        )
+
+        data_component_cache = {}
+        for dc in (
+            all_data_components_enterprise
+            + all_data_components_mobile
+            + all_data_components_ics
+        ):
+            data_component_cache[dc["id"]] = dc
+
+        self.analytics = list()
+
+        for analytic in analytics_stix:
+            if self.is_valid_stix_object(analytic):
+                analytic_obj = MITREAnalytic(name=analytic["name"])
+
+                # Add basic attributes
+                analytic_obj.internal_id = analytic["id"]
+                analytic_obj.version = analytic.get("x_mitre_version", "")
+                analytic_obj.created = analytic.get("created", "")
+                analytic_obj.modified = analytic.get("modified", "")
+                analytic_obj.description = analytic.get("description", "")
+                analytic_obj.domain = analytic.get("x_mitre_domains", [""])[0]
+
+                # Get external references
+                ext_refs = analytic.get("external_references", [])
+                for ext_ref in ext_refs:
+                    if ext_ref["source_name"] == "mitre-attack":
+                        analytic_obj.id = ext_ref["external_id"]
+                        analytic_obj.url = ext_ref["url"]
+                    elif "url" in ext_ref and "description" in ext_ref:
+                        analytic_obj.external_references = {
+                            "name": ext_ref["source_name"],
+                            "url": ext_ref["url"],
+                            "description": ext_ref["description"],
+                        }
+
+                # Get platforms
+                platforms = analytic.get("x_mitre_platforms", [])
+                for platform in platforms:
+                    analytic_obj.platforms = platform
+
+                # Get log source references
+                log_sources = analytic.get("x_mitre_log_source_references", [])
+                for log_source in log_sources:
+                    # Resolve data component reference if present
+                    dc_ref = log_source.get("x_mitre_data_component_ref")
+                    if dc_ref and dc_ref in data_component_cache:
+                        data_component = data_component_cache[dc_ref]
+                        log_source["data_component_name"] = data_component.get(
+                            "name", ""
+                        )
+
+                    analytic_obj.log_source_references = log_source
+
+                # Get mutable elements
+                mutable_elements = analytic.get("x_mitre_mutable_elements", [])
+                for element in mutable_elements:
+                    analytic_obj.mutable_elements = element
+
+                self.analytics.append(analytic_obj)

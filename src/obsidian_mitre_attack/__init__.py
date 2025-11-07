@@ -153,9 +153,9 @@ def main() -> None:
                 raise
     print(f"✓ Domain markdown generated ({time.time() - domain_gen_start:.2f}s)")
 
-    # Generate CTI data markdown in parallel (software, groups, campaigns, assets, data sources)
+    # Generate CTI data markdown in parallel (software, groups, campaigns, assets, data sources, detection strategies, analytics)
     cti_gen_start = time.time()
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=7) as executor:
         cti_futures = {
             executor.submit(markdown_generator.create_software_notes): "software",
             executor.submit(markdown_generator.create_group_notes): "groups",
@@ -164,6 +164,12 @@ def main() -> None:
             executor.submit(
                 markdown_generator.create_data_source_notes
             ): "data_sources",
+            executor.submit(
+                markdown_generator.create_detection_strategy_notes
+            ): "detection_strategies",
+            executor.submit(
+                markdown_generator.create_analytic_notes
+            ): "analytics",
         }
         for future in as_completed(cti_futures):
             entity_type = cti_futures[future]

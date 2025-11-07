@@ -1115,3 +1115,173 @@ class MITREDataSource(MITREObject):
     def collection_layers(self, collection_layer: dict) -> None:
         """Set the collection layers of the object."""
         self._collection_layers.append(collection_layer)
+
+
+class MITREDetectionStrategy(MITREObject):
+    """Define a detection strategy (x-mitre-detection-strategy)."""
+
+    def __init__(self, name) -> None:
+        """Initialize the MITREDetectionStrategy class."""
+        MITREObject.__init__(self=self, name=name)
+        self._version: str = ""
+        self._created: str = ""
+        self._modified: str = ""
+        self._external_references = list()
+        self._analytic_refs = list()  # References to analytics
+        self._techniques = list()  # Techniques this strategy detects
+
+    @property
+    def version(self) -> str:
+        """Return the version of the object."""
+        return self._version
+
+    @version.setter
+    def version(self, version: str) -> None:
+        """Set the version of the object."""
+        self._version: str = version
+
+    @property
+    def created(self) -> str:
+        """Return the created date of the object."""
+        return self._created
+
+    @created.setter
+    def created(self, created: str) -> None:
+        """Set the created date of the object."""
+        self._created: str = created
+
+    @property
+    def modified(self) -> str:
+        """Return the modified date of the object."""
+        return self._modified
+
+    @modified.setter
+    def modified(self, modified: str) -> None:
+        """Set the modified date of the object."""
+        self._modified: str = modified
+
+    @property
+    def external_references(self):
+        """Return the external references of the object."""
+        return self._external_references
+
+    @external_references.setter
+    def external_references(self, reference: dict) -> None:
+        """Set the external references of the object."""
+        self._external_references.append(reference)
+
+    @property
+    def analytic_refs(self):
+        """Return the analytic references of the object."""
+        return self._analytic_refs
+
+    @analytic_refs.setter
+    def analytic_refs(self, analytic_ref: str) -> None:
+        """Set the analytic references of the object."""
+        self._analytic_refs.append(analytic_ref)
+
+    @property
+    def techniques(self):
+        """Return the techniques detected by the object."""
+        return self._techniques
+
+    @techniques.setter
+    def techniques(self, technique: dict) -> None:
+        """Set the techniques detected by the object."""
+        self._techniques.append(technique)
+
+
+class MITREAnalytic(MITREObject):
+    """Define an analytic (x-mitre-analytic)."""
+
+    def __init__(self, name) -> None:
+        """Initialize the MITREAnalytic class."""
+        MITREObject.__init__(self=self, name=name)
+        self._version: str = ""
+        self._created: str = ""
+        self._modified: str = ""
+        self._external_references = list()
+        self._platforms = list()
+        self._log_source_references = list()
+        self._mutable_elements = list()
+        self._description: str = ""
+
+    @property
+    def version(self) -> str:
+        """Return the version of the object."""
+        return self._version
+
+    @version.setter
+    def version(self, version: str) -> None:
+        """Set the version of the object."""
+        self._version: str = version
+
+    @property
+    def created(self) -> str:
+        """Return the created date of the object."""
+        return self._created
+
+    @created.setter
+    def created(self, created: str) -> None:
+        """Set the created date of the object."""
+        self._created: str = created
+
+    @property
+    def modified(self) -> str:
+        """Return the modified date of the object."""
+        return self._modified
+
+    @modified.setter
+    def modified(self, modified: str) -> None:
+        """Set the modified date of the object."""
+        self._modified: str = modified
+
+    @property
+    def description(self) -> str:
+        """Return the description of the object."""
+        return self._description
+
+    @description.setter
+    def description(self, description: str) -> None:
+        """Set the description of the object."""
+        self._description: str = description
+
+    @property
+    def external_references(self):
+        """Return the external references of the object."""
+        return self._external_references
+
+    @external_references.setter
+    def external_references(self, reference: dict) -> None:
+        """Set the external references of the object."""
+        self._external_references.append(reference)
+
+    @property
+    def platforms(self):
+        """Return the platforms of the object."""
+        return self._platforms
+
+    @platforms.setter
+    def platforms(self, platform: str) -> None:
+        """Set the platforms of the object."""
+        self._platforms.append(platform)
+
+    @property
+    def log_source_references(self):
+        """Return the log source references of the object."""
+        return self._log_source_references
+
+    @log_source_references.setter
+    def log_source_references(self, log_source: dict) -> None:
+        """Set the log source references of the object."""
+        self._log_source_references.append(log_source)
+
+    @property
+    def mutable_elements(self):
+        """Return the mutable elements of the object."""
+        return self._mutable_elements
+
+    @mutable_elements.setter
+    def mutable_elements(self, element: dict) -> None:
+        """Set the mutable elements of the object."""
+        self._mutable_elements.append(element)
