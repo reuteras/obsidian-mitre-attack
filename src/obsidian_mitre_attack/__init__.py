@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
@@ -100,26 +101,40 @@ def main() -> None:
     if not args.verbose:
         args.verbose = config["verbose"]
 
+    start_time = time.time()
+    print("Starting STIX data download and parsing...")
+
     stix_data = StixParser(
         repo_url=config["repository_url"],
         version=config["version"],
         verbose=args.verbose,
     )
+    print(f"✓ STIX Parser initialized ({time.time() - start_time:.2f}s)")
 
     output_dir: str = args.output
     Path(output_dir).mkdir(exist_ok=True, parents=True)
 
+    parse_start = time.time()
     for domain in domains:
+        domain_start = time.time()
         stix_data.get_domain_data(domain=domain)
+        print(f"✓ Parsed {domain} ({time.time() - domain_start:.2f}s)")
 
+    cti_start = time.time()
     stix_data.get_cti_data()
+    print(f"✓ Parsed CTI data ({time.time() - cti_start:.2f}s)")
+    print(f"✓ Total parsing time: {time.time() - parse_start:.2f}s")
     markdown_generator = MarkdownGenerator(
         output_dir=output_dir,
         stix_data=stix_data,
         arguments=args,
     )
 
+    markdown_start = time.time()
+    print("\nGenerating markdown files...")
+
     # Generate domain-specific markdown in parallel (tactics, techniques, mitigations)
+    domain_gen_start = time.time()
     with ThreadPoolExecutor(max_workers=3) as executor:
         domain_futures = {
             executor.submit(generate_domain_markdown, markdown_generator, domain): domain
@@ -134,8 +149,10 @@ def main() -> None:
             except Exception as e:
                 print(f"Error generating markdown for {domain}: {e}")
                 raise
+    print(f"✓ Domain markdown generated ({time.time() - domain_gen_start:.2f}s)")
 
     # Generate CTI data markdown in parallel (software, groups, campaigns, assets, data sources)
+    cti_gen_start = time.time()
     with ThreadPoolExecutor(max_workers=5) as executor:
         cti_futures = {
             executor.submit(markdown_generator.create_software_notes): "software",
@@ -153,6 +170,14 @@ def main() -> None:
             except Exception as e:
                 print(f"Error generating markdown for {entity_type}: {e}")
                 raise
+    print(f"✓ CTI markdown generated ({time.time() - cti_gen_start:.2f}s)")
+    print(f"✓ Total markdown generation time: {time.time() - markdown_start:.2f}s")
 
     # Generate Main README file
+    readme_start = time.time()
     create_main_readme(arguments=args, domains=domains, config=config)
+    print(f"✓ README generated ({time.time() - readme_start:.2f}s)")
+
+    print(f"\n{'='*60}")
+    print(f"TOTAL TIME: {time.time() - start_time:.2f}s ({(time.time() - start_time)/60:.2f} minutes)")
+    print(f"{'='*60}")
