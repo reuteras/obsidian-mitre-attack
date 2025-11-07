@@ -45,60 +45,6 @@ Locking at the graph it is also easy to see that [T1548.004](https://attack.mitr
 
 The Markdown shown above is available [here](./sample.md).
 
-## TODO
-
-- Add more relevant tags and consider prepending tags with **attack** or use **attack/<tag>**.
-- Add other metadata? Att&ck ID, etc. (URL has been added)
-- Should top level pages be added to each category or are they not needed when ATT&CK is used in Obsidian?
-- Check for unused code and remove it.
-- Since speed is not the main concern (runs one time) it has not been top priority but I should look at [https://github.com/oasis-open/cti-python-stix2/issues/516#issuecomment-871510496](https://github.com/oasis-open/cti-python-stix2/issues/516#issuecomment-871510496).
-- Look at [coming changes](https://medium.com/mitre-attack/smarter-detection-strategies-in-attack-7e6738fec31f) for the data and in include them.
-
-## Done
-
-- Add [Data sources](https://attack.mitre.org/datasources/)
-- Add [Assets](https://attack.mitre.org/assets/)
-- Add one link per page to the corresponding page on [https://attack.mitre.org/](https://attack.mitre.org/)
-
-## Status
-
-Missing in the current implementation:
-
-- Groups
-  - First version done.
-- Mitigations
-  - First version done.
-- Campaigns
-  - First version done.
-- Software
-  - First version done.
-- Tactics
-  - First version done.
-- Techniques
-  - No links to data sources since they are not implemented yet.
-  - No "Targeted Assets" since they are not implemented yet.
-
-Current time to run the scripts and the different parts in verbose mode:
-
-```bash
-2024-05-17 05:36:02 - Getting STIX data from https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master for version 15.1
-2024-05-17 05:36:07 - STIX data loaded successfully
-2024-05-17 05:36:07 - Getting tactics data for enterprise-attack domain
-2024-05-17 05:36:07 - Getting techniques data for enterprise-attack domain
-2024-05-17 05:43:48 - Getting mitigations data for enterprise-attack domain
-2024-05-17 05:44:20 - Getting tactics data for mobile-attack domain
-2024-05-17 05:44:20 - Getting techniques data for mobile-attack domain
-2024-05-17 05:44:25 - Getting mitigations data for mobile-attack domain
-2024-05-17 05:44:26 - Getting tactics data for ics-attack domain
-2024-05-17 05:44:26 - Getting techniques data for ics-attack domain
-2024-05-17 05:44:29 - Getting mitigations data for ics-attack domain
-2024-05-17 05:44:30 - Getting data sources data
-2024-05-17 05:48:15 - Getting assets data
-2024-05-17 05:48:17 - Getting groups data
-2024-05-17 06:03:18 - Getting campaigns data
-2024-05-17 06:03:26 - Getting software data
-2024-05-17 06:11:02 - CTI data loaded successfully
-```
 
 ## Development
 
@@ -110,12 +56,11 @@ Clone this repository
 git clone https://github.com/vincenzocaputo/obsidian-mitre-attack.git
 ```
 
-Use `uv`to create a _.venv_.
+Use `uv`.
 
 ```bash
 cd obsidian-mitre-attack
-uv venv
-source .venv/bin/activate
+uv sync --frozen
 ```
 
 ### Run
