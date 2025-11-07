@@ -199,7 +199,7 @@ class MarkdownGenerator:
                     lines.append(
                         f"> [!summary]- Other sub-techniques of {technique.parent_name} ({len(technique.subtechniques)})"
                     )
-                    lines.append(">> | ID | Name |")
+                    lines.append("> | ID | Name |")
                     lines.append("> | --- | --- |")
                     first = False
                 if subt["id"] == technique.id:
@@ -216,7 +216,7 @@ class MarkdownGenerator:
                     lines.append(
                         f"> [!summary]- Sub-techniques ({len(technique.subtechniques)})"
                     )
-                    lines.append(">> | ID | Name |")
+                    lines.append("> | ID | Name |")
                     lines.append("> | --- | --- |")
                     first = False
                 lines.append(
