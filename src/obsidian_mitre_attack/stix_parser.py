@@ -779,33 +779,19 @@ class StixParser:
             technique_cache[tech["id"]] = (tech, "ics-attack")
 
         # Cache all "uses" relationships for groups->software
-        all_soft_relationships_enterprise = self.enterprise_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="uses"),
-            Filter(prop="target_ref", op="contains", value="malware"),
-        ]) + self.enterprise_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="uses"),
-            Filter(prop="target_ref", op="contains", value="tool"),
-        ])
-        all_soft_relationships_mobile = self.mobile_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="uses"),
-            Filter(prop="target_ref", op="contains", value="malware"),
-        ]) + self.mobile_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="uses"),
-            Filter(prop="target_ref", op="contains", value="tool"),
-        ])
-        all_soft_relationships_ics = self.ics_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="uses"),
-            Filter(prop="target_ref", op="contains", value="malware"),
-        ]) + self.ics_attack.query([
-            Filter(prop="type", op="=", value="relationship"),
-            Filter(prop="relationship_type", op="=", value="uses"),
-            Filter(prop="target_ref", op="contains", value="tool"),
-        ])
+        # Get all "uses" relationships and filter in Python (faster than multiple queries)
+        all_soft_relationships_enterprise = [
+            rel for rel in all_tech_relationships_enterprise
+            if "malware" in rel.get("target_ref", "") or "tool" in rel.get("target_ref", "")
+        ]
+        all_soft_relationships_mobile = [
+            rel for rel in all_tech_relationships_mobile
+            if "malware" in rel.get("target_ref", "") or "tool" in rel.get("target_ref", "")
+        ]
+        all_soft_relationships_ics = [
+            rel for rel in all_tech_relationships_ics
+            if "malware" in rel.get("target_ref", "") or "tool" in rel.get("target_ref", "")
+        ]
 
         soft_relationships_by_source = {}
         for rel in (all_soft_relationships_enterprise + all_soft_relationships_mobile + all_soft_relationships_ics):
@@ -815,13 +801,16 @@ class StixParser:
                     soft_relationships_by_source[source] = []
                 soft_relationships_by_source[source].append(rel)
 
-        # Cache all software by ID
-        all_software_enterprise = self.enterprise_attack.query([Filter(prop="type", op="=", value="malware")]) + \
-                                  self.enterprise_attack.query([Filter(prop="type", op="=", value="tool")])
-        all_software_mobile = self.mobile_attack.query([Filter(prop="type", op="=", value="malware")]) + \
-                              self.mobile_attack.query([Filter(prop="type", op="=", value="tool")])
-        all_software_ics = self.ics_attack.query([Filter(prop="type", op="=", value="malware")]) + \
-                           self.ics_attack.query([Filter(prop="type", op="=", value="tool")])
+        # Cache all software by ID (combined query for malware and tool)
+        all_software_enterprise = self.enterprise_attack.query([
+            Filter(prop="type", op="in", value=["malware", "tool"])
+        ])
+        all_software_mobile = self.mobile_attack.query([
+            Filter(prop="type", op="in", value=["malware", "tool"])
+        ])
+        all_software_ics = self.ics_attack.query([
+            Filter(prop="type", op="in", value=["malware", "tool"])
+        ])
 
         software_cache = {}
         for soft in (all_software_enterprise + all_software_mobile + all_software_ics):
