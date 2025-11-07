@@ -1656,7 +1656,7 @@ class StixParser:
                     or not campaign["x_mitre_deprecated"]
                 ) and ("revoked" not in campaign or not campaign["revoked"]):
                     campaign_obj = MITRECampaign(name=campaign["name"])
-                    external_references_added = set()
+                    added = []
                     groups_added = []
 
                     # Add attributes to the campaign object
@@ -1682,9 +1682,9 @@ class StixParser:
                                 "url": ext_ref["url"],
                                 "description": ext_ref["description"],
                             }
-                            if ext_ref["source_name"] not in external_references_added:
+                            if item not in added:
                                 campaign_obj.external_references = item
-                                external_references_added.add(ext_ref["source_name"])
+                                added.append(item)
 
                     # Get group(s) associated with the campaign
                     group_relationships_enterprise = self.enterprise_attack.query(
@@ -1948,9 +1948,9 @@ class StixParser:
                                         "url": ext_ref["url"],
                                         "description": ext_ref["description"],
                                     }
-                                    if ext_ref["source_name"] not in external_references_added:
+                                    if item not in added:
                                         campaign_obj.external_references = item
-                                        external_references_added.add(ext_ref["source_name"])
+                                        added.append(item)
 
                     self.campaigns.append(campaign_obj)
 
