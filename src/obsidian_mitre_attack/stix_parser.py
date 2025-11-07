@@ -215,6 +215,10 @@ class StixParser:
         elif domain == "ics-attack":
             self.src = self.ics_attack
 
+        # Pre-cache all relationships and objects to avoid repeated queries
+        print(f"Pre-caching relationships and objects for {domain} techniques...")
+        cache_start = time_module.time()
+
         # Extract techniques
         techniques_stix = self.src.query([Filter("type", "=", "attack-pattern")])
         external_references_added = set()
@@ -234,6 +238,98 @@ class StixParser:
                     break
             shortname_name[tactic["x_mitre_shortname"]] = tactic["name"]
             shortname_id[tactic["x_mitre_shortname"]] = tactic_id
+
+        # Cache all "uses" relationships by target_ref
+        all_uses_relationships = self.src.query([
+            Filter(prop="type", op="=", value="relationship"),
+            Filter(prop="relationship_type", op="=", value="uses"),
+        ])
+        uses_by_target = {}
+        for rel in all_uses_relationships:
+            target = rel.get("target_ref")
+            if target:
+                if target not in uses_by_target:
+                    uses_by_target[target] = []
+                uses_by_target[target].append(rel)
+
+        # Cache all "mitigates" relationships by target_ref
+        all_mitigates_relationships = self.src.query([
+            Filter(prop="type", op="=", value="relationship"),
+            Filter(prop="relationship_type", op="=", value="mitigates"),
+        ])
+        mitigates_by_target = {}
+        for rel in all_mitigates_relationships:
+            target = rel.get("target_ref")
+            if target:
+                if target not in mitigates_by_target:
+                    mitigates_by_target[target] = []
+                mitigates_by_target[target].append(rel)
+
+        # Cache all "detects" relationships by target_ref
+        all_detects_relationships = self.src.query([
+            Filter(prop="type", op="=", value="relationship"),
+            Filter(prop="relationship_type", op="=", value="detects"),
+        ])
+        detects_by_target = {}
+        for rel in all_detects_relationships:
+            target = rel.get("target_ref")
+            if target:
+                if target not in detects_by_target:
+                    detects_by_target[target] = []
+                detects_by_target[target].append(rel)
+
+        # Cache all software (malware + tools) by ID
+        all_malware = self.src.query([Filter(prop="type", op="=", value="malware")])
+        all_tools = self.src.query([Filter(prop="type", op="=", value="tool")])
+        software_cache = {}
+        for soft in all_malware + all_tools:
+            software_cache[soft["id"]] = soft
+
+        # Cache all groups by ID
+        all_groups = self.src.query([Filter(prop="type", op="=", value="intrusion-set")])
+        group_cache = {}
+        for group in all_groups:
+            group_cache[group["id"]] = group
+
+        # Cache all campaigns by ID
+        all_campaigns = self.src.query([Filter(prop="type", op="=", value="campaign")])
+        campaign_cache = {}
+        for camp in all_campaigns:
+            campaign_cache[camp["id"]] = camp
+
+        # Cache all mitigations by ID
+        all_mitigations = self.src.query([Filter(prop="type", op="=", value="course-of-action")])
+        mitigation_cache = {}
+        for mit in all_mitigations:
+            mitigation_cache[mit["id"]] = mit
+
+        # Cache all data components by ID
+        all_data_components = self.src.query([Filter(prop="type", op="=", value="x-mitre-data-component")])
+        data_component_cache = {}
+        for dc in all_data_components:
+            data_component_cache[dc["id"]] = dc
+
+        # Cache all data sources by ID
+        all_data_sources = self.src.query([Filter(prop="type", op="=", value="x-mitre-data-source")])
+        data_source_cache = {}
+        for ds in all_data_sources:
+            data_source_cache[ds["id"]] = ds
+
+        # Build subtechniques cache by main_id
+        subtechniques_by_main_id = {}
+        for tech in techniques_stix:
+            if tech.get("x_mitre_is_subtechnique"):
+                ext_refs = tech.get("external_references", [])
+                for ext_ref in ext_refs:
+                    if ext_ref["source_name"] == "mitre-attack":
+                        sub_id = ext_ref["external_id"]
+                        main_id = sub_id.split(".")[0]
+                        if main_id not in subtechniques_by_main_id:
+                            subtechniques_by_main_id[main_id] = []
+                        subtechniques_by_main_id[main_id].append(tech)
+                        break
+
+        print(f"  Cache built in {time_module.time() - cache_start:.2f}s")
 
         # Extract techniques
         for tech in techniques_stix:
@@ -295,16 +391,8 @@ class StixParser:
                 else:
                     technique_obj.main_id = technique_obj.id
 
-                # Procedure examples
-                procedure_examples_stix = self.src.query(
-                    [
-                        Filter(prop="type", op="=", value="relationship"),
-                        Filter(prop="relationship_type", op="=", value="uses"),
-                        Filter(
-                            prop="target_ref", op="=", value=technique_obj.internal_id
-                        ),
-                    ]
-                )
+                # Procedure examples (using cache)
+                procedure_examples_stix = uses_by_target.get(technique_obj.internal_id, [])
                 for relation in procedure_examples_stix:
                     if (
                         "x_mitre_deprecated" not in relation
@@ -328,47 +416,19 @@ class StixParser:
                                             ext_ref["source_name"]
                                         )
 
-                        if "malware" in relation["source_ref"]:
-                            source_stix = self.src.query(
-                                [
-                                    Filter(prop="type", op="=", value="malware"),
-                                    Filter(
-                                        prop="id", op="=", value=relation["source_ref"]
-                                    ),
-                                ]
-                            )
-                        elif "tool" in relation["source_ref"]:
-                            source_stix = self.src.query(
-                                [
-                                    Filter(prop="type", op="=", value="tool"),
-                                    Filter(
-                                        prop="id", op="=", value=relation["source_ref"]
-                                    ),
-                                ]
-                            )
-                        elif "intrusion-set" in relation["source_ref"]:
-                            source_stix = self.src.query(
-                                [
-                                    Filter(prop="type", op="=", value="intrusion-set"),
-                                    Filter(
-                                        prop="id", op="=", value=relation["source_ref"]
-                                    ),
-                                ]
-                            )
-                        elif "campaign" in relation["source_ref"]:
-                            source_stix = self.src.query(
-                                [
-                                    Filter(prop="type", op="=", value="campaign"),
-                                    Filter(
-                                        prop="id", op="=", value=relation["source_ref"]
-                                    ),
-                                ]
-                            )
+                        # Use cache instead of queries
+                        source = None
+                        source_ref = relation["source_ref"]
+                        if "malware" in source_ref or "tool" in source_ref:
+                            source = software_cache.get(source_ref)
+                        elif "intrusion-set" in source_ref:
+                            source = group_cache.get(source_ref)
+                        elif "campaign" in source_ref:
+                            source = campaign_cache.get(source_ref)
                         else:
-                            sys.exit(f"Unknown source type: {relation['source_ref']}")
+                            sys.exit(f"Unknown source type: {source_ref}")
 
-                        if source_stix:
-                            source = source_stix[0]
+                        if source:
                             if (
                                 "x_mitre_deprecated" not in source
                                 or not source["x_mitre_deprecated"]
@@ -399,16 +459,8 @@ class StixParser:
                                     "description": relation.get("description", ""),
                                 }
 
-                # Mitigations
-                mitigations_relationships = self.src.query(
-                    [
-                        Filter(prop="type", op="=", value="relationship"),
-                        Filter(prop="relationship_type", op="=", value="mitigates"),
-                        Filter(
-                            prop="target_ref", op="=", value=technique_obj.internal_id
-                        ),
-                    ]
-                )
+                # Mitigations (using cache)
+                mitigations_relationships = mitigates_by_target.get(technique_obj.internal_id, [])
                 for relation in mitigations_relationships:
                     ext_refs = relation.get("external_references", [])
                     for ext_ref in ext_refs:
@@ -421,13 +473,10 @@ class StixParser:
                             if ext_ref["source_name"] not in external_references_added:
                                 technique_obj.external_references = item
                                 external_references_added.add(ext_ref["source_name"])
-                    # Get mitigation id
-                    mitigation = self.src.query(
-                        [
-                            Filter(prop="type", op="=", value="course-of-action"),
-                            Filter(prop="id", op="=", value=relation["source_ref"]),
-                        ]
-                    )[0]
+                    # Get mitigation id (using cache)
+                    mitigation = mitigation_cache.get(relation["source_ref"])
+                    if not mitigation:
+                        continue
                     mitigation_id = ""
                     ext_refs = mitigation.get("external_references", [])
                     for ext_ref in ext_refs:
@@ -450,46 +499,26 @@ class StixParser:
                         technique_obj.mitigations = item
                         added.append(item)
 
-                # Detection
-                detections_relationships = self.src.query(
-                    [
-                        Filter(prop="type", op="=", value="relationship"),
-                        Filter(prop="relationship_type", op="=", value="detects"),
-                        Filter(
-                            prop="target_ref", op="=", value=technique_obj.internal_id
-                        ),
-                    ]
-                )
+                # Detection (using cache)
+                detections_relationships = detects_by_target.get(technique_obj.internal_id, [])
                 for relation in detections_relationships:
-                    data_component_result = self.src.query(
-                        [
-                            Filter(prop="type", op="=", value="x-mitre-data-component"),
-                            Filter(prop="id", op="=", value=relation["source_ref"]),
-                        ]
-                    )
+                    data_component = data_component_cache.get(relation["source_ref"])
 
                     # Set defaults in case lookups fail
                     data_component_name = "Unknown"
                     data_source_name = "Unknown"
                     data_source_id = ""
 
-                    if data_component_result:
-                        data_component = data_component_result[0]
+                    if data_component:
                         data_component_name = data_component.get("name", "Unknown")
                         data_component_source_ref = data_component.get(
                             "x_mitre_data_source_ref", ""
                         )
 
                         if data_component_source_ref:
-                            data_source_result = self.src.query(
-                                [
-                                    Filter(prop="type", op="=", value="x-mitre-data-source"),
-                                    Filter(prop="id", op="=", value=data_component_source_ref),
-                                ]
-                            )
+                            data_source = data_source_cache.get(data_component_source_ref)
 
-                            if data_source_result:
-                                data_source = data_source_result[0]
+                            if data_source:
                                 data_source_name = data_source.get("name", "Unknown")
                                 ext_refs = data_source.get("external_references", [])
 
@@ -517,18 +546,8 @@ class StixParser:
                         technique_obj.detections = item
                         added.append(item)
 
-                # Subtechniques
-                subtechniques = self.src.query(
-                    [
-                        Filter(prop="type", op="=", value="attack-pattern"),
-                        Filter(prop="x_mitre_is_subtechnique", op="=", value=True),
-                        Filter(
-                            prop="external_references.external_id",
-                            op="contains",
-                            value=technique_obj.main_id,
-                        ),
-                    ]
-                )
+                # Subtechniques (using cache)
+                subtechniques = subtechniques_by_main_id.get(technique_obj.main_id, [])
                 for subtechnique in subtechniques:
                     if (
                         "x_mitre_deprecated" not in subtechnique
