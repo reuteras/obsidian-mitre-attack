@@ -228,7 +228,6 @@ class StixParser:
 
         # Extract techniques
         techniques_stix = self.src.query([Filter("type", "=", "attack-pattern")])
-        external_references_added = set()
 
         # Extract tactics to build relationship between techniques and tactics
         tactics_stix = self.src.query([Filter("type", "=", "x-mitre-tactic")])
@@ -359,6 +358,7 @@ class StixParser:
             ) and ("revoked" not in tech or not tech["revoked"]):
                 technique_obj = MITRETechnique(name=tech["name"])
                 added = []
+                external_references_added = set()
 
                 # Add attributes to the technique object
                 technique_obj.internal_id = tech["id"]
