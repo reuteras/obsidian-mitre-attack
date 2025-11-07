@@ -422,11 +422,19 @@ class MarkdownGenerator:
                 )
                 content = convert_to_local_links(text=content)
 
-                # References
+                # References - only include footnotes that are actually cited in the content
                 ref_lines = ["", "", "### References", ""]
+                # Find all citation references in the content
+                cited_refs = set()
+                for match in REFERENCE_PATTERN.finditer(content):
+                    ref_text = match.group(0)
+                    ref_name = ref_text[2:-1]  # Remove [^ and ]
+                    cited_refs.add(ref_name)
+
+                # Only add footnotes for citations that are actually used
                 for ref in technique.external_references:
                     name: str = ref["name"].replace(" ", "_")
-                    if "url" in ref:
+                    if "url" in ref and name in cited_refs:
                         ref_lines.append(
                             f"[^{name}]: [{ref['description']}]({ref['url']})"
                         )
@@ -523,22 +531,22 @@ class MarkdownGenerator:
                     content = "\n".join(lines)
                     content = convert_to_local_links(text=content)
 
-                    # References
+                    # References - only include footnotes that are actually cited in the content
                     ref_lines = ["", "", "### References", ""]
+                    # Find all citation references in the content
+                    cited_refs = set()
+                    for match in REFERENCE_PATTERN.finditer(content):
+                        ref_text = match.group(0)
+                        ref_name = ref_text[2:-1]  # Remove [^ and ]
+                        cited_refs.add(ref_name)
+
+                    # Only add footnotes for citations that are actually used
                     for ref in mitigation.external_references:
                         name = ref["name"].replace(" ", "_")
-                        if "url" in ref:
+                        if "url" in ref and name in cited_refs:
                             ref_lines.append(
                                 f"[^{name}]: [{ref['description']}]({ref['url']})"
                             )
-
-                    if mitigation.external_references:
-                        for alias in mitigation.external_references:
-                            if "url" in alias:
-                                name: str = alias["name"].replace(" ", "_")
-                                ref_lines.append(
-                                    f"[^{name}]: [{alias['description']}]({alias['url']})"
-                                )
 
                     content = content + "\n".join(ref_lines)
                     content = content.replace("MITRE_URL", mitigation.url)
@@ -669,20 +677,29 @@ class MarkdownGenerator:
             content = "\n".join(lines)
             content = convert_to_local_links(text=content)
 
-            # References
+            # References - only include footnotes that are actually cited in the content
             ref_lines = ["", "", "### References", ""]
+            # Find all citation references in the content
+            cited_refs = set()
+            for match in REFERENCE_PATTERN.finditer(content):
+                ref_text = match.group(0)
+                ref_name = ref_text[2:-1]  # Remove [^ and ]
+                cited_refs.add(ref_name)
+
+            # Only add footnotes for citations that are actually used
             for ref in group.external_references:
                 name = ref["name"].replace(" ", "_")
-                if "url" in ref:
+                if "url" in ref and name in cited_refs:
                     ref_lines.append(f"[^{name}]: [{ref['description']}]({ref['url']})")
 
             if group.aliases_references:
                 for alias in group.aliases_references:
                     if "url" in alias:
                         name: str = alias["name"].replace(" ", "_")
-                        ref_lines.append(
-                            f"[^{name}]: [{alias['description']}]({alias['url']})"
-                        )
+                        if name in cited_refs:
+                            ref_lines.append(
+                                f"[^{name}]: [{alias['description']}]({alias['url']})"
+                            )
 
             content = content + "\n".join(ref_lines)
             content = content.replace("MITRE_URL", group.url)
@@ -836,12 +853,19 @@ class MarkdownGenerator:
 
             content = convert_to_local_links(text=content)
 
-            # References
+            # References - only include footnotes that are actually cited in the content
             content += "\n\n### References\n\n"
+            # Find all citation references in the content
+            cited_refs = set()
+            for match in REFERENCE_PATTERN.finditer(content):
+                ref_text = match.group(0)
+                ref_name = ref_text[2:-1]  # Remove [^ and ]
+                cited_refs.add(ref_name)
 
+            # Only add footnotes for citations that are actually used
             for ref in software.external_references:
                 name: str = ref["name"].replace(" ", "_")
-                if "url" in ref:
+                if "url" in ref and name in cited_refs:
                     content += f"[^{name}]: [{ref['description']}]({ref['url']})\n"
 
             content = content.replace("MITRE_URL", software.url)
@@ -986,11 +1010,20 @@ class MarkdownGenerator:
                 ) + "\n".join(lines)
                 content = convert_to_local_links(text=content)
 
-                # References
+                # References - only include footnotes that are actually cited in the content
                 ref_lines = ["", "", "### References", ""]
+                # Find all citation references in the content
+                cited_refs = set()
+                for match in REFERENCE_PATTERN.finditer(content):
+                    # Extract the reference name from [^name]
+                    ref_text = match.group(0)
+                    ref_name = ref_text[2:-1]  # Remove [^ and ]
+                    cited_refs.add(ref_name)
+
+                # Only add footnotes for citations that are actually used
                 for ref in campaign.external_references:
                     name: str = ref["name"].replace(" ", "_")
-                    if "url" in ref:
+                    if "url" in ref and name in cited_refs:
                         ref_lines.append(
                             f"[^{name}]: [{ref['description']}]({ref['url']})"
                         )
@@ -1126,12 +1159,20 @@ class MarkdownGenerator:
                 content = self.create_tool_notes_header(asset=asset) + "\n".join(lines)
                 content = convert_to_local_links(text=content)
 
-                # References
+                # References - only include footnotes that are actually cited in the content
                 if asset.external_references and len(asset.external_references) > 0:
                     ref_lines = ["", "", "### References", ""]
+                    # Find all citation references in the content
+                    cited_refs = set()
+                    for match in REFERENCE_PATTERN.finditer(content):
+                        ref_text = match.group(0)
+                        ref_name = ref_text[2:-1]  # Remove [^ and ]
+                        cited_refs.add(ref_name)
+
+                    # Only add footnotes for citations that are actually used
                     for ref in asset.external_references:
                         name = ref["name"].replace(" ", "_")
-                        if "url" in ref:
+                        if "url" in ref and name in cited_refs:
                             ref_lines.append(
                                 f"[^{name}]: [{ref['description']}]({ref['url']})"
                             )
@@ -1244,15 +1285,23 @@ class MarkdownGenerator:
                 content = "\n".join(lines)
                 content = convert_to_local_links(text=content)
 
-                # References
+                # References - only include footnotes that are actually cited in the content
                 if (
                     data_source.external_references
                     and len(data_source.external_references) > 0
                 ):
                     ref_lines = ["", "", "### References", ""]
+                    # Find all citation references in the content
+                    cited_refs = set()
+                    for match in REFERENCE_PATTERN.finditer(content):
+                        ref_text = match.group(0)
+                        ref_name = ref_text[2:-1]  # Remove [^ and ]
+                        cited_refs.add(ref_name)
+
+                    # Only add footnotes for citations that are actually used
                     for ref in data_source.external_references:
                         name: str = ref["name"].replace(" ", "_")
-                        if "url" in ref:
+                        if "url" in ref and name in cited_refs:
                             ref_lines.append(
                                 f"[^{name}]: [{ref['description']}]({ref['url']})"
                             )
