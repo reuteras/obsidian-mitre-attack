@@ -461,23 +461,31 @@ class StixParser:
                     ]
                 )
                 for relation in detections_relationships:
-                    data_component = self.src.query(
+                    data_component_result = self.src.query(
                         [
                             Filter(prop="type", op="=", value="x-mitre-data-component"),
                             Filter(prop="id", op="=", value=relation["source_ref"]),
                         ]
-                    )[0]
+                    )
+                    if not data_component_result:
+                        continue
+
+                    data_component = data_component_result[0]
                     data_component_name = data_component.get("name", "")
                     data_component_source_ref = data_component.get(
                         "x_mitre_data_source_ref", ""
                     )
 
-                    data_source = self.src.query(
+                    data_source_result = self.src.query(
                         [
                             Filter(prop="type", op="=", value="x-mitre-data-source"),
                             Filter(prop="id", op="=", value=data_component_source_ref),
                         ]
-                    )[0]
+                    )
+                    if not data_source_result:
+                        continue
+
+                    data_source = data_source_result[0]
                     data_source_name = data_source.get("name", "")
                     data_source_id = ""
                     ext_refs = data_source.get("external_references", [])
