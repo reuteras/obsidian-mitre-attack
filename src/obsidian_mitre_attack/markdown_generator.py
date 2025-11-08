@@ -1392,8 +1392,13 @@ class MarkdownGenerator:
                         # Find the analytic object
                         for analytic in self.analytics:
                             if analytic.internal_id == analytic_ref:
+                                # Build the name with platform info if available
+                                platforms_str = ""
+                                if analytic.platforms:
+                                    platforms_str = f" ({', '.join(analytic.platforms)})"
+                                display_name = f"{analytic.id}{platforms_str}"
                                 lines.append(
-                                    f"| [[{analytic.name} - {analytic.id} \\| {analytic.id}]] | [[{analytic.name} - {analytic.id} \\| {analytic.name}]] |"
+                                    f"| [[{analytic.name} - {analytic.id} \\| {analytic.id}]] | [[{analytic.name} - {analytic.id} \\| {display_name}]] |"
                                 )
                                 break
 
