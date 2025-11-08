@@ -2335,6 +2335,9 @@ class StixParser:
 
     def _get_detection_strategies(self) -> None:  # noqa: PLR0912
         """Get and parse detection strategies from STIX data."""
+        print("Pre-caching relationships and objects for detection strategies...")
+        cache_start = time_module.time()
+
         # Extract detection strategies from all domains
         detection_strategies_enterprise = self.enterprise_attack.query(
             [Filter(prop="type", op="=", value="x-mitre-detection-strategy")]
@@ -2473,8 +2476,13 @@ class StixParser:
 
                 self.detection_strategies.append(ds_obj)
 
+        print(f"  Detection strategies parsed in {time_module.time() - cache_start:.2f}s")
+
     def _get_analytics(self) -> None:
         """Get and parse analytics from STIX data."""
+        print("Pre-caching relationships and objects for analytics...")
+        cache_start = time_module.time()
+
         # Extract analytics from all domains
         analytics_enterprise = self.enterprise_attack.query(
             [Filter(prop="type", op="=", value="x-mitre-analytic")]
@@ -2558,3 +2566,5 @@ class StixParser:
                     analytic_obj.mutable_elements = element
 
                 self.analytics.append(analytic_obj)
+
+        print(f"  Analytics parsed in {time_module.time() - cache_start:.2f}s")
