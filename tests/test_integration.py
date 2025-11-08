@@ -246,7 +246,7 @@ class TestErrorHandling:
 
         # Should raise FileNotFoundError
         with pytest.raises(FileNotFoundError, match="config.toml"):
-            main()
+            main([])
 
     def test_invalid_output_directory(self, test_config: dict[str, Any], tmp_path: Path, monkeypatch):
         """Test handling of invalid output directory in config."""
@@ -262,7 +262,7 @@ class TestErrorHandling:
 
         # Should raise ValueError
         with pytest.raises(ValueError, match="output directory"):
-            main()
+            main([])
 
 
 @pytest.mark.integration
