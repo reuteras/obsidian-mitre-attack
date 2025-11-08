@@ -65,6 +65,7 @@ class MarkdownGenerator:
         output_dir: str,
         stix_data,
         arguments,
+        config: dict | None = None,
     ) -> None:
         """Initialize the class."""
         if output_dir:
@@ -80,6 +81,7 @@ class MarkdownGenerator:
         self.detection_strategies = stix_data.detection_strategies
         self.analytics = stix_data.analytics
         self.tags_prefix = arguments.tags
+        self.config = config or {}
 
     def create_tactic_notes(self, domain: str) -> None:
         """Function to create markdown notes for tactics."""
@@ -1315,18 +1317,103 @@ class MarkdownGenerator:
                 if not content.endswith("\n"):
                     fd.write("\n")
 
+    def _generate_analytic_content(self, analytic) -> str:
+        """Generate the content for an analytic (for embedding in detection strategies).
+
+        Args:
+            analytic: The analytic object to generate content for
+
+        Returns:
+            str: The markdown content for the analytic
+        """
+        lines = [f"## {analytic.name}", ""]
+
+        # Analytic description
+        if analytic.description:
+            analytic_description: str = fix_description(
+                description_str=analytic.description
+            )
+            lines.extend([analytic_description, ""])
+
+        # Analytic information
+        lines.extend(
+            [
+                "> [!info]",
+                f"> ID: {analytic.id}",
+            ]
+        )
+
+        if analytic.platforms:
+            lines.append(f"> Platforms: {', '.join(analytic.platforms)}")
+
+        lines.extend(
+            [
+                f"> Version: {analytic.version}",
+                f"> Created: {str(object=analytic.created).split(sep=' ')[0]}",
+                f"> Last Modified: {str(object=analytic.modified).split(sep=' ')[0]}",
+                f"> URL: {analytic.url}",
+                "",
+                "",
+            ]
+        )
+
+        # Log sources
+        if analytic.log_source_references:
+            lines.extend(
+                [
+                    "### Log Sources",
+                    "",
+                    "| Name | Data Component | Channel |",
+                    "| --- | --- | --- |",
+                ]
+            )
+            for log_source in analytic.log_source_references:
+                data_component_name = log_source.get("data_component_name", "")
+                name = log_source.get("name", "")
+                channel = log_source.get("channel", "")
+                lines.append(f"| {name} | {data_component_name} | {channel} |")
+
+        # Mutable elements
+        if analytic.mutable_elements:
+            lines.extend(
+                [
+                    "",
+                    "",
+                    "### Mutable Elements",
+                    "",
+                    "| Field | Description |",
+                    "| --- | --- |",
+                ]
+            )
+            for element in analytic.mutable_elements:
+                field = element.get("field", "")
+                description = element.get("description", "")
+                lines.append(f"| {field} | {description} |")
+
+        content = "\n".join(lines)
+        content = convert_to_local_links(text=content)
+        return content
+
     def create_detection_strategy_notes(self) -> None:
         """Function to create markdown notes for detection strategies in Defense folder."""
-        detection_strategies_dir = Path(self.output_dir, "Defenses", "Detection_Strategies")
+        detection_strategies_dir = Path(
+            self.output_dir, "Defenses", "Detection_Strategies"
+        )
         detection_strategies_dir.mkdir(parents=True, exist_ok=True)
 
         # Group detection strategies by domain
         for detection_strategy in self.detection_strategies:
-            dirname: str = detection_strategy.domain.replace("-", " ").capitalize().replace("Ics ", "ICS ")
+            dirname: str = (
+                detection_strategy.domain.replace("-", " ")
+                .capitalize()
+                .replace("Ics ", "ICS ")
+            )
             domain_dir = Path(detection_strategies_dir, dirname)
             domain_dir.mkdir(parents=True, exist_ok=True)
 
-            ds_file = Path(domain_dir, f"{detection_strategy.name} - {detection_strategy.id}.md")
+            ds_file = Path(
+                domain_dir, f"{detection_strategy.name} - {detection_strategy.id}.md"
+            )
 
             # Create markdown file for current detection strategy
             with open(file=ds_file, mode="w", encoding="utf-8") as fd:
@@ -1378,29 +1465,72 @@ class MarkdownGenerator:
 
                 # Analytics associated with this strategy
                 if detection_strategy.analytic_refs:
-                    lines.extend(
-                        [
-                            "",
-                            "",
-                            "### Associated Analytics",
-                            "",
-                            "| ID | Name |",
-                            "| --- | --- |",
-                        ]
+                    embed_analytics = self.config.get(
+                        "embed_analytics_in_detection_strategies", False
                     )
-                    for analytic_ref in detection_strategy.analytic_refs:
-                        # Find the analytic object
-                        for analytic in self.analytics:
-                            if analytic.internal_id == analytic_ref:
-                                # Build the name with platform info if available
-                                platforms_str = ""
-                                if analytic.platforms:
-                                    platforms_str = f" ({', '.join(analytic.platforms)})"
-                                display_name = f"{analytic.id}{platforms_str}"
-                                lines.append(
-                                    f"| [[{analytic.name} - {analytic.id} \\| {analytic.id}]] | [[{analytic.name} - {analytic.id} \\| {display_name}]] |"
-                                )
-                                break
+
+                    if embed_analytics:
+                        # Embed analytics using tab-panels syntax
+                        lines.extend(
+                            [
+                                "",
+                                "",
+                                "### Associated Analytics",
+                                "",
+                                "```tabs",
+                            ]
+                        )
+
+                        for analytic_ref in detection_strategy.analytic_refs:
+                            # Find the analytic object
+                            for analytic in self.analytics:
+                                if analytic.internal_id == analytic_ref:
+                                    # Build the tab name with platform info if available
+                                    platforms_str = ""
+                                    if analytic.platforms:
+                                        platforms_str = (
+                                            f" ({', '.join(analytic.platforms)})"
+                                        )
+                                    tab_name = f"{analytic.id}{platforms_str}"
+
+                                    lines.append(f"--- {tab_name}")
+
+                                    # Generate and embed the analytic content
+                                    analytic_content = self._generate_analytic_content(
+                                        analytic
+                                    )
+                                    lines.append(analytic_content)
+                                    lines.append("")  # Add blank line between tabs
+                                    break
+
+                        lines.append("```")
+                    else:
+                        # Default behavior: link to analytics files
+                        lines.extend(
+                            [
+                                "",
+                                "",
+                                "### Associated Analytics",
+                                "",
+                                "| ID | Name |",
+                                "| --- | --- |",
+                            ]
+                        )
+                        for analytic_ref in detection_strategy.analytic_refs:
+                            # Find the analytic object
+                            for analytic in self.analytics:
+                                if analytic.internal_id == analytic_ref:
+                                    # Build the name with platform info if available
+                                    platforms_str = ""
+                                    if analytic.platforms:
+                                        platforms_str = (
+                                            f" ({', '.join(analytic.platforms)})"
+                                        )
+                                    display_name = f"{analytic.id}{platforms_str}"
+                                    lines.append(
+                                        f"| [[{analytic.name} - {analytic.id} \\| {analytic.id}]] | [[{analytic.name} - {analytic.id} \\| {display_name}]] |"
+                                    )
+                                    break
 
                 content = "\n".join(lines)
                 content = convert_to_local_links(text=content)
@@ -1417,7 +1547,9 @@ class MarkdownGenerator:
 
         # Group analytics by domain
         for analytic in self.analytics:
-            dirname: str = analytic.domain.replace("-", " ").capitalize().replace("Ics ", "ICS ")
+            dirname: str = (
+                analytic.domain.replace("-", " ").capitalize().replace("Ics ", "ICS ")
+            )
             domain_dir = Path(analytics_dir, dirname)
             domain_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1441,7 +1573,9 @@ class MarkdownGenerator:
                 if analytic.platforms:
                     for platform in analytic.platforms:
                         if platform:
-                            lines.append(f"  - {self.tags_prefix}{platform.replace(' ', '_')}")
+                            lines.append(
+                                f"  - {self.tags_prefix}{platform.replace(' ', '_')}"
+                            )
 
                 lines.extend(["---", "", f"## {analytic.name}", ""])
 

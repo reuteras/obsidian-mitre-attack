@@ -84,3 +84,37 @@ options:
   -t, --tags TAGS      Prepend this string to tags in the markdown files.
   -v, --verbose        Print verbose output.
 ```
+
+### Configuration
+
+Create a `config.toml` file in the root directory based on `default-config.toml`. Available configuration options:
+
+```toml
+repository_url = "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master"
+output_dir = "output"
+version = "18.0"
+verbose = true
+# Embed Analytics within Detection Strategies using tab-panels plugin syntax
+# When true, Analytics are included as tabs in Detection Strategy files
+# Requires: https://github.com/GnoxNahte/obsidian-tab-panels
+embed_analytics_in_detection_strategies = false
+```
+
+#### Embedding Analytics in Detection Strategies
+
+By default, Detection Strategies link to separate Analytics files. Setting `embed_analytics_in_detection_strategies = true` will embed the full Analytics content within Detection Strategy files using tab-panels syntax, similar to how they appear on the [MITRE ATT&CK website](https://attack.mitre.org/detectionstrategies/DET0119/).
+
+**Requirements:**
+- Install the [obsidian-tab-panels](https://github.com/GnoxNahte/obsidian-tab-panels) plugin in Obsidian
+- This feature is useful for viewing all related analytics in one place without navigating between files
+
+**Example output:**
+When enabled, each Detection Strategy file will include tabs for each associated analytic:
+
+```tabs
+--- ANO001 (Windows, macOS)
+[Analytic content here...]
+
+--- ANO002 (Linux)
+[Analytic content here...]
+```

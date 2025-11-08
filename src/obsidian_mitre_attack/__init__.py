@@ -128,6 +128,7 @@ def main() -> None:
         output_dir=output_dir,
         stix_data=stix_data,
         arguments=args,
+        config=config,
     )
 
     markdown_start = time.time()
@@ -167,9 +168,7 @@ def main() -> None:
             executor.submit(
                 markdown_generator.create_detection_strategy_notes
             ): "detection_strategies",
-            executor.submit(
-                markdown_generator.create_analytic_notes
-            ): "analytics",
+            executor.submit(markdown_generator.create_analytic_notes): "analytics",
         }
         for future in as_completed(cti_futures):
             entity_type = cti_futures[future]
