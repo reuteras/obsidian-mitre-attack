@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 import toml
+from stix2 import MemoryStore
 
 from obsidian_mitre_attack import create_main_readme, main
 from obsidian_mitre_attack.markdown_generator import MarkdownGenerator
@@ -31,7 +32,6 @@ class TestEndToEndWorkflow:
         parser.mitigations = []
 
         # Load cached data
-        from stix2 import MemoryStore
         parser.enterprise_attack = MemoryStore(stix_data=download_stix_data["enterprise-attack"]["objects"])
         parser.mobile_attack = MemoryStore(stix_data=download_stix_data["mobile-attack"]["objects"])
         parser.ics_attack = MemoryStore(stix_data=download_stix_data["ics-attack"]["objects"])
@@ -89,7 +89,6 @@ class TestEndToEndWorkflow:
         parser.mitigations = []
 
         # Load cached data
-        from stix2 import MemoryStore
         parser.enterprise_attack = MemoryStore(stix_data=download_stix_data["enterprise-attack"]["objects"])
         parser.mobile_attack = MemoryStore(stix_data=download_stix_data["mobile-attack"]["objects"])
         parser.ics_attack = MemoryStore(stix_data=download_stix_data["ics-attack"]["objects"])
@@ -212,9 +211,9 @@ class TestDataIntegrity:
 
         # Used techniques should exist in the techniques list
         for used_tech in group.techniques_used[:5]:
-            matching_techniques = [t for t in parsed_stix_data.techniques if t.id == used_tech["technique_id"]]
             # Note: Group might use techniques from different domains
             # So we can't always guarantee a match
+            _ = [t for t in parsed_stix_data.techniques if t.id == used_tech["technique_id"]]
 
     def test_no_broken_references_in_markdown(self, markdown_generator: MarkdownGenerator):
         """Test that generated markdown doesn't have broken references."""
