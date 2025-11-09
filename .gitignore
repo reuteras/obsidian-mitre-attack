@@ -2,7 +2,7 @@
 __pycache__/
 config.toml
 config.yml
-output/
+output*
 src/__pycache__/
 test/
 venv/
