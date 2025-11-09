@@ -376,6 +376,8 @@ class MarkdownGenerator:
                 "| ID | Name | Analytic ID | Analytic Description |",
                 "| --- | --- | --- | --- |",
             ]
+            embed_analytics = self.config.get("embed_analytics_in_detection_strategies", False)
+
             for detection_strategy in sorted(technique.detection_strategies, key=lambda x: x["id"]):
                 ds_id = detection_strategy['id']
                 ds_name = detection_strategy['name']
@@ -386,16 +388,32 @@ class MarkdownGenerator:
                     first_analytic = analytics[0]
                     analytic_desc = fix_description(description_str=first_analytic['description'])
                     analytic_desc = analytic_desc.replace("\n", " ")
+
+                    if embed_analytics:
+                        # Link to section within detection strategy file
+                        analytic_link = f"[[{ds_name} - {ds_id}#{first_analytic['name']} \\| {first_analytic['id']}]]"
+                    else:
+                        # Link to separate analytic file
+                        analytic_link = f"[[{first_analytic['name']} - {first_analytic['id']} \\| {first_analytic['id']}]]"
+
                     lines.append(
-                        f"| [[{ds_name} - {ds_id} \\| {ds_id}]] | [[{ds_name} - {ds_id} \\| {ds_name}]] | [[{first_analytic['name']} - {first_analytic['id']} \\| {first_analytic['id']}]] | {analytic_desc} |"
+                        f"| [[{ds_name} - {ds_id} \\| {ds_id}]] | [[{ds_name} - {ds_id} \\| {ds_name}]] | {analytic_link} | {analytic_desc} |"
                     )
 
                     # Subsequent analytics for the same detection strategy (empty ID and name cells)
                     for analytic in analytics[1:]:
                         analytic_desc = fix_description(description_str=analytic['description'])
                         analytic_desc = analytic_desc.replace("\n", " ")
+
+                        if embed_analytics:
+                            # Link to section within detection strategy file
+                            analytic_link = f"[[{ds_name} - {ds_id}#{analytic['name']} \\| {analytic['id']}]]"
+                        else:
+                            # Link to separate analytic file
+                            analytic_link = f"[[{analytic['name']} - {analytic['id']} \\| {analytic['id']}]]"
+
                         lines.append(
-                            f"|  |  | [[{analytic['name']} - {analytic['id']} \\| {analytic['id']}]] | {analytic_desc} |"
+                            f"|  |  | {analytic_link} | {analytic_desc} |"
                         )
                 else:
                     # No analytics, just show detection strategy
@@ -1562,6 +1580,10 @@ class MarkdownGenerator:
 
     def create_analytic_notes(self) -> None:
         """Function to create markdown notes for analytics in Defense folder."""
+        # Skip creating analytic files if they're embedded in detection strategies
+        if self.config.get("embed_analytics_in_detection_strategies", False):
+            return
+
         analytics_dir = Path(self.output_dir, "Defenses", "Analytics")
         analytics_dir.mkdir(parents=True, exist_ok=True)
 
