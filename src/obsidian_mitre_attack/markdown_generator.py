@@ -301,7 +301,7 @@ class MarkdownGenerator:
                 )
                 description = description.replace("\n", "<br />")
                 lines.append(
-                    f"| [[{example['name'].replace('/', '／')} \\| {example['id']}]] | [[{example['name'].replace('/', '／')} \\| {example['name'].replace('/', '／')}]] | {description} |"
+                    f"| [[{example['name'].replace('/', '／')} \\| {example['id']}]] | [[{example['name'].replace('/', '／')} \\| {example['name'].replace('/', '／')}]] | {description} |"  # noqa: RUF001
                 )
             return content + "\n".join(lines)
         return content
@@ -596,7 +596,7 @@ class MarkdownGenerator:
                     if not content.endswith("\n"):
                         fd.write("\n")
 
-    def create_group_notes(self) -> None:  # noqa: PLR0912
+    def create_group_notes(self) -> None:  # noqa: PLR0912, PLR0915
         """Function to create markdown notes for groups in CTI folder."""
         groups_dir = Path(self.output_dir, "CTI", "Groups")
         groups_dir.mkdir(parents=True, exist_ok=True)
@@ -843,7 +843,7 @@ class MarkdownGenerator:
                     if ref["source_name"] == "mitre-attack":
                         external_id = ref["external_id"]
                 lines.append(
-                    f"| {domain} | [[{technique['technique'].name.replace('/', '／')} - {external_id} \\| {external_id}]] | {technique['technique'].name} | {description} |"
+                    f"| {domain} | [[{technique['technique'].name.replace('/', '／')} - {external_id} \\| {external_id}]] | {technique['technique'].name} | {description} |"  # noqa: RUF001
                 )
 
         # Groups that use this software
@@ -954,7 +954,7 @@ class MarkdownGenerator:
 
         return "\n".join(lines)
 
-    def create_campaign_notes(self) -> None:
+    def create_campaign_notes(self) -> None:  # noqa: PLR0912
         """Function to create markdown notes for campaigns in CTI folder."""
         campaigns_dir = Path(self.output_dir, "CTI", "Campaigns")
         campaigns_dir.mkdir(parents=True, exist_ok=True)
@@ -1016,7 +1016,7 @@ class MarkdownGenerator:
                         )
                         description = description.replace("\n", "<br />")
                         lines.append(
-                            f"| {domain} | [[{technique['technique_name'].replace('/', '／')} - {technique['technique_id']} \\| {technique['technique_id']}]] | {technique['technique_name']} | {description} |"
+                            f"| {domain} | [[{technique['technique_name'].replace('/', '／')} - {technique['technique_id']} \\| {technique['technique_id']}]] | {technique['technique_name']} | {description} |"  # noqa: RUF001
                         )
 
                 # Software used in campaign
@@ -1432,7 +1432,7 @@ class MarkdownGenerator:
         content = convert_to_local_links(text=content)
         return content
 
-    def create_detection_strategy_notes(self) -> None:
+    def create_detection_strategy_notes(self) -> None:  # noqa: PLR0912
         """Function to create markdown notes for detection strategies in Defense folder."""
         detection_strategies_dir = Path(
             self.output_dir, "Defenses", "Detection_Strategies"

@@ -1009,7 +1009,7 @@ class StixParser:
                                     if "url" in ext_ref and "description" in ext_ref:
                                         item = {
                                             "name": ext_ref["source_name"].replace(
-                                                "/", "／"
+                                                "/", "／"  # noqa: RUF001
                                             ),
                                             "url": ext_ref["url"],
                                             "description": ext_ref["description"],
@@ -1025,7 +1025,7 @@ class StixParser:
 
                                 group_obj.techniques_used = {
                                     "technique_name": technique["name"].replace(
-                                        "/", "／"
+                                        "/", "／"  # noqa: RUF001
                                     ),
                                     "technique_id": technique_id,
                                     "description": tech_group_rel.get(
@@ -1370,7 +1370,7 @@ class StixParser:
                     # Use cache instead of repeated queries
                     target_ref = relationship["target_ref"]
                     if target_ref in technique_cache:
-                        technique, domain = technique_cache[target_ref]
+                        technique, _ = technique_cache[target_ref]
                         if (
                             "x_mitre_deprecated" not in technique
                             or not technique["x_mitre_deprecated"]
@@ -1525,9 +1525,6 @@ class StixParser:
                                 campaign_id,
                                 groupinfo["id"],
                             ) in attributed_by_campaign_group:
-                                campaign_rel = attributed_by_campaign_group[
-                                    (campaign_id, groupinfo["id"])
-                                ]
                                 if campaign_id in campaign_cache:
                                     campaign = campaign_cache[campaign_id]
                                     if (
@@ -2302,7 +2299,7 @@ class StixParser:
 
                 self.data_sources.append(data_source_obj)
 
-    def _get_detection_strategies(self) -> None:  # noqa: PLR0912
+    def _get_detection_strategies(self) -> None:  # noqa: PLR0912, PLR0915
         """Get and parse detection strategies from STIX data."""
         print("Pre-caching relationships and objects for detection strategies...")
         cache_start = time_module.time()
