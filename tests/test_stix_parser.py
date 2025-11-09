@@ -12,10 +12,8 @@ from obsidian_mitre_attack.models import (
     MITRECampaign,
     MITREDataSource,
     MITREGroup,
-    MITREMitigation,
     MITRESoftware,
     MITRETactic,
-    MITRETechnique,
 )
 from obsidian_mitre_attack.stix_parser import StixParser
 

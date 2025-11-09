@@ -183,7 +183,7 @@ options:
 
 ## Project Structure
 
-```
+```text
 output/
 ├── Tactics/
 │   ├── Enterprise attack/
@@ -222,6 +222,10 @@ cd obsidian-mitre-attack
 # Install dependencies
 uv sync
 
+# Install pre-commit hooks (recommended)
+pip install pre-commit
+pre-commit install
+
 # Run tests
 uv run pytest tests/
 
@@ -229,6 +233,25 @@ uv run pytest tests/
 uv run ruff check src/
 uv run ruff format src/
 ```
+
+### Pre-commit Hooks
+
+Pre-commit hooks are configured to automatically check code quality before commits:
+
+```bash
+# Install hooks
+pip install pre-commit
+pre-commit install
+
+# Run manually on all files
+pre-commit run --all-files
+```
+
+Configured hooks:
+- **Ruff** - Python linting and formatting
+- **Markdownlint** - Markdown formatting
+- **Checkov** - GitHub Actions security scanning
+- **Standard hooks** - Trailing whitespace, YAML/TOML validation, etc.
 
 ### Code Quality
 

@@ -212,9 +212,9 @@ class TestDataIntegrity:
 
         # Used techniques should exist in the techniques list
         for used_tech in group.techniques_used[:5]:
-            matching_techniques = [t for t in parsed_stix_data.techniques if t.id == used_tech["technique_id"]]
             # Note: Group might use techniques from different domains
             # So we can't always guarantee a match
+            _ = [t for t in parsed_stix_data.techniques if t.id == used_tech["technique_id"]]
 
     def test_no_broken_references_in_markdown(self, markdown_generator: MarkdownGenerator):
         """Test that generated markdown doesn't have broken references."""

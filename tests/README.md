@@ -4,7 +4,7 @@ This directory contains comprehensive tests for the obsidian-mitre-attack projec
 
 ## Test Structure
 
-```
+```text
 tests/
 ├── conftest.py              # Pytest fixtures and configuration
 ├── test_models.py           # Unit tests for MITRE model classes
