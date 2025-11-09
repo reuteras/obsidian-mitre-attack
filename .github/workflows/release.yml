@@ -29,14 +29,18 @@ jobs:
       - run: uv build
 
 
-      - name: Copy configuration file
-        run: cp default-config.toml config.toml
+      - name: Create standard output (separate analytics files)
+        run: |
+          cp default-config.toml config.toml
+          uv run obsidian-mitre-attack -o MITRE --tags "mitre/"
+          zip -r dist/mitre-attack-obsidian-standard.zip MITRE README.md
 
-      - name: Create output
-        run: uv run obsidian-mitre-attack -o MITRE --tags "mitre/"
-
-      - name: Create zip
-        run: zip -r dist/release.zip MITRE README.md
+      - name: Create embedded analytics output (requires obsidian-tab-panels plugin)
+        run: |
+          sed -i 's/embed_analytics_in_detection_strategies = false/embed_analytics_in_detection_strategies = true/' config.toml
+          rm -rf MITRE
+          uv run obsidian-mitre-attack -o MITRE --tags "mitre/"
+          zip -r dist/mitre-attack-obsidian-embedded.zip MITRE README.md
 
       - name: Release
         uses: softprops/action-gh-release@v2

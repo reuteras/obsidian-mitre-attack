@@ -1,120 +1,282 @@
 # obsidian-mitre-attack
 
-This is a modified and extended version of the original version that can be found here [vincenzocaputo/obsidian-mitre-attack](https://github.com/vincenzocaputo/obsidian-mitre-attack). Some functions have been removed (create canvas) and some have been added such as always generating the full MITRE ATT&CK (enterprise-attack, ics-attack and mobile-attack) as well as adding some missing parts for the original repository.
+Convert MITRE ATT&CK® knowledge base to Obsidian-compatible Markdown notes with advanced cross-linking and detection strategies for ATT&CK v18.0.
 
-Python code is used to parse the MITRE ATT&CK knowledge base into Markdown format, making it readable and browsable using the Obsidian note-taking application.
-MITRE ATT&CK data is retrieved from the MITRE GitHub repository ([https://github.com/mitre-attack/attack-stix-data](https://github.com/mitre-attack/attack-stix-data)) in STIX 2.1 JSON format.
+[![Tests](https://github.com/reuteras/obsidian-mitre-attack/actions/workflows/tests.yml/badge.svg)](https://github.com/reuteras/obsidian-mitre-attack/actions/workflows/tests.yml)
+[![Linter](https://github.com/reuteras/obsidian-mitre-attack/actions/workflows/linter.yml/badge.svg)](https://github.com/reuteras/obsidian-mitre-attack/actions/workflows/linter.yml)
 
-The main idea behind this project is to make the MITRE ATT&CK knowledge base easily accessible and seamlessly integrable into Obsidian, along with reports or your personal notes. Utilizing Obsidian's features such as hyperlinks, tags, graph view, and more can greatly support threat intelligence analysis and investigations.
+## Overview
 
-## Quick start from release
+This project parses MITRE ATT&CK® STIX 2.1 data and converts it into beautifully structured Markdown files optimized for [Obsidian](https://obsidian.md/). The generated notes include cross-references, tags, and metadata that leverage Obsidian's powerful linking, graph view, and query capabilities.
 
-Generating the files takes a long time at the moment and it is recommended that you download the release zip-file that contains the result of running the code. After downloading it unzip it and place the content of the _MITRE_ folder in your Obsidian vault.
+**What's included:**
+- ✅ All three ATT&CK domains: Enterprise, Mobile, and ICS
+- ✅ Comprehensive coverage: Tactics, Techniques, Mitigations, Groups, Software, Campaigns, Assets, Data Sources
+- ✅ NEW in v18: Detection Strategies and Analytics with full cross-linking
+- ✅ Automatic internal linking using Obsidian's `[[wikilinks]]` syntax
+- ✅ YAML frontmatter with aliases and tags for advanced querying
+- ✅ Two output modes: standard (separate files) or embedded (requires plugin)
 
-## Example usage
+This is an extended fork of [vincenzocaputo/obsidian-mitre-attack](https://github.com/vincenzocaputo/obsidian-mitre-attack) with significant enhancements including support for ATT&CK v18.0 detection strategies and analytics.
 
-With the [Dataview](https://github.com/blacksmithgu/obsidian-dataview) plugin for Obsidian installed you can get a list of f MITRE ATT&CK _techniques_ or _software_ (or something else) for the current note with the following code.
+## Quick Start
 
-~~~markdown
-## Techniques
+### Option 1: Download Pre-Generated Files (Recommended)
 
-```dataview
-list from #technique
-WHERE contains(file.inlinks, this.file.link)
-```
+Download the latest release from the [Releases page](https://github.com/reuteras/obsidian-mitre-attack/releases):
 
-## Tools and malware
+1. **Standard version** (`mitre-attack-obsidian-standard.zip`):
+   - Works with vanilla Obsidian
+   - Analytics are separate files linked from Detection Strategies
 
-```dataview
-list from #tool or #malware
-WHERE contains(file.inlinks, this.file.link)
-```
-~~~
+2. **Embedded version** (`mitre-attack-obsidian-embedded.zip`):
+   - Requires [obsidian-tab-panels](https://github.com/GnoxNahte/obsidian-tab-panels) plugin
+   - Analytics embedded as tabs within Detection Strategy files
+   - Matches MITRE ATT&CK website layout
 
-The image below shows the source of a simple investigation of a made up attack by [APT28](https://attack.mitre.org/groups/G0007/).
+Extract the ZIP file and copy the `MITRE` folder into your Obsidian vault.
 
-![Markdown example in Obsidian](https://raw.githubusercontent.com/reuteras/obsidian-mitre-attack/main/resources/text.png)
-
-Result is shown below.
-
-![Result in Obsidian with lists generated](https://raw.githubusercontent.com/reuteras/obsidian-mitre-attack/main/resources/text.png)
-
-Locking at the graph it is also easy to see that [T1548.004](https://attack.mitre.org/techniques/T1548/004/) is not associated with APT28 by MITRE ATT&CK.
-
-![Result in Obsidian with lists generated](https://raw.githubusercontent.com/reuteras/obsidian-mitre-attack/main/resources/graph.png)
-
-The Markdown shown above is available [here](./sample.md).
-
-
-## Development
-
-### Installation
-
-Clone this repository
+### Option 2: Generate Fresh Files
 
 ```bash
-git clone https://github.com/vincenzocaputo/obsidian-mitre-attack.git
-```
-
-Use `uv`.
-
-```bash
+# Clone the repository
+git clone https://github.com/reuteras/obsidian-mitre-attack.git
 cd obsidian-mitre-attack
-uv sync --frozen
-```
 
-### Run
+# Install dependencies using uv
+uv sync
 
-Run the application specifying the output directory path (i.e.: your obsidian vault) with a full path
+# Create configuration file
+cp default-config.toml config.toml
 
-```bash
+# Generate files (output to ./output directory)
 uv run obsidian-mitre-attack --output $(pwd)/output --tags 'mitre/'
 ```
 
-### Options
+## Features
 
-```bash
-usage: obsidian-mitre-attack [-h] [-o OUTPUT] [-t TAGS] [-v]
+### Detection Strategies (NEW in v18.0)
 
-Download MITRE ATT&CK STIX data and parse it to Obsidian markdown notes.
+Techniques now include a **Detection Strategy** section that links to analytics with detailed detection guidance:
 
-options:
-  -h, --help           show this help message and exit
-  -o, --output OUTPUT  Output directory in which the notes will be saved.
-  -t, --tags TAGS      Prepend this string to tags in the markdown files.
-  -v, --verbose        Print verbose output.
+| ID | Name | Analytic ID | Analytic Description |
+| --- | --- | --- | --- |
+| [[Detection Strategy for X]] | Detection Strategy for X | [[AN0001]] | Detects behavior Y using... |
+
+Each Detection Strategy includes:
+- Links to all techniques it detects
+- Associated analytics with log sources and mutable elements
+- Platform-specific detection approaches (Windows, Linux, macOS)
+
+### Comprehensive Cross-Linking
+
+All entities are automatically linked:
+- Techniques → Tactics, Mitigations, Detection Strategies, Groups, Software
+- Groups → Techniques, Software, Campaigns
+- Software → Techniques, Groups, Campaigns
+- Detection Strategies → Techniques, Analytics
+
+### Obsidian Integration
+
+Generated notes include:
+- **YAML frontmatter** with aliases and tags
+- **Callouts** for metadata and summaries
+- **Tables** for procedures, mitigations, and detections
+- **Footnotes** for references
+- **Wikilinks** for seamless navigation
+
+## Usage Examples
+
+### With Dataview Plugin
+
+Query techniques used by a specific group:
+
+```dataview
+TABLE
+  file.link AS Technique,
+  Tactic AS "Tactic"
+FROM #mitre/technique
+WHERE contains(file.inlinks, this.file.link)
+SORT Tactic ASC
 ```
 
-### Configuration
+Query all software used by groups in your notes:
 
-Create a `config.toml` file in the root directory based on `default-config.toml`. Available configuration options:
+```dataview
+TABLE
+  file.link AS Software,
+  Type
+FROM #mitre/software
+WHERE contains(file.inlinks, this.file.link)
+```
+
+### Graph View Navigation
+
+The interconnected structure creates a rich graph visualization:
+- See relationships between groups, techniques, and mitigations
+- Identify coverage gaps in detection strategies
+- Explore campaign attribution paths
+
+![Graph View Example](https://raw.githubusercontent.com/reuteras/obsidian-mitre-attack/main/resources/graph.png)
+
+## Configuration
+
+Create a `config.toml` file (copy from `default-config.toml`):
 
 ```toml
 repository_url = "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master"
 output_dir = "output"
 version = "18.0"
 verbose = true
-# Embed Analytics within Detection Strategies using tab-panels plugin syntax
-# When true, Analytics are included as tabs in Detection Strategy files
-# Requires: https://github.com/GnoxNahte/obsidian-tab-panels
+
+# Embed Analytics within Detection Strategies
+# When true: Analytics embedded as tabs (requires obsidian-tab-panels plugin)
+# When false: Analytics as separate linked files (default)
 embed_analytics_in_detection_strategies = false
 ```
 
-#### Embedding Analytics in Detection Strategies
+### Embedded Analytics Mode
 
-By default, Detection Strategies link to separate Analytics files. Setting `embed_analytics_in_detection_strategies = true` will embed the full Analytics content within Detection Strategy files using tab-panels syntax, similar to how they appear on the [MITRE ATT&CK website](https://attack.mitre.org/detectionstrategies/DET0119/).
+When `embed_analytics_in_detection_strategies = true`:
 
-**Requirements:**
-- Install the [obsidian-tab-panels](https://github.com/GnoxNahte/obsidian-tab-panels) plugin in Obsidian
-- This feature is useful for viewing all related analytics in one place without navigating between files
+**Pros:**
+- View all analytics in one file (like MITRE website)
+- Reduced file count
+- Better for overview and comparison
 
-**Example output:**
-When enabled, each Detection Strategy file will include tabs for each associated analytic:
+**Cons:**
+- Requires [obsidian-tab-panels](https://github.com/GnoxNahte/obsidian-tab-panels) plugin
+- Larger individual files
+- Less modular
 
-```tabs
---- ANO001 (Windows, macOS)
-[Analytic content here...]
-
---- ANO002 (Linux)
-[Analytic content here...]
+**Technique files link to sections:**
+```markdown
+| [[Detection Strategy - DET0324#Analytic 0919 | AN0919]] | Identifies self-modifying executables... |
 ```
+
+**Detection Strategy files contain:**
+```markdown
+### Associated Analytics
+
+\```tabs
+--- AN0919 (Windows)
+## Analytic 0919
+[Full analytic content with log sources and mutable elements]
+
+--- AN0920 (Linux)
+## Analytic 0920
+[Full analytic content]
+\```
+```
+
+## Command-Line Options
+
+```bash
+usage: obsidian-mitre-attack [-h] [-o OUTPUT] [-t TAGS] [-v]
+
+options:
+  -h, --help            show this help message and exit
+  -o, --output OUTPUT   Output directory for generated notes
+  -t, --tags TAGS       Tag prefix (e.g., 'mitre/' creates #mitre/technique tags)
+  -v, --verbose         Enable verbose logging
+```
+
+## Project Structure
+
+```
+output/
+├── Tactics/
+│   ├── Enterprise attack/
+│   ├── Mobile attack/
+│   └── ICS attack/
+├── Techniques/
+│   ├── Enterprise attack/
+│   ├── Mobile attack/
+│   └── ICS attack/
+├── Defenses/
+│   ├── Mitigations/
+│   ├── Assets/
+│   ├── Data_Sources/
+│   ├── Detection_Strategies/  # NEW in v18
+│   └── Analytics/             # Separate files when embed=false
+└── CTI/
+    ├── Groups/
+    ├── Software/
+    └── Campaigns/
+```
+
+## Development
+
+### Requirements
+
+- Python 3.11+
+- [uv](https://github.com/astral-sh/uv) package manager
+
+### Setup
+
+```bash
+# Clone repository
+git clone https://github.com/reuteras/obsidian-mitre-attack.git
+cd obsidian-mitre-attack
+
+# Install dependencies
+uv sync
+
+# Run tests
+uv run pytest tests/
+
+# Run linting
+uv run ruff check src/
+uv run ruff format src/
+```
+
+### Code Quality
+
+This project uses:
+- **Ruff** for linting and formatting
+- **Pylint** for additional checks
+- **pytest** for testing
+- **GitHub Actions** for CI/CD
+
+## Version History
+
+### v18.0 (Current)
+- ✅ Support for MITRE ATT&CK v18.0
+- ✅ Detection Strategies with full analytics integration
+- ✅ Embedded analytics mode with tab-panels support
+- ✅ Optimized STIX parsing with caching
+- ✅ Improved cross-linking between all entity types
+
+### Earlier Versions
+See [CHANGELOG.md](./CHANGELOG.md) for complete history.
+
+## Contributing
+
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new features
+4. Ensure all tests pass (`uv run pytest`)
+5. Run linting (`uv run ruff check src/`)
+6. Submit a pull request
+
+## License
+
+MIT License - see [LICENSE](./LICENSE) file.
+
+## Acknowledgments
+
+- Original project by [Vincenzo Caputo](https://github.com/vincenzocaputo/obsidian-mitre-attack)
+- MITRE ATT&CK® framework by [MITRE Corporation](https://attack.mitre.org/)
+- STIX data from [mitre-attack/attack-stix-data](https://github.com/mitre-attack/attack-stix-data)
+
+## Resources
+
+- [MITRE ATT&CK®](https://attack.mitre.org/)
+- [Obsidian](https://obsidian.md/)
+- [Dataview Plugin](https://github.com/blacksmithgu/obsidian-dataview)
+- [Tab Panels Plugin](https://github.com/GnoxNahte/obsidian-tab-panels)
+
+---
+
+MITRE ATT&CK® is a registered trademark of The MITRE Corporation.

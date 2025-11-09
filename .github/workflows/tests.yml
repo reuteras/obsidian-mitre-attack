@@ -29,6 +29,14 @@ jobs:
       run: |
         uv sync --group test
 
+    - name: Cache STIX data
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/obsidian-mitre-attack
+        key: stix-data-${{ hashFiles('default-config.toml') }}
+        restore-keys: |
+          stix-data-
+
     - name: Run unit tests
       run: |
         uv run pytest tests/ -m unit -v

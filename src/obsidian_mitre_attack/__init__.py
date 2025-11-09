@@ -54,7 +54,7 @@ def create_main_readme(
         fd.write(content)
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv: list[str] | None = None) -> None:  # noqa: PLR0915
     """Main function for obsidian-mitre-attack.
 
     Args:
