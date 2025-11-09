@@ -22,7 +22,7 @@ class TestEndToEndWorkflow:
 
     def test_full_pipeline_enterprise_only(self, test_config: dict[str, Any], temp_output_dir: Path, download_stix_data: dict[str, Any]):
         """Test complete pipeline for enterprise domain only."""
-        # Initialize parser
+        # Initialize parser (bypass __init__ to use cached data)
         parser = StixParser.__new__(StixParser)
         parser.url = test_config["repository_url"]
         parser.version = test_config["version"]
@@ -30,11 +30,19 @@ class TestEndToEndWorkflow:
         parser.techniques = []
         parser.tactics = []
         parser.mitigations = []
+        parser.detection_strategies = []
+        parser.analytics = []
+        parser.groups = []
+        parser.software = []
+        parser.campaigns = []
+        parser.assets = []
+        parser.data_sources = []
 
         # Load cached data
         parser.enterprise_attack = MemoryStore(stix_data=download_stix_data["enterprise-attack"]["objects"])
         parser.mobile_attack = MemoryStore(stix_data=download_stix_data["mobile-attack"]["objects"])
         parser.ics_attack = MemoryStore(stix_data=download_stix_data["ics-attack"]["objects"])
+        parser.src = parser.enterprise_attack  # Set current source
 
         # Parse enterprise domain
         parser.get_domain_data(domain="enterprise-attack")
@@ -79,7 +87,7 @@ class TestEndToEndWorkflow:
 
     def test_full_pipeline_all_domains(self, test_config: dict[str, Any], temp_output_dir: Path, download_stix_data: dict[str, Any]):
         """Test complete pipeline for all domains."""
-        # Initialize parser
+        # Initialize parser (bypass __init__ to use cached data)
         parser = StixParser.__new__(StixParser)
         parser.url = test_config["repository_url"]
         parser.version = test_config["version"]
@@ -87,11 +95,19 @@ class TestEndToEndWorkflow:
         parser.techniques = []
         parser.tactics = []
         parser.mitigations = []
+        parser.detection_strategies = []
+        parser.analytics = []
+        parser.groups = []
+        parser.software = []
+        parser.campaigns = []
+        parser.assets = []
+        parser.data_sources = []
 
         # Load cached data
         parser.enterprise_attack = MemoryStore(stix_data=download_stix_data["enterprise-attack"]["objects"])
         parser.mobile_attack = MemoryStore(stix_data=download_stix_data["mobile-attack"]["objects"])
         parser.ics_attack = MemoryStore(stix_data=download_stix_data["ics-attack"]["objects"])
+        parser.src = parser.enterprise_attack  # Set current source
 
         # Parse all domains
         domains = ["enterprise-attack", "mobile-attack", "ics-attack"]
