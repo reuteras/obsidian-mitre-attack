@@ -196,6 +196,7 @@ class MITRETechnique(MITREObject):
         self._procedure_examples = list()
         self._detections = list()
         self._targeted_assets = list()
+        self._detection_strategies = list()
 
     @property
     def version(self) -> str:
@@ -472,6 +473,16 @@ class MITRETechnique(MITREObject):
     @targeted_assets.setter
     def targeted_assets(self, targeted_asset) -> None:
         self._targeted_assets.append(targeted_asset)
+
+    @property
+    def detection_strategies(self):
+        """Return the detection strategies for the object."""
+        return self._detection_strategies
+
+    @detection_strategies.setter
+    def detection_strategies(self, detection_strategy: dict) -> None:
+        """Set the detection strategies for the object."""
+        self._detection_strategies.append(detection_strategy)
 
 
 class MITREMitigation(MITREObject):
