@@ -54,8 +54,12 @@ def create_main_readme(
         fd.write(content)
 
 
-def main() -> None:
-    """Main function for obsidian-mitre-attack."""
+def main(argv: list[str] | None = None) -> None:
+    """Main function for obsidian-mitre-attack.
+
+    Args:
+        argv: Command-line arguments. If None, uses sys.argv[1:].
+    """
     domains: list[str] = ["enterprise-attack", "mobile-attack", "ics-attack"]
     parser = argparse.ArgumentParser(
         description="Download MITRE ATT&CK STIX data and parse it to Obsidian markdown notes."
@@ -81,7 +85,7 @@ def main() -> None:
         help="Print verbose output.",
     )
 
-    args: argparse.Namespace = parser.parse_args()
+    args: argparse.Namespace = parser.parse_args(argv)
 
     try:
         with open(file="config.toml", encoding="utf8") as fd:
