@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 import toml
+from stix2 import MemoryStore
 
 from obsidian_mitre_attack import create_main_readme, main
 from obsidian_mitre_attack.markdown_generator import MarkdownGenerator
@@ -31,7 +32,6 @@ class TestEndToEndWorkflow:
         parser.mitigations = []
 
         # Load cached data
-        from stix2 import MemoryStore
         parser.enterprise_attack = MemoryStore(stix_data=download_stix_data["enterprise-attack"]["objects"])
         parser.mobile_attack = MemoryStore(stix_data=download_stix_data["mobile-attack"]["objects"])
         parser.ics_attack = MemoryStore(stix_data=download_stix_data["ics-attack"]["objects"])
@@ -89,7 +89,6 @@ class TestEndToEndWorkflow:
         parser.mitigations = []
 
         # Load cached data
-        from stix2 import MemoryStore
         parser.enterprise_attack = MemoryStore(stix_data=download_stix_data["enterprise-attack"]["objects"])
         parser.mobile_attack = MemoryStore(stix_data=download_stix_data["mobile-attack"]["objects"])
         parser.ics_attack = MemoryStore(stix_data=download_stix_data["ics-attack"]["objects"])
