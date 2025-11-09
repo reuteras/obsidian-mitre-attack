@@ -42,6 +42,7 @@ class TestEndToEndWorkflow:
         parser.enterprise_attack = MemoryStore(stix_data=download_stix_data["enterprise-attack"]["objects"])
         parser.mobile_attack = MemoryStore(stix_data=download_stix_data["mobile-attack"]["objects"])
         parser.ics_attack = MemoryStore(stix_data=download_stix_data["ics-attack"]["objects"])
+        parser.src = parser.enterprise_attack  # Set current source
 
         # Parse enterprise domain
         parser.get_domain_data(domain="enterprise-attack")
@@ -106,6 +107,7 @@ class TestEndToEndWorkflow:
         parser.enterprise_attack = MemoryStore(stix_data=download_stix_data["enterprise-attack"]["objects"])
         parser.mobile_attack = MemoryStore(stix_data=download_stix_data["mobile-attack"]["objects"])
         parser.ics_attack = MemoryStore(stix_data=download_stix_data["ics-attack"]["objects"])
+        parser.src = parser.enterprise_attack  # Set current source
 
         # Parse all domains
         domains = ["enterprise-attack", "mobile-attack", "ics-attack"]
