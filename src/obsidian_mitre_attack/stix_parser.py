@@ -833,6 +833,19 @@ class StixParser:
         for tech in all_techniques_ics:
             technique_cache[tech["id"]] = (tech, "ics-attack")
 
+        # Cache all techniques by their external_id for parent technique lookups
+        technique_by_external_id = {}
+        for tech in (
+            all_techniques_enterprise + all_techniques_mobile + all_techniques_ics
+        ):
+            ext_refs = tech.get("external_references", [])
+            for ext_ref in ext_refs:
+                if ext_ref.get("source_name") == "mitre-attack":
+                    external_id = ext_ref.get("external_id")
+                    if external_id:
+                        technique_by_external_id[external_id] = tech
+                    break
+
         # Cache all "uses" relationships for groups->software
         # Query separately for malware relationships
         all_soft_relationships_enterprise_malware = self.enterprise_attack.query(
@@ -1082,58 +1095,12 @@ class StixParser:
                                     technique_parent_id: str = technique_id.split(".")[
                                         0
                                     ]
-                                    technique_parent_name_enterprise = self.enterprise_attack.query(
-                                        [
-                                            Filter(
-                                                prop="type",
-                                                op="=",
-                                                value="attack-pattern",
-                                            ),
-                                            Filter(
-                                                prop="external_references.external_id",
-                                                op="=",
-                                                value=technique_parent_id,
-                                            ),
-                                        ]
+                                    # Use cache instead of querying all three domains
+                                    parent_tech = technique_by_external_id.get(
+                                        technique_parent_id
                                     )
-                                    technique_parent_name_mobile = self.mobile_attack.query(
-                                        [
-                                            Filter(
-                                                prop="type",
-                                                op="=",
-                                                value="attack-pattern",
-                                            ),
-                                            Filter(
-                                                prop="external_references.external_id",
-                                                op="=",
-                                                value=technique_parent_id,
-                                            ),
-                                        ]
-                                    )
-                                    technique_parent_name_ics = self.ics_attack.query(
-                                        [
-                                            Filter(
-                                                prop="type",
-                                                op="=",
-                                                value="attack-pattern",
-                                            ),
-                                            Filter(
-                                                prop="external_references.external_id",
-                                                op="=",
-                                                value=technique_parent_id,
-                                            ),
-                                        ]
-                                    )
-                                    technique_parent_name_stix = (
-                                        technique_parent_name_enterprise
-                                        + technique_parent_name_mobile
-                                        + technique_parent_name_ics
-                                    )
-
-                                    if technique_parent_name_stix:
-                                        technique_parent_name = (
-                                            technique_parent_name_stix[0]["name"]
-                                        )
+                                    if parent_tech:
+                                        technique_parent_name = parent_tech["name"]
                                     else:
                                         technique_parent_name: str = ""
                                 else:
@@ -2335,6 +2302,9 @@ class StixParser:
 
     def _get_detection_strategies(self) -> None:  # noqa: PLR0912
         """Get and parse detection strategies from STIX data."""
+        print("Pre-caching relationships and objects for detection strategies...")
+        cache_start = time_module.time()
+
         # Extract detection strategies from all domains
         detection_strategies_enterprise = self.enterprise_attack.query(
             [Filter(prop="type", op="=", value="x-mitre-detection-strategy")]
@@ -2473,8 +2443,13 @@ class StixParser:
 
                 self.detection_strategies.append(ds_obj)
 
+        print(f"  Detection strategies parsed in {time_module.time() - cache_start:.2f}s")
+
     def _get_analytics(self) -> None:
         """Get and parse analytics from STIX data."""
+        print("Pre-caching relationships and objects for analytics...")
+        cache_start = time_module.time()
+
         # Extract analytics from all domains
         analytics_enterprise = self.enterprise_attack.query(
             [Filter(prop="type", op="=", value="x-mitre-analytic")]
@@ -2558,3 +2533,5 @@ class StixParser:
                     analytic_obj.mutable_elements = element
 
                 self.analytics.append(analytic_obj)
+
+        print(f"  Analytics parsed in {time_module.time() - cache_start:.2f}s")
