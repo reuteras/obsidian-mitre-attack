@@ -373,13 +373,35 @@ class MarkdownGenerator:
                 "",
                 "### Detection Strategy",
                 "",
-                "| ID | Name |",
-                "| --- | --- |",
+                "| ID | Name | Analytic ID | Analytic Description |",
+                "| --- | --- | --- | --- |",
             ]
             for detection_strategy in sorted(technique.detection_strategies, key=lambda x: x["id"]):
-                lines.append(
-                    f"| [[{detection_strategy['name']} - {detection_strategy['id']} \\| {detection_strategy['id']}]] | [[{detection_strategy['name']} - {detection_strategy['id']} \\| {detection_strategy['name']}]] |"
-                )
+                ds_id = detection_strategy['id']
+                ds_name = detection_strategy['name']
+                analytics = detection_strategy.get('analytics', [])
+
+                if analytics:
+                    # First analytic row includes detection strategy ID and name
+                    first_analytic = analytics[0]
+                    analytic_desc = fix_description(description_str=first_analytic['description'])
+                    analytic_desc = analytic_desc.replace("\n", " ")
+                    lines.append(
+                        f"| [[{ds_name} - {ds_id} \\| {ds_id}]] | [[{ds_name} - {ds_id} \\| {ds_name}]] | [[{first_analytic['name']} - {first_analytic['id']} \\| {first_analytic['id']}]] | {analytic_desc} |"
+                    )
+
+                    # Subsequent analytics for the same detection strategy (empty ID and name cells)
+                    for analytic in analytics[1:]:
+                        analytic_desc = fix_description(description_str=analytic['description'])
+                        analytic_desc = analytic_desc.replace("\n", " ")
+                        lines.append(
+                            f"|  |  | [[{analytic['name']} - {analytic['id']} \\| {analytic['id']}]] | {analytic_desc} |"
+                        )
+                else:
+                    # No analytics, just show detection strategy
+                    lines.append(
+                        f"| [[{ds_name} - {ds_id} \\| {ds_id}]] | [[{ds_name} - {ds_id} \\| {ds_name}]] |  |  |"
+                    )
             return content + "\n".join(lines)
         return content
 

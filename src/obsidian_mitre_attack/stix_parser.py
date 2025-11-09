@@ -137,10 +137,10 @@ class StixParser:
         self._get_software()
         self.verbose_log(message="Getting detection strategies data")
         self._get_detection_strategies()
-        self.verbose_log(message="Linking detection strategies to techniques")
-        self._link_detection_strategies_to_techniques()
         self.verbose_log(message="Getting analytics data")
         self._get_analytics()
+        self.verbose_log(message="Linking detection strategies to techniques")
+        self._link_detection_strategies_to_techniques()
         self.verbose_log(message="CTI data loaded successfully")
 
     def _get_tactics(self, domain) -> None:  # noqa: PLR0912
@@ -2461,8 +2461,25 @@ class StixParser:
         for technique in self.techniques:
             technique_map[technique.id] = technique
 
+        # Create a mapping from analytic internal ID to analytic object
+        analytic_map = {}
+        for analytic in self.analytics:
+            analytic_map[analytic.internal_id] = analytic
+
         # Iterate through detection strategies and link them to techniques
         for ds in self.detection_strategies:
+            # Collect analytics for this detection strategy
+            analytics_list = []
+            for analytic_ref in ds.analytic_refs:
+                if analytic_ref in analytic_map:
+                    analytic = analytic_map[analytic_ref]
+                    analytics_list.append({
+                        "id": analytic.id,
+                        "name": analytic.name,
+                        "description": analytic.description,
+                    })
+
+            # Link to each technique
             for technique_ref in ds.techniques:
                 technique_id = technique_ref["technique_id"]
                 if technique_id in technique_map:
@@ -2470,6 +2487,7 @@ class StixParser:
                     technique_obj.detection_strategies = {
                         "id": ds.id,
                         "name": ds.name,
+                        "analytics": analytics_list,
                     }
 
         print(f"  Detection strategies linked to techniques in {time_module.time() - link_start:.2f}s")
