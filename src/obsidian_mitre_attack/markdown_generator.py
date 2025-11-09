@@ -366,21 +366,19 @@ class MarkdownGenerator:
         return content + "\n".join(lines)
 
     def create_technique_notes_detection(self, content: str, technique) -> str:
-        """Function to create markdown notes for detection."""
-        if technique.detections:
+        """Function to create markdown notes for detection strategies."""
+        if technique.detection_strategies:
             lines = [
                 "",
                 "",
-                "### Detection",
+                "### Detection Strategy",
                 "",
-                "| ID | Data Source | Data Source Type | Detects |",
-                "| --- | --- | --- | --- |",
+                "| ID | Name |",
+                "| --- | --- |",
             ]
-            for detection in sorted(technique.detections, key=lambda x: x["id"]):
-                description = fix_description(description_str=detection["description"])
-                description = description.replace("\n", "<br />")
+            for detection_strategy in sorted(technique.detection_strategies, key=lambda x: x["id"]):
                 lines.append(
-                    f"| {detection['id']} | {detection['data_source']} | {detection['name']} | {description} |"
+                    f"| [[{detection_strategy['name']} - {detection_strategy['id']} \\| {detection_strategy['id']}]] | [[{detection_strategy['name']} - {detection_strategy['id']} \\| {detection_strategy['name']}]] |"
                 )
             return content + "\n".join(lines)
         return content

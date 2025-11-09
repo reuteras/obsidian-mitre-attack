@@ -137,6 +137,8 @@ class StixParser:
         self._get_software()
         self.verbose_log(message="Getting detection strategies data")
         self._get_detection_strategies()
+        self.verbose_log(message="Linking detection strategies to techniques")
+        self._link_detection_strategies_to_techniques()
         self.verbose_log(message="Getting analytics data")
         self._get_analytics()
         self.verbose_log(message="CTI data loaded successfully")
@@ -2444,6 +2446,33 @@ class StixParser:
                 self.detection_strategies.append(ds_obj)
 
         print(f"  Detection strategies parsed in {time_module.time() - cache_start:.2f}s")
+
+    def _link_detection_strategies_to_techniques(self) -> None:
+        """Link detection strategies to techniques.
+
+        This method creates the reverse relationship from techniques to detection strategies
+        by iterating through all detection strategies and their detected techniques.
+        """
+        print("Linking detection strategies to techniques...")
+        link_start = time_module.time()
+
+        # Create a mapping from technique ID to technique object
+        technique_map = {}
+        for technique in self.techniques:
+            technique_map[technique.id] = technique
+
+        # Iterate through detection strategies and link them to techniques
+        for ds in self.detection_strategies:
+            for technique_ref in ds.techniques:
+                technique_id = technique_ref["technique_id"]
+                if technique_id in technique_map:
+                    technique_obj = technique_map[technique_id]
+                    technique_obj.detection_strategies = {
+                        "id": ds.id,
+                        "name": ds.name,
+                    }
+
+        print(f"  Detection strategies linked to techniques in {time_module.time() - link_start:.2f}s")
 
     def _get_analytics(self) -> None:
         """Get and parse analytics from STIX data."""
