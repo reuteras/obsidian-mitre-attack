@@ -17,15 +17,15 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.2
+    rev: v0.14.4
     hooks:
       - id: ruff
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: 3.4.0
+    rev: 3.4.1
     hooks:
       - id: editorconfig-checker
         alias: ec
   - repo: https://github.com/owenlamont/uv-secure
-    rev: 0.13.0
+    rev: 0.14.4
     hooks:
       - id: uv-secure
