@@ -95,6 +95,7 @@ Generated Markdown files include:
 ## Special Handling
 
 - Forward slashes in names are replaced with full-width slashes (／) for filesystem compatibility
+- Colons in names are replaced with full-width colons (：) for iOS/macOS Obsidian compatibility
 - MITRE citation references are converted to footnote format
 - External MITRE links are converted to internal Obsidian links
 - Inconsistent MITRE references are normalized during processing

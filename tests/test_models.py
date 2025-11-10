@@ -36,11 +36,27 @@ class TestMITREObject:
         assert obj.name == "Test／Object"
         assert "/" not in obj.name
 
+    def test_colon_replacement(self):
+        """Test that colons are replaced with full-width colons for iOS compatibility."""
+        obj = MITREObject(name="Test:Object")
+        assert obj.name == "Test：Object"
+        assert ":" not in obj.name
+
+    def test_combined_slash_and_colon_replacement(self):
+        """Test that both slashes and colons are replaced."""
+        obj = MITREObject(name="Test/Object:Name")
+        assert obj.name == "Test／Object：Name"
+        assert "/" not in obj.name
+        assert ":" not in obj.name
+
     def test_name_property_setter(self):
         """Test name property setter."""
         obj = MITREObject(name="Test")
         obj.name = "New/Name"
         assert obj.name == "New／Name"
+
+        obj.name = "New:Name"
+        assert obj.name == "New：Name"
 
     def test_description_property(self):
         """Test description property getter and setter."""
@@ -61,6 +77,10 @@ class TestMITREObject:
         obj.references = ref
         assert "Test／Reference" in obj._references
         assert obj._references["Test／Reference"] == "https://example.com"
+
+        ref_colon = {"name": "Test:Reference", "url": "https://example.com"}
+        obj.references = ref_colon
+        assert "Test：Reference" in obj._references
 
     def test_references_invalid_input(self):
         """Test that references setter validates input."""
@@ -192,6 +212,9 @@ class TestMITRETechnique:
         technique = MITRETechnique(name="Test")
         technique.parent_name = "Parent/Name"
         assert technique.parent_name == "Parent／Name"
+
+        technique.parent_name = "Parent:Name"
+        assert technique.parent_name == "Parent：Name"
 
     def test_mitigations_append(self):
         """Test that mitigations are appended."""
