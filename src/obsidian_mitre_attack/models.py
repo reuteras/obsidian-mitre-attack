@@ -1139,6 +1139,113 @@ class MITREDataSource(MITREObject):
         self._collection_layers.append(collection_layer)
 
 
+class MITREDataComponent(MITREObject):
+    """Define a data component (x-mitre-data-component)."""
+
+    def __init__(self, name) -> None:
+        """Initialize the MITREDataComponent class."""
+        MITREObject.__init__(self=self, name=name)
+        self._description: str = ""
+        self._version: str = ""
+        self._created: str = ""
+        self._modified: str = ""
+        self._domain: str = ""
+        self._external_references = list()
+        self._data_source_name: str = ""
+        self._data_source_id: str = ""
+        self._techniques_used = list()
+
+    @property
+    def description(self) -> str:
+        """Return the description of the object."""
+        return self._description
+
+    @description.setter
+    def description(self, description) -> None:
+        """Set the description of the object."""
+        self._description = description
+
+    @property
+    def version(self) -> str:
+        """Return the version of the object."""
+        return self._version
+
+    @version.setter
+    def version(self, version) -> None:
+        """Set the version of the object."""
+        self._version = version
+
+    @property
+    def created(self) -> str:
+        """Return the created date of the object."""
+        return self._created
+
+    @created.setter
+    def created(self, created) -> None:
+        """Set the created date of the object."""
+        self._created = created
+
+    @property
+    def modified(self) -> str:
+        """Return the modified date of the object."""
+        return self._modified
+
+    @modified.setter
+    def modified(self, modified) -> None:
+        """Set the modified date of the object."""
+        self._modified = modified
+
+    @property
+    def domain(self) -> str:
+        """Return the domain of the object."""
+        return self._domain
+
+    @domain.setter
+    def domain(self, domain: str) -> None:
+        """Set the domain of the object."""
+        self._domain = domain
+
+    @property
+    def external_references(self):
+        """Return the external references of the object."""
+        return self._external_references
+
+    @external_references.setter
+    def external_references(self, external_reference: dict) -> None:
+        """Set the external references of the object."""
+        self._external_references.append(external_reference)
+
+    @property
+    def data_source_name(self) -> str:
+        """Return the data source name of the object."""
+        return self._data_source_name
+
+    @data_source_name.setter
+    def data_source_name(self, data_source_name: str) -> None:
+        """Set the data source name of the object."""
+        self._data_source_name = data_source_name
+
+    @property
+    def data_source_id(self) -> str:
+        """Return the data source ID of the object."""
+        return self._data_source_id
+
+    @data_source_id.setter
+    def data_source_id(self, data_source_id: str) -> None:
+        """Set the data source ID of the object."""
+        self._data_source_id = data_source_id
+
+    @property
+    def techniques_used(self):
+        """Return the techniques used by the object."""
+        return self._techniques_used
+
+    @techniques_used.setter
+    def techniques_used(self, technique_used: dict) -> None:
+        """Set the techniques used by the object."""
+        self._techniques_used.append(technique_used)
+
+
 class MITREDetectionStrategy(MITREObject):
     """Define a detection strategy (x-mitre-detection-strategy)."""
 

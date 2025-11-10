@@ -13,6 +13,7 @@ from .models import (
     MITREAnalytic,
     MITREAsset,
     MITRECampaign,
+    MITREDataComponent,
     MITREDataSource,
     MITREDetectionStrategy,
     MITREGroup,
@@ -39,6 +40,7 @@ class StixParser:
         self.techniques = list()
         self.tactics = list()
         self.mitigations = list()
+        self.data_components = list()
         self.detection_strategies = list()
         self.analytics = list()
 
@@ -127,6 +129,8 @@ class StixParser:
         """
         self.verbose_log(message="Getting data sources data")
         self._get_data_sources()
+        self.verbose_log(message="Getting data components data")
+        self._get_data_components()
         self.verbose_log(message="Getting assets data")
         self._get_assets()
         self.verbose_log(message="Getting groups data")
@@ -2161,10 +2165,7 @@ class StixParser:
         self.data_sources = list()
 
         for data_source, domain in data_sources_with_domain:
-            if (
-                "x_mitre_deprecated" not in data_source
-                or not data_source["x_mitre_deprecated"]
-            ) and ("revoked" not in data_source or not data_source["revoked"]):
+            if self.is_valid_stix_object(data_source):
                 data_source_obj = MITREDataSource(name=data_source["name"])
 
                 external_references_added = set()
@@ -2302,6 +2303,182 @@ class StixParser:
                 data_source_obj.data_components = data_components
 
                 self.data_sources.append(data_source_obj)
+
+    def _get_data_components(self) -> None:  # noqa: PLR0912, PLR0915
+        """Get and parse data components from STIX data as standalone entities."""
+        print("Pre-caching relationships and objects for data components...")
+        cache_start = time_module.time()
+
+        # Extract data components from all domains
+        data_components_stix_enterprise = self.enterprise_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-data-component")]
+        )
+        data_components_stix_mobile = self.mobile_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-data-component")]
+        )
+        data_components_stix_ics = self.ics_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-data-component")]
+        )
+
+        # Create domain-tracked data components
+        data_components_with_domain = []
+        for dc in data_components_stix_enterprise:
+            data_components_with_domain.append((dc, "enterprise-attack"))
+        for dc in data_components_stix_mobile:
+            data_components_with_domain.append((dc, "mobile-attack"))
+        for dc in data_components_stix_ics:
+            data_components_with_domain.append((dc, "ics-attack"))
+
+        # Cache all deprecated data sources to get their names
+        data_sources_enterprise = self.enterprise_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-data-source")]
+        )
+        data_sources_mobile = self.mobile_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-data-source")]
+        )
+        data_sources_ics = self.ics_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-data-source")]
+        )
+
+        data_source_cache = {}
+        for ds in data_sources_enterprise + data_sources_mobile + data_sources_ics:
+            data_source_cache[ds["id"]] = ds
+
+        # Cache all "detects" relationships by source_ref
+        all_detects_enterprise = self.enterprise_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="detects"),
+            ]
+        )
+        all_detects_mobile = self.mobile_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="detects"),
+            ]
+        )
+        all_detects_ics = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="detects"),
+            ]
+        )
+
+        detects_by_source = {}
+        for rel in all_detects_enterprise + all_detects_mobile + all_detects_ics:
+            source = rel.get("source_ref")
+            if source:
+                if source not in detects_by_source:
+                    detects_by_source[source] = []
+                detects_by_source[source].append(rel)
+
+        # Cache all techniques by ID
+        all_techniques_enterprise = self.enterprise_attack.query(
+            [Filter(prop="type", op="=", value="attack-pattern")]
+        )
+        all_techniques_mobile = self.mobile_attack.query(
+            [Filter(prop="type", op="=", value="attack-pattern")]
+        )
+        all_techniques_ics = self.ics_attack.query(
+            [Filter(prop="type", op="=", value="attack-pattern")]
+        )
+
+        technique_cache = {}
+        for tech in all_techniques_enterprise:
+            technique_cache[tech["id"]] = (tech, "enterprise-attack")
+        for tech in all_techniques_mobile:
+            technique_cache[tech["id"]] = (tech, "mobile-attack")
+        for tech in all_techniques_ics:
+            technique_cache[tech["id"]] = (tech, "ics-attack")
+
+        print(f"  Cache built in {time_module.time() - cache_start:.2f}s")
+
+        self.data_components = list()
+
+        for data_component, domain in data_components_with_domain:
+            if self.is_valid_stix_object(data_component):
+                data_component_obj = MITREDataComponent(name=data_component["name"])
+
+                external_references_added = set()
+
+                # Add attributes
+                data_component_obj.internal_id = data_component["id"]
+                data_component_obj.domain = domain
+                data_component_obj.description = data_component.get("description", "")
+                data_component_obj.created = data_component.get("created", "")
+                data_component_obj.modified = data_component.get("modified", "")
+                data_component_obj.version = data_component.get("x_mitre_version", "")
+
+                # Get external references
+                ext_refs = data_component.get("external_references", [])
+                for ext_ref in ext_refs:
+                    if ext_ref["source_name"] == "mitre-attack":
+                        data_component_obj.id = ext_ref["external_id"]
+                        data_component_obj.url = ext_ref["url"]
+                    elif "url" in ext_ref and "description" in ext_ref:
+                        item = {
+                            "name": ext_ref["source_name"],
+                            "url": ext_ref["url"],
+                            "description": ext_ref["description"],
+                        }
+                        if ext_ref["source_name"] not in external_references_added:
+                            data_component_obj.external_references = item
+                            external_references_added.add(ext_ref["source_name"])
+
+                # Get parent data source info
+                data_source_ref = data_component.get("x_mitre_data_source_ref")
+                if data_source_ref and data_source_ref in data_source_cache:
+                    parent_ds = data_source_cache[data_source_ref]
+                    data_component_obj.data_source_name = parent_ds.get("name", "")
+                    # Get data source ID
+                    ds_ext_refs = parent_ds.get("external_references", [])
+                    for ext_ref in ds_ext_refs:
+                        if ext_ref["source_name"] == "mitre-attack":
+                            data_component_obj.data_source_id = ext_ref.get("external_id", "")
+
+                # Get techniques that detect using this data component
+                techniques_used_stix = detects_by_source.get(data_component_obj.internal_id, [])
+
+                techniques_used = []
+                for techniques_relationship in techniques_used_stix:
+                    technique_description = techniques_relationship.get("description", "")
+
+                    # Get external references for the technique relationship
+                    ext_refs = techniques_relationship.get("external_references", [])
+                    for ext_ref in ext_refs:
+                        if "url" in ext_ref and "description" in ext_ref:
+                            item = {
+                                "name": ext_ref["source_name"],
+                                "url": ext_ref["url"],
+                                "description": ext_ref["description"],
+                            }
+                            if ext_ref["source_name"] not in external_references_added:
+                                data_component_obj.external_references = item
+                                external_references_added.add(ext_ref["source_name"])
+
+                    # Get technique name and id (using cache)
+                    target_ref = techniques_relationship["target_ref"]
+                    if target_ref in technique_cache:
+                        technique, tech_domain = technique_cache[target_ref]
+                        technique_name = technique["name"]
+                        ext_refs = technique.get("external_references", [])
+                        technique_id = ""
+                        for ext_ref in ext_refs:
+                            if ext_ref["source_name"] == "mitre-attack":
+                                technique_id = ext_ref["external_id"]
+
+                        item = {
+                            "technique_name": technique_name.replace("/", "／").replace(":", "："),  # noqa: RUF001
+                            "technique_id": technique_id,
+                            "description": technique_description,
+                            "domain": tech_domain,
+                        }
+                        techniques_used.append(item)
+
+                # Set techniques_used directly to avoid the setter which would append
+                data_component_obj._techniques_used = techniques_used
+
+                self.data_components.append(data_component_obj)
 
     def _get_detection_strategies(self) -> None:  # noqa: PLR0912, PLR0915
         """Get and parse detection strategies from STIX data."""
