@@ -1021,6 +1021,7 @@ class MITREDataSource(MITREObject):
         self._version: str = ""
         self._created: str = ""
         self._modified: str = ""
+        self._domain: str = ""
         self._external_references = list()
         self._techniques_used = list()
         self._contributors = list()
@@ -1067,6 +1068,16 @@ class MITREDataSource(MITREObject):
     def modified(self, modified) -> None:
         """Set the modified date of the object."""
         self._modified = modified
+
+    @property
+    def domain(self) -> str:
+        """Return the domain of the object."""
+        return self._domain
+
+    @domain.setter
+    def domain(self, domain: str) -> None:
+        """Set the domain of the object."""
+        self._domain = domain
 
     @property
     def external_references(self):
