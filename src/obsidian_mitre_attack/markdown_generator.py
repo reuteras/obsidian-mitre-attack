@@ -1231,8 +1231,17 @@ class MarkdownGenerator:
         data_sources_dir = Path(self.output_dir, "Defenses", "Detections", "Data Components")
         data_sources_dir.mkdir(parents=True, exist_ok=True)
 
+        # Group data sources by domain
         for data_source in self.data_sources:
-            data_source_file = Path(data_sources_dir, f"{data_source.name}.md")
+            dirname: str = (
+                data_source.domain.replace("-", " ")
+                .capitalize()
+                .replace("Ics ", "ICS ")
+            )
+            domain_dir = Path(data_sources_dir, dirname)
+            domain_dir.mkdir(parents=True, exist_ok=True)
+
+            data_source_file = Path(domain_dir, f"{data_source.name}.md")
 
             # Create markdown file for current data source
             with open(file=data_source_file, mode="w", encoding="utf-8") as fd:
@@ -1587,15 +1596,9 @@ class MarkdownGenerator:
         analytics_dir = Path(self.output_dir, "Defenses", "Detections", "Analytics")
         analytics_dir.mkdir(parents=True, exist_ok=True)
 
-        # Group analytics by domain
+        # Create all analytics in a flat structure (no domain subfolders)
         for analytic in self.analytics:
-            dirname: str = (
-                analytic.domain.replace("-", " ").capitalize().replace("Ics ", "ICS ")
-            )
-            domain_dir = Path(analytics_dir, dirname)
-            domain_dir.mkdir(parents=True, exist_ok=True)
-
-            analytic_file = Path(domain_dir, f"{analytic.name} - {analytic.id}.md")
+            analytic_file = Path(analytics_dir, f"{analytic.name} - {analytic.id}.md")
 
             # Create markdown file for current analytic
             with open(file=analytic_file, mode="w", encoding="utf-8") as fd:

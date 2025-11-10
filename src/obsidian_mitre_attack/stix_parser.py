@@ -2065,11 +2065,14 @@ class StixParser:
             ]
         )
 
-        data_sources_stix = (
-            data_sources_stix_enterprise
-            + data_sources_stix_mobile
-            + data_sources_stix_ics
-        )
+        # Create domain-tracked data sources
+        data_sources_with_domain = []
+        for ds in data_sources_stix_enterprise:
+            data_sources_with_domain.append((ds, "enterprise-attack"))
+        for ds in data_sources_stix_mobile:
+            data_sources_with_domain.append((ds, "mobile-attack"))
+        for ds in data_sources_stix_ics:
+            data_sources_with_domain.append((ds, "ics-attack"))
 
         # Cache all data components by x_mitre_data_source_ref
         all_data_components_enterprise = self.enterprise_attack.query(
@@ -2157,7 +2160,7 @@ class StixParser:
 
         self.data_sources = list()
 
-        for data_source in data_sources_stix:
+        for data_source, domain in data_sources_with_domain:
             if (
                 "x_mitre_deprecated" not in data_source
                 or not data_source["x_mitre_deprecated"]
@@ -2168,6 +2171,7 @@ class StixParser:
 
                 # Add attributes to the data source object
                 data_source_obj.internal_id = data_source["id"]
+                data_source_obj.domain = domain
                 data_source_obj.description = data_source.get("description", "")
                 data_source_obj.created = data_source.get("created", "")
                 data_source_obj.modified = data_source.get("modified", "")
