@@ -33,13 +33,13 @@ def convert_to_local_links(text: str) -> str:
         if match.group(2)[0] == "T" or match.group(2)[0] == "M":
             return (
                 "[["
-                + match.group(1).replace("/", "／").replace(":", "：")  # noqa: RUF001
+                + match.group(1).replace("/", "／").replace(":", ";")  # noqa: RUF001
                 + " - "
                 + match.group(2).replace("/", ".")
                 + "]]"
             )
         else:
-            return "[[" + match.group(1).replace("/", "／").replace(":", "：") + "]]"  # noqa: RUF001
+            return "[[" + match.group(1).replace("/", "／").replace(":", ";") + "]]"  # noqa: RUF001
 
     # Fix inconsistent links from Mitre
     if "[Exaramel](https://attack.mitre.org/software/S0343)" in text:
@@ -302,7 +302,7 @@ class MarkdownGenerator:
                 )
                 description = description.replace("\n", "<br />")
                 lines.append(
-                    f"| [[{example['name'].replace('/', '／').replace(':', '：')} \\| {example['id']}]] | [[{example['name'].replace('/', '／').replace(':', '：')} \\| {example['name'].replace('/', '／').replace(':', '：')}]] | {description} |"  # noqa: RUF001
+                    f"| [[{example['name'].replace('/', '／').replace(':', ';')} \\| {example['id']}]] | [[{example['name'].replace('/', '／').replace(':', ';')} \\| {example['name'].replace('/', '／').replace(':', ';')}]] | {description} |"  # noqa: RUF001
                 )
             return content + "\n".join(lines)
         return content
@@ -844,7 +844,7 @@ class MarkdownGenerator:
                     if ref["source_name"] == "mitre-attack":
                         external_id = ref["external_id"]
                 lines.append(
-                    f"| {domain} | [[{technique['technique'].name.replace('/', '／').replace(':', '：')} - {external_id} \\| {external_id}]] | {technique['technique'].name} | {description} |"  # noqa: RUF001
+                    f"| {domain} | [[{technique['technique'].name.replace('/', '／').replace(':', ';')} - {external_id} \\| {external_id}]] | {technique['technique'].name} | {description} |"  # noqa: RUF001
                 )
 
         # Groups that use this software
@@ -1017,7 +1017,7 @@ class MarkdownGenerator:
                         )
                         description = description.replace("\n", "<br />")
                         lines.append(
-                            f"| {domain} | [[{technique['technique_name'].replace('/', '／').replace(':', '：')} - {technique['technique_id']} \\| {technique['technique_id']}]] | {technique['technique_name']} | {description} |"  # noqa: RUF001
+                            f"| {domain} | [[{technique['technique_name'].replace('/', '／').replace(':', ';')} - {technique['technique_id']} \\| {technique['technique_id']}]] | {technique['technique_name']} | {description} |"  # noqa: RUF001
                         )
 
                 # Software used in campaign
