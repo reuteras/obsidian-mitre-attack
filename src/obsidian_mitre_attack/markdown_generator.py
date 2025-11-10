@@ -78,6 +78,7 @@ class MarkdownGenerator:
         self.campaigns = stix_data.campaigns
         self.assets = stix_data.assets
         self.data_sources = stix_data.data_sources
+        self.data_components = stix_data.data_components
         self.detection_strategies = stix_data.detection_strategies
         self.analytics = stix_data.analytics
         self.tags_prefix = arguments.tags
@@ -1375,6 +1376,133 @@ class MarkdownGenerator:
                 if not content.endswith("\n"):
                     fd.write("\n")
 
+    def create_data_component_notes(self) -> None:
+        """Function to create markdown notes for data components in Defense folder."""
+        data_components_dir = Path(self.output_dir, "Defenses", "Detections", "Data Components")
+        data_components_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create domain subfolders
+        domains = ["enterprise-attack", "mobile-attack", "ics-attack"]
+        for domain in domains:
+            dirname: str = (
+                domain.replace("-", " ")
+                .capitalize()
+                .replace("Ics ", "ICS ")
+            )
+            domain_dir = Path(data_components_dir, dirname)
+            domain_dir.mkdir(parents=True, exist_ok=True)
+
+        # Group data components by domain
+        for data_component in self.data_components:
+            dirname: str = (
+                data_component.domain.replace("-", " ")
+                .capitalize()
+                .replace("Ics ", "ICS ")
+            )
+            domain_dir = Path(data_components_dir, dirname)
+            domain_dir.mkdir(parents=True, exist_ok=True)
+
+            # Use format: "Data Source Name: Data Component Name - DC0001.md"
+            full_name = f"{data_component.data_source_name}: {data_component.name} - {data_component.id}.md"
+            data_component_file = Path(domain_dir, full_name)
+
+            # Create markdown file for current data component
+            with open(file=data_component_file, mode="w", encoding="utf-8") as fd:
+                lines = [
+                    f"---\naliases:\n  - {data_component.id}",
+                    f"  - {data_component.data_source_name}: {data_component.name}",
+                    f"  - {data_component.name} ({data_component.id})",
+                    f"  - {data_component.id} ({data_component.name})",
+                    "url: MITRE_URL",
+                    "tags:",
+                    f"  - {self.tags_prefix}data_component",
+                    f"  - {self.tags_prefix}mitre_attack",
+                    "---",
+                    "",
+                    f"## {data_component.data_source_name}: {data_component.name}",
+                    "",
+                ]
+
+                data_component_description: str = fix_description(
+                    description_str=data_component.description
+                )
+                lines.extend([data_component_description, ""])
+
+                # Data component information
+                lines.extend(
+                    [
+                        "> [!info]",
+                        f"> ID: {data_component.id}",
+                    ]
+                )
+
+                if data_component.data_source_name:
+                    if data_component.data_source_id:
+                        lines.append(f"> Data Source: [[{data_component.data_source_name} ({data_component.data_source_id})]] ({data_component.data_source_id})")
+                    else:
+                        lines.append(f"> Data Source: {data_component.data_source_name}")
+
+                lines.extend(
+                    [
+                        f"> Version: {data_component.version}",
+                        f"> Created: {str(object=data_component.created).split(sep=' ')[0].split(sep='T')[0]}",
+                        f"> Last Modified: {str(object=data_component.modified).split(sep=' ')[0].split('T')[0]}",
+                        "",
+                        "",
+                    ]
+                )
+
+                # Detection table
+                if data_component.techniques_used:
+                    lines.extend(
+                        [
+                            "## Techniques Detected",
+                            "",
+                            "| Domain | ID | Name | Detects |",
+                            "| --- | --- | --- | --- |",
+                        ]
+                    )
+
+                    for technique in data_component.techniques_used:
+                        detects: str = fix_description(
+                            description_str=technique["description"]
+                        )
+                        detects = detects.replace("\n", "<br />")
+                        lines.append(
+                            f"| {technique['domain']} | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_name']}]] | {detects} |"
+                        )
+
+                content = "\n".join(lines)
+                content = convert_to_local_links(text=content)
+
+                # References - only include footnotes that are actually cited in the content
+                if (
+                    data_component.external_references
+                    and len(data_component.external_references) > 0
+                ):
+                    ref_lines = ["", "", "### References", ""]
+                    # Find all citation references in the content
+                    cited_refs = set()
+                    for match in REFERENCE_PATTERN.finditer(content):
+                        ref_text = match.group(0)
+                        ref_name = ref_text[2:-1]  # Remove [^ and ]
+                        cited_refs.add(ref_name)
+
+                    # Only add footnotes for citations that are actually used
+                    for ref in data_component.external_references:
+                        name: str = ref["name"].replace(" ", "_")
+                        if "url" in ref and name in cited_refs:
+                            ref_lines.append(
+                                f"[^{name}]: [{ref['description']}]({ref['url']})"
+                            )
+                    content = content + "\n".join(ref_lines)
+
+                content = content.replace("MITRE_URL", data_component.url)
+
+                fd.write(content)
+                if not content.endswith("\n"):
+                    fd.write("\n")
+
     def _generate_analytic_content(self, analytic) -> str:
         """Generate the content for an analytic (for embedding in detection strategies).
 
@@ -1647,13 +1775,15 @@ class MarkdownGenerator:
                         detection_strategy_id = ds.id
                         break
 
-                # Create link to detection strategy or individual analytic file
+                # Create link for ID column
                 if self.config.get("embed_analytics_in_detection_strategies", False):
-                    # Link to detection strategy when embedded
-                    ds_link = f"[[{detection_strategy_name} - {detection_strategy_id}|{detection_strategy_name}]]" if detection_strategy_name else ""
+                    # Link to detection strategy when embedded (ID links to the detection strategy page)
+                    id_link = f"[[{detection_strategy_name} - {detection_strategy_id} \\| {analytic.id}]]" if detection_strategy_name else analytic.id
+                    ds_link = f"[[{detection_strategy_name} - {detection_strategy_id} \\| {detection_strategy_name}]]" if detection_strategy_name else ""
                 else:
                     # Link to individual analytic file when not embedded
-                    ds_link = f"[[{analytic.name} - {analytic.id}|{detection_strategy_name}]]" if detection_strategy_name else ""
+                    id_link = f"[[{analytic.name} - {analytic.id} \\| {analytic.id}]]"
+                    ds_link = f"[[{analytic.name} - {analytic.id} \\| {detection_strategy_name}]]" if detection_strategy_name else ""
 
                 description = fix_description(description_str=analytic.description) if analytic.description else ""
                 description = description.replace("\n", " ").strip()
@@ -1662,7 +1792,7 @@ class MarkdownGenerator:
                     description = description[:197] + "..."
 
                 lines.append(
-                    f"| {analytic.id} | {platforms_str} | {domain_str} | {ds_link} | {description} |"
+                    f"| {id_link} | {platforms_str} | {domain_str} | {ds_link} | {description} |"
                 )
 
             content = "\n".join(lines)
