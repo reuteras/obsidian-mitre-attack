@@ -1231,6 +1231,17 @@ class MarkdownGenerator:
         data_sources_dir = Path(self.output_dir, "Defenses", "Detections", "Data Components")
         data_sources_dir.mkdir(parents=True, exist_ok=True)
 
+        # Create domain subfolders (even if empty, to match ATT&CK structure)
+        domains = ["enterprise-attack", "mobile-attack", "ics-attack"]
+        for domain in domains:
+            dirname: str = (
+                domain.replace("-", " ")
+                .capitalize()
+                .replace("Ics ", "ICS ")
+            )
+            domain_dir = Path(data_sources_dir, dirname)
+            domain_dir.mkdir(parents=True, exist_ok=True)
+
         # Group data sources by domain
         for data_source in self.data_sources:
             dirname: str = (
@@ -1589,12 +1600,80 @@ class MarkdownGenerator:
 
     def create_analytic_notes(self) -> None:
         """Function to create markdown notes for analytics in Defense folder."""
-        # Skip creating analytic files if they're embedded in detection strategies
-        if self.config.get("embed_analytics_in_detection_strategies", False):
-            return
-
         analytics_dir = Path(self.output_dir, "Defenses", "Detections", "Analytics")
         analytics_dir.mkdir(parents=True, exist_ok=True)
+
+        # Always create Analytics.md index file
+        index_file = Path(analytics_dir, "Analytics.md")
+        with open(file=index_file, mode="w", encoding="utf-8") as fd:
+            lines = [
+                "---",
+                "tags:",
+                f"  - {self.tags_prefix}analytics",
+                f"  - {self.tags_prefix}mitre_attack",
+                "---",
+                "",
+                "## Analytics",
+                "",
+                "This page lists all analytics across all domains.",
+                "",
+            ]
+
+            # Add note about embedded analytics if applicable
+            if self.config.get("embed_analytics_in_detection_strategies", False):
+                lines.append("Individual analytics are embedded within their corresponding Detection Strategy pages.")
+                lines.append("")
+
+            lines.extend([
+                "| ID | Platform | Domain | Detection Strategy | Description |",
+                "| --- | --- | --- | --- | --- |",
+            ])
+
+            # Sort analytics by ID
+            for analytic in sorted(self.analytics, key=lambda x: x.id):
+                platforms_str = ", ".join(analytic.platforms) if analytic.platforms else ""
+                domain_str = (
+                    analytic.domain.replace("-", " ")
+                    .capitalize()
+                    .replace("Ics ", "ICS ")
+                )
+
+                # Find the detection strategy this analytic belongs to
+                detection_strategy_name = ""
+                detection_strategy_id = ""
+                for ds in self.detection_strategies:
+                    if analytic.internal_id in ds.analytic_refs:
+                        detection_strategy_name = ds.name
+                        detection_strategy_id = ds.id
+                        break
+
+                # Create link to detection strategy or individual analytic file
+                if self.config.get("embed_analytics_in_detection_strategies", False):
+                    # Link to detection strategy when embedded
+                    ds_link = f"[[{detection_strategy_name} - {detection_strategy_id}|{detection_strategy_name}]]" if detection_strategy_name else ""
+                else:
+                    # Link to individual analytic file when not embedded
+                    ds_link = f"[[{analytic.name} - {analytic.id}|{detection_strategy_name}]]" if detection_strategy_name else ""
+
+                description = fix_description(description_str=analytic.description) if analytic.description else ""
+                description = description.replace("\n", " ").strip()
+                # Limit description length for table readability
+                if len(description) > 200:
+                    description = description[:197] + "..."
+
+                lines.append(
+                    f"| {analytic.id} | {platforms_str} | {domain_str} | {ds_link} | {description} |"
+                )
+
+            content = "\n".join(lines)
+            content = convert_to_local_links(text=content)
+            fd.write(content)
+            if not content.endswith("\n"):
+                fd.write("\n")
+
+        # Skip creating individual analytic files if they're embedded in detection strategies
+        if self.config.get("embed_analytics_in_detection_strategies", False):
+            return
 
         # Create all analytics in a flat structure (no domain subfolders)
         for analytic in self.analytics:
