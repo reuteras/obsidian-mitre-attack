@@ -1228,7 +1228,7 @@ class MarkdownGenerator:
 
     def create_data_source_notes(self) -> None:
         """Function to create markdown notes for data sources in Defense folder."""
-        data_sources_dir = Path(self.output_dir, "Defenses", "Data_Sources")
+        data_sources_dir = Path(self.output_dir, "Defenses", "Detections", "Data Components")
         data_sources_dir.mkdir(parents=True, exist_ok=True)
 
         for data_source in self.data_sources:
@@ -1435,7 +1435,7 @@ class MarkdownGenerator:
     def create_detection_strategy_notes(self) -> None:  # noqa: PLR0912
         """Function to create markdown notes for detection strategies in Defense folder."""
         detection_strategies_dir = Path(
-            self.output_dir, "Defenses", "Detection_Strategies"
+            self.output_dir, "Defenses", "Detections", "Detection Strategies"
         )
         detection_strategies_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1584,7 +1584,7 @@ class MarkdownGenerator:
         if self.config.get("embed_analytics_in_detection_strategies", False):
             return
 
-        analytics_dir = Path(self.output_dir, "Defenses", "Analytics")
+        analytics_dir = Path(self.output_dir, "Defenses", "Detections", "Analytics")
         analytics_dir.mkdir(parents=True, exist_ok=True)
 
         # Group analytics by domain
