@@ -8,7 +8,7 @@ class MITREObject:
 
     def __init__(self, name) -> None:
         """Initialize the MITREObject class."""
-        self._name: str = name.replace("/", "／")  # Name of the object  # noqa: RUF001
+        self._name: str = name.replace("/", "／").replace(":", "：")  # Name of the object  # noqa: RUF001
         self._references = dict()
         self._internal_id: str = ""  # Internal ID from MITRE ATT&CK
         self._domain: str = ""  # ATT&CK Domain (enterprise, mobile or ICS)
@@ -22,7 +22,7 @@ class MITREObject:
     @name.setter
     def name(self, name) -> None:
         """Set the name of the object."""
-        self._name = name.replace("/", "／")  # noqa: RUF001
+        self._name = name.replace("/", "／").replace(":", "：")  # noqa: RUF001
 
     @property
     def description(self) -> str:
@@ -55,7 +55,7 @@ class MITREObject:
         if "name" not in reference or "url" not in reference:
             raise ValueError("The parameter provided is not supported")
 
-        self._references[reference["name"].replace("/", "／")] = reference["url"]  # noqa: RUF001
+        self._references[reference["name"].replace("/", "／").replace(":", "：")] = reference["url"]  # noqa: RUF001
 
     @property
     def internal_id(self) -> str:
@@ -236,7 +236,7 @@ class MITRETechnique(MITREObject):
     @shortname.setter
     def shortname(self, shortname) -> None:
         """Set the shortname of the object."""
-        self._shortname: str = shortname.replace("/", "／")  # noqa: RUF001
+        self._shortname: str = shortname.replace("/", "／").replace(":", "：")  # noqa: RUF001
 
     @property
     def external_references(self):
@@ -336,7 +336,7 @@ class MITRETechnique(MITREObject):
     @tactic_name.setter
     def tactic_name(self, tactic_name) -> None:
         """Set the tactic name of the object."""
-        self._tactic_name: str = tactic_name.replace("/", "／")  # noqa: RUF001
+        self._tactic_name: str = tactic_name.replace("/", "／").replace(":", "：")  # noqa: RUF001
 
     @property
     def tactic_id(self):
@@ -463,7 +463,7 @@ class MITRETechnique(MITREObject):
 
     @parent_name.setter
     def parent_name(self, parent_name) -> None:
-        self._parent_name = parent_name.replace("/", "／")  # noqa: RUF001
+        self._parent_name = parent_name.replace("/", "／").replace(":", "：")  # noqa: RUF001
 
     @property
     def targeted_assets(self):
