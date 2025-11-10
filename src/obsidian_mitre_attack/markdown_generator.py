@@ -1402,15 +1402,15 @@ class MarkdownGenerator:
             domain_dir = Path(data_components_dir, dirname)
             domain_dir.mkdir(parents=True, exist_ok=True)
 
-            # Use format: "Data Source Name: Data Component Name - DC0001.md"
-            full_name = f"{data_component.data_source_name}: {data_component.name} - {data_component.id}.md"
+            # Use format: "Data Source Name; Data Component Name - DC0001.md"
+            full_name = f"{data_component.data_source_name}; {data_component.name} - {data_component.id}.md"
             data_component_file = Path(domain_dir, full_name)
 
             # Create markdown file for current data component
             with open(file=data_component_file, mode="w", encoding="utf-8") as fd:
                 lines = [
                     f"---\naliases:\n  - {data_component.id}",
-                    f"  - {data_component.data_source_name}: {data_component.name}",
+                    f"  - {data_component.data_source_name}; {data_component.name}",
                     f"  - {data_component.name} ({data_component.id})",
                     f"  - {data_component.id} ({data_component.name})",
                     "url: MITRE_URL",
@@ -1419,7 +1419,7 @@ class MarkdownGenerator:
                     f"  - {self.tags_prefix}mitre_attack",
                     "---",
                     "",
-                    f"## {data_component.data_source_name}: {data_component.name}",
+                    f"## {data_component.data_source_name}; {data_component.name}",
                     "",
                 ]
 
