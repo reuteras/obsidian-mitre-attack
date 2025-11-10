@@ -1311,14 +1311,14 @@ class MarkdownGenerator:
                 # Data Components
                 for related_data_source in data_source.data_components[0]:
                     lines.append(
-                        f"- [[#{related_data_source['data_component_parent']}: {related_data_source['data_component_name']} \\| {related_data_source['data_component_name']}]]"
+                        f"- [[#{related_data_source['data_component_parent']}; {related_data_source['data_component_name']} \\| {related_data_source['data_component_name']}]]"
                     )
 
                 lines.append("")
 
                 for related_data_source in data_source.data_components[0]:
                     lines.append(
-                        f"### {related_data_source['data_component_parent']}: {related_data_source['data_component_name']}"
+                        f"### {related_data_source['data_component_parent']}; {related_data_source['data_component_name']}"
                     )
                     if related_data_source["data_component_description"]:
                         description: str = fix_description(
@@ -1402,26 +1402,36 @@ class MarkdownGenerator:
             domain_dir = Path(data_components_dir, dirname)
             domain_dir.mkdir(parents=True, exist_ok=True)
 
-            # Use format: "Data Source Name; Data Component Name - DC0001.md"
-            full_name = f"{data_component.data_source_name}; {data_component.name} - {data_component.id}.md"
+            # Use format: "Data Component Name - DC0001.md" (no data source in filename)
+            full_name = f"{data_component.name} - {data_component.id}.md"
             data_component_file = Path(domain_dir, full_name)
 
             # Create markdown file for current data component
             with open(file=data_component_file, mode="w", encoding="utf-8") as fd:
-                lines = [
+                # Build aliases - only include data source name if it exists
+                aliases = [
                     f"---\naliases:\n  - {data_component.id}",
-                    f"  - {data_component.data_source_name}; {data_component.name}",
                     f"  - {data_component.name} ({data_component.id})",
                     f"  - {data_component.id} ({data_component.name})",
+                ]
+                if data_component.data_source_name:
+                    aliases.insert(1, f"  - {data_component.data_source_name}; {data_component.name}")
+
+                lines = aliases + [
                     "url: MITRE_URL",
                     "tags:",
                     f"  - {self.tags_prefix}data_component",
                     f"  - {self.tags_prefix}mitre_attack",
                     "---",
                     "",
-                    f"## {data_component.data_source_name}; {data_component.name}",
-                    "",
                 ]
+
+                # Add heading - include data source name only if it exists
+                if data_component.data_source_name:
+                    lines.append(f"## {data_component.data_source_name}; {data_component.name}")
+                else:
+                    lines.append(f"## {data_component.name}")
+                lines.append("")
 
                 data_component_description: str = fix_description(
                     description_str=data_component.description
