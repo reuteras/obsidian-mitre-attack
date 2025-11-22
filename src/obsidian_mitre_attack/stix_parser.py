@@ -209,7 +209,9 @@ class StixParser:
                                         break
                                 tactic_obj.techniques_used = {
                                     "id": technique_id,
-                                    "name": technique["name"].replace("/", "／").replace(":", "："),  # noqa: RUF001
+                                    "name": technique["name"]
+                                    .replace("/", "／")
+                                    .replace(":", "："),  # noqa: RUF001
                                     "description": technique["description"],
                                 }
 
@@ -514,7 +516,9 @@ class StixParser:
                             mitigation_id = ext_ref["external_id"]
                     description = relation.get("description", "")
                     item = {
-                        "name": mitigation.get("name").replace("/", "／").replace(":", "："),  # noqa: RUF001
+                        "name": mitigation.get("name")
+                        .replace("/", "／")
+                        .replace(":", "："),  # noqa: RUF001
                         "description": description,
                         "id": mitigation_id,
                     }
@@ -609,7 +613,9 @@ class StixParser:
                             technique_obj.subtechniques.append(
                                 {
                                     "id": sub_id,
-                                    "name": subtechnique["name"].replace("/", "／").replace(":", "："),  # noqa: RUF001
+                                    "name": subtechnique["name"]
+                                    .replace("/", "／")
+                                    .replace(":", "："),  # noqa: RUF001
                                 }
                             )
 
@@ -666,7 +672,9 @@ class StixParser:
                                 technique_obj.external_references = item
                                 external_references_added.add(ext_ref["source_name"])
                     item = {
-                        "name": targeted_assets_name.replace("/", "／").replace(":", "："),  # noqa: RUF001
+                        "name": targeted_assets_name.replace("/", "／").replace(
+                            ":", "："
+                        ),  # noqa: RUF001
                         "id": targeted_assets_id,
                         "description": targeted_assets_description,
                     }
@@ -771,7 +779,9 @@ class StixParser:
                                     )
                         mitigation_obj.mitigates = {
                             "id": external_id,
-                            "name": technique["name"].replace("/", "／").replace(":", "："),  # noqa: RUF001
+                            "name": technique["name"]
+                            .replace("/", "／")
+                            .replace(":", "："),  # noqa: RUF001
                             "description": relationship.get("description", ""),
                             "domain": relationship.get("x_mitre_domains", domain),
                         }
@@ -1013,7 +1023,8 @@ class StixParser:
                                     if "url" in ext_ref and "description" in ext_ref:
                                         item = {
                                             "name": ext_ref["source_name"].replace(
-                                                "/", "／"  # noqa: RUF001
+                                                "/",
+                                                "／",  # noqa: RUF001
                                             ),
                                             "url": ext_ref["url"],
                                             "description": ext_ref["description"],
@@ -1029,7 +1040,8 @@ class StixParser:
 
                                 group_obj.techniques_used = {
                                     "technique_name": technique["name"].replace(
-                                        "/", "／"  # noqa: RUF001
+                                        "/",
+                                        "／",  # noqa: RUF001
                                     ),
                                     "technique_id": technique_id,
                                     "description": tech_group_rel.get(
@@ -2035,7 +2047,9 @@ class StixParser:
                                     technique_id = ext_ref["external_id"]
 
                             asset_obj.techniques_used = {
-                                "technique_name": technique.name.replace("/", "／").replace(":", "："),  # noqa: RUF001
+                                "technique_name": technique.name.replace(
+                                    "/", "／"
+                                ).replace(":", "："),  # noqa: RUF001
                                 "technique_id": technique_id,
                                 "domain": domain,
                             }
@@ -2281,7 +2295,9 @@ class StixParser:
                                         technique_id = ext_ref["external_id"]
 
                                 item = {
-                                    "technique_name": technique_name.replace("/", "／").replace(":", "："),  # noqa: RUF001
+                                    "technique_name": technique_name.replace(
+                                        "/", "／"
+                                    ).replace(":", "："),  # noqa: RUF001
                                     "technique_id": technique_id,
                                     "description": technique_description,
                                     "domain": domain,
@@ -2434,14 +2450,20 @@ class StixParser:
                     ds_ext_refs = parent_ds.get("external_references", [])
                     for ext_ref in ds_ext_refs:
                         if ext_ref["source_name"] == "mitre-attack":
-                            data_component_obj.data_source_id = ext_ref.get("external_id", "")
+                            data_component_obj.data_source_id = ext_ref.get(
+                                "external_id", ""
+                            )
 
                 # Get techniques that detect using this data component
-                techniques_used_stix = detects_by_source.get(data_component_obj.internal_id, [])
+                techniques_used_stix = detects_by_source.get(
+                    data_component_obj.internal_id, []
+                )
 
                 techniques_used = []
                 for techniques_relationship in techniques_used_stix:
-                    technique_description = techniques_relationship.get("description", "")
+                    technique_description = techniques_relationship.get(
+                        "description", ""
+                    )
 
                     # Get external references for the technique relationship
                     ext_refs = techniques_relationship.get("external_references", [])
@@ -2468,7 +2490,9 @@ class StixParser:
                                 technique_id = ext_ref["external_id"]
 
                         item = {
-                            "technique_name": technique_name.replace("/", "／").replace(":", "："),  # noqa: RUF001
+                            "technique_name": technique_name.replace("/", "／").replace(
+                                ":", "："
+                            ),  # noqa: RUF001
                             "technique_id": technique_id,
                             "description": technique_description,
                             "domain": tech_domain,
@@ -2618,12 +2642,16 @@ class StixParser:
                         if technique_id:
                             ds_obj.techniques = {
                                 "technique_id": technique_id,
-                                "technique_name": technique["name"].replace("/", "／").replace(":", "："),  # noqa: RUF001
+                                "technique_name": technique["name"]
+                                .replace("/", "／")
+                                .replace(":", "："),  # noqa: RUF001
                             }
 
                 self.detection_strategies.append(ds_obj)
 
-        print(f"  Detection strategies parsed in {time_module.time() - cache_start:.2f}s")
+        print(
+            f"  Detection strategies parsed in {time_module.time() - cache_start:.2f}s"
+        )
 
     def _link_detection_strategies_to_techniques(self) -> None:
         """Link detection strategies to techniques.
@@ -2651,11 +2679,13 @@ class StixParser:
             for analytic_ref in ds.analytic_refs:
                 if analytic_ref in analytic_map:
                     analytic = analytic_map[analytic_ref]
-                    analytics_list.append({
-                        "id": analytic.id,
-                        "name": analytic.name,
-                        "description": analytic.description,
-                    })
+                    analytics_list.append(
+                        {
+                            "id": analytic.id,
+                            "name": analytic.name,
+                            "description": analytic.description,
+                        }
+                    )
 
             # Link to each technique
             for technique_ref in ds.techniques:
@@ -2668,7 +2698,9 @@ class StixParser:
                         "analytics": analytics_list,
                     }
 
-        print(f"  Detection strategies linked to techniques in {time_module.time() - link_start:.2f}s")
+        print(
+            f"  Detection strategies linked to techniques in {time_module.time() - link_start:.2f}s"
+        )
 
     def _get_analytics(self) -> None:
         """Get and parse analytics from STIX data."""

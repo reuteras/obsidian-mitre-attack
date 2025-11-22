@@ -64,7 +64,9 @@ class TestErrorHandling:
         with pytest.raises(FileNotFoundError, match="config.toml"):
             main([])
 
-    def test_invalid_output_directory(self, test_config: dict[str, Any], tmp_path: Path, monkeypatch):
+    def test_invalid_output_directory(
+        self, test_config: dict[str, Any], tmp_path: Path, monkeypatch
+    ):
         """Test handling of invalid output directory in config."""
         # Create config with no output directory
         config = test_config.copy()
@@ -89,7 +91,9 @@ class TestErrorHandling:
 class TestConfigHandling:
     """Test configuration handling."""
 
-    def test_create_main_readme_with_tags(self, test_config: dict[str, Any], temp_output_dir: Path):
+    def test_create_main_readme_with_tags(
+        self, test_config: dict[str, Any], temp_output_dir: Path
+    ):
         """Test README creation with custom tags."""
         args = argparse.Namespace(
             output=str(temp_output_dir),
@@ -105,7 +109,9 @@ class TestConfigHandling:
 
         assert "custom/prefix/mitre_attack" in content
 
-    def test_create_main_readme_without_tags(self, test_config: dict[str, Any], temp_output_dir: Path):
+    def test_create_main_readme_without_tags(
+        self, test_config: dict[str, Any], temp_output_dir: Path
+    ):
         """Test README creation without custom tags."""
         args = argparse.Namespace(
             output=str(temp_output_dir),

@@ -28,7 +28,9 @@ class TestStixParserInitialization:
         assert stix_parser.mobile_attack is not None
         assert stix_parser.ics_attack is not None
 
-    def test_parser_attributes(self, stix_parser: StixParser, test_config: dict[str, Any]):
+    def test_parser_attributes(
+        self, stix_parser: StixParser, test_config: dict[str, Any]
+    ):
         """Test that parser has correct attributes."""
         assert stix_parser.url == test_config["repository_url"]
         assert stix_parser.version == test_config["version"]
@@ -39,15 +41,15 @@ class TestStixParserInitialization:
     def test_memory_stores_have_data(self, stix_parser: StixParser):
         """Test that memory stores contain data."""
         # Check enterprise attack has tactics
-        enterprise_tactics = stix_parser.enterprise_attack.query([
-            Filter(prop="type", op="=", value="x-mitre-tactic")
-        ])
+        enterprise_tactics = stix_parser.enterprise_attack.query(
+            [Filter(prop="type", op="=", value="x-mitre-tactic")]
+        )
         assert len(enterprise_tactics) > 0
 
         # Check enterprise attack has techniques
-        enterprise_techniques = stix_parser.enterprise_attack.query([
-            Filter(prop="type", op="=", value="attack-pattern")
-        ])
+        enterprise_techniques = stix_parser.enterprise_attack.query(
+            [Filter(prop="type", op="=", value="attack-pattern")]
+        )
         assert len(enterprise_techniques) > 0
 
 
@@ -60,7 +62,9 @@ class TestStixParserTactics:
         """Test parsing tactics from enterprise domain."""
         stix_parser._get_tactics(domain="enterprise-attack")
 
-        enterprise_tactics = [t for t in stix_parser.tactics if t.domain == "enterprise-attack"]
+        enterprise_tactics = [
+            t for t in stix_parser.tactics if t.domain == "enterprise-attack"
+        ]
         assert len(enterprise_tactics) > 0
 
         # Check structure of first tactic
@@ -110,7 +114,9 @@ class TestStixParserTechniques:
         stix_parser._get_tactics(domain="enterprise-attack")
         stix_parser._get_techniques(domain="enterprise-attack")
 
-        enterprise_techniques = [t for t in stix_parser.techniques if t.domain == "enterprise-attack"]
+        enterprise_techniques = [
+            t for t in stix_parser.techniques if t.domain == "enterprise-attack"
+        ]
         assert len(enterprise_techniques) > 0
 
     def test_techniques_have_required_fields(self, stix_parser: StixParser):
@@ -164,7 +170,9 @@ class TestStixParserMitigations:
         """Test parsing mitigations from enterprise domain."""
         stix_parser._get_mitigations(domain="enterprise-attack")
 
-        enterprise_mitigations = [m for m in stix_parser.mitigations if m.domain == "enterprise-attack"]
+        enterprise_mitigations = [
+            m for m in stix_parser.mitigations if m.domain == "enterprise-attack"
+        ]
         assert len(enterprise_mitigations) > 0
 
     def test_mitigations_have_required_fields(self, stix_parser: StixParser):
@@ -325,9 +333,15 @@ class TestStixParserFullWorkflow:
         stix_parser.get_domain_data(domain="enterprise-attack")
 
         # Check that all data types were parsed
-        enterprise_tactics = [t for t in stix_parser.tactics if t.domain == "enterprise-attack"]
-        enterprise_techniques = [t for t in stix_parser.techniques if t.domain == "enterprise-attack"]
-        enterprise_mitigations = [m for m in stix_parser.mitigations if m.domain == "enterprise-attack"]
+        enterprise_tactics = [
+            t for t in stix_parser.tactics if t.domain == "enterprise-attack"
+        ]
+        enterprise_techniques = [
+            t for t in stix_parser.techniques if t.domain == "enterprise-attack"
+        ]
+        enterprise_mitigations = [
+            m for m in stix_parser.mitigations if m.domain == "enterprise-attack"
+        ]
 
         assert len(enterprise_tactics) > 0
         assert len(enterprise_techniques) > 0
@@ -371,11 +385,17 @@ class TestStixParserFullWorkflow:
             assert technique.tactic_id != ""
 
         # Mitigations should reference techniques
-        mitigations_with_techniques = [m for m in parsed_stix_data.mitigations if len(m.mitigates) > 0]
+        mitigations_with_techniques = [
+            m for m in parsed_stix_data.mitigations if len(m.mitigates) > 0
+        ]
         assert len(mitigations_with_techniques) > 0
 
         # Groups should reference techniques or software
-        groups_with_data = [g for g in parsed_stix_data.groups if len(g.techniques_used) > 0 or len(g.software_used) > 0]
+        groups_with_data = [
+            g
+            for g in parsed_stix_data.groups
+            if len(g.techniques_used) > 0 or len(g.software_used) > 0
+        ]
         assert len(groups_with_data) > 0
 
 

@@ -377,17 +377,23 @@ class MarkdownGenerator:
                 "| ID | Name | Analytic ID | Analytic Description |",
                 "| --- | --- | --- | --- |",
             ]
-            embed_analytics = self.config.get("embed_analytics_in_detection_strategies", False)
+            embed_analytics = self.config.get(
+                "embed_analytics_in_detection_strategies", False
+            )
 
-            for detection_strategy in sorted(technique.detection_strategies, key=lambda x: x["id"]):
-                ds_id = detection_strategy['id']
-                ds_name = detection_strategy['name']
-                analytics = detection_strategy.get('analytics', [])
+            for detection_strategy in sorted(
+                technique.detection_strategies, key=lambda x: x["id"]
+            ):
+                ds_id = detection_strategy["id"]
+                ds_name = detection_strategy["name"]
+                analytics = detection_strategy.get("analytics", [])
 
                 if analytics:
                     # First analytic row includes detection strategy ID and name
                     first_analytic = analytics[0]
-                    analytic_desc = fix_description(description_str=first_analytic['description'])
+                    analytic_desc = fix_description(
+                        description_str=first_analytic["description"]
+                    )
                     analytic_desc = analytic_desc.replace("\n", " ")
 
                     if embed_analytics:
@@ -403,7 +409,9 @@ class MarkdownGenerator:
 
                     # Subsequent analytics for the same detection strategy (empty ID and name cells)
                     for analytic in analytics[1:]:
-                        analytic_desc = fix_description(description_str=analytic['description'])
+                        analytic_desc = fix_description(
+                            description_str=analytic["description"]
+                        )
                         analytic_desc = analytic_desc.replace("\n", " ")
 
                         if embed_analytics:
@@ -413,9 +421,7 @@ class MarkdownGenerator:
                             # Link to separate analytic file
                             analytic_link = f"[[{analytic['name']} - {analytic['id']} \\| {analytic['id']}]]"
 
-                        lines.append(
-                            f"|  |  | {analytic_link} | {analytic_desc} |"
-                        )
+                        lines.append(f"|  |  | {analytic_link} | {analytic_desc} |")
                 else:
                     # No analytics, just show detection strategy
                     lines.append(
@@ -1229,17 +1235,15 @@ class MarkdownGenerator:
 
     def create_data_source_notes(self) -> None:
         """Function to create markdown notes for data sources in Defense folder."""
-        data_sources_dir = Path(self.output_dir, "Defenses", "Detections", "Data Components")
+        data_sources_dir = Path(
+            self.output_dir, "Defenses", "Detections", "Data Components"
+        )
         data_sources_dir.mkdir(parents=True, exist_ok=True)
 
         # Create domain subfolders (even if empty, to match ATT&CK structure)
         domains = ["enterprise-attack", "mobile-attack", "ics-attack"]
         for domain in domains:
-            dirname: str = (
-                domain.replace("-", " ")
-                .capitalize()
-                .replace("Ics ", "ICS ")
-            )
+            dirname: str = domain.replace("-", " ").capitalize().replace("Ics ", "ICS ")
             domain_dir = Path(data_sources_dir, dirname)
             domain_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1378,17 +1382,15 @@ class MarkdownGenerator:
 
     def create_data_component_notes(self) -> None:
         """Function to create markdown notes for data components in Defense folder."""
-        data_components_dir = Path(self.output_dir, "Defenses", "Detections", "Data Components")
+        data_components_dir = Path(
+            self.output_dir, "Defenses", "Detections", "Data Components"
+        )
         data_components_dir.mkdir(parents=True, exist_ok=True)
 
         # Create domain subfolders
         domains = ["enterprise-attack", "mobile-attack", "ics-attack"]
         for domain in domains:
-            dirname: str = (
-                domain.replace("-", " ")
-                .capitalize()
-                .replace("Ics ", "ICS ")
-            )
+            dirname: str = domain.replace("-", " ").capitalize().replace("Ics ", "ICS ")
             domain_dir = Path(data_components_dir, dirname)
             domain_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1415,7 +1417,10 @@ class MarkdownGenerator:
                     f"  - {data_component.id} ({data_component.name})",
                 ]
                 if data_component.data_source_name:
-                    aliases.insert(1, f"  - {data_component.data_source_name}; {data_component.name}")
+                    aliases.insert(
+                        1,
+                        f"  - {data_component.data_source_name}; {data_component.name}",
+                    )
 
                 lines = aliases + [
                     "url: MITRE_URL",
@@ -1428,7 +1433,9 @@ class MarkdownGenerator:
 
                 # Add heading - include data source name only if it exists
                 if data_component.data_source_name:
-                    lines.append(f"## {data_component.data_source_name}; {data_component.name}")
+                    lines.append(
+                        f"## {data_component.data_source_name}; {data_component.name}"
+                    )
                 else:
                     lines.append(f"## {data_component.name}")
                 lines.append("")
@@ -1448,9 +1455,13 @@ class MarkdownGenerator:
 
                 if data_component.data_source_name:
                     if data_component.data_source_id:
-                        lines.append(f"> Data Source: [[{data_component.data_source_name} ({data_component.data_source_id})]] ({data_component.data_source_id})")
+                        lines.append(
+                            f"> Data Source: [[{data_component.data_source_name} ({data_component.data_source_id})]] ({data_component.data_source_id})"
+                        )
                     else:
-                        lines.append(f"> Data Source: {data_component.data_source_name}")
+                        lines.append(
+                            f"> Data Source: {data_component.data_source_name}"
+                        )
 
                 lines.extend(
                     [
@@ -1759,17 +1770,23 @@ class MarkdownGenerator:
 
             # Add note about embedded analytics if applicable
             if self.config.get("embed_analytics_in_detection_strategies", False):
-                lines.append("Individual analytics are embedded within their corresponding Detection Strategy pages.")
+                lines.append(
+                    "Individual analytics are embedded within their corresponding Detection Strategy pages."
+                )
                 lines.append("")
 
-            lines.extend([
-                "| ID | Platform | Domain | Detection Strategy | Description |",
-                "| --- | --- | --- | --- | --- |",
-            ])
+            lines.extend(
+                [
+                    "| ID | Platform | Domain | Detection Strategy | Description |",
+                    "| --- | --- | --- | --- | --- |",
+                ]
+            )
 
             # Sort analytics by ID
             for analytic in sorted(self.analytics, key=lambda x: x.id):
-                platforms_str = ", ".join(analytic.platforms) if analytic.platforms else ""
+                platforms_str = (
+                    ", ".join(analytic.platforms) if analytic.platforms else ""
+                )
                 domain_str = (
                     analytic.domain.replace("-", " ")
                     .capitalize()
@@ -1788,14 +1805,30 @@ class MarkdownGenerator:
                 # Create link for ID column
                 if self.config.get("embed_analytics_in_detection_strategies", False):
                     # Link to detection strategy when embedded (ID links to the detection strategy page)
-                    id_link = f"[[{detection_strategy_name} - {detection_strategy_id} \\| {analytic.id}]]" if detection_strategy_name else analytic.id
-                    ds_link = f"[[{detection_strategy_name} - {detection_strategy_id} \\| {detection_strategy_name}]]" if detection_strategy_name else ""
+                    id_link = (
+                        f"[[{detection_strategy_name} - {detection_strategy_id} \\| {analytic.id}]]"
+                        if detection_strategy_name
+                        else analytic.id
+                    )
+                    ds_link = (
+                        f"[[{detection_strategy_name} - {detection_strategy_id} \\| {detection_strategy_name}]]"
+                        if detection_strategy_name
+                        else ""
+                    )
                 else:
                     # Link to individual analytic file when not embedded
                     id_link = f"[[{analytic.name} - {analytic.id} \\| {analytic.id}]]"
-                    ds_link = f"[[{analytic.name} - {analytic.id} \\| {detection_strategy_name}]]" if detection_strategy_name else ""
+                    ds_link = (
+                        f"[[{analytic.name} - {analytic.id} \\| {detection_strategy_name}]]"
+                        if detection_strategy_name
+                        else ""
+                    )
 
-                description = fix_description(description_str=analytic.description) if analytic.description else ""
+                description = (
+                    fix_description(description_str=analytic.description)
+                    if analytic.description
+                    else ""
+                )
                 description = description.replace("\n", " ").strip()
                 # Limit description length for table readability
                 if len(description) > 200:

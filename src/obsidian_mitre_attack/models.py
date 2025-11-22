@@ -8,7 +8,9 @@ class MITREObject:
 
     def __init__(self, name) -> None:
         """Initialize the MITREObject class."""
-        self._name: str = name.replace("/", "／").replace(":", ";")  # Name of the object  # noqa: RUF001
+        self._name: str = name.replace("/", "／").replace(
+            ":", ";"
+        )  # Name of the object  # noqa: RUF001
         self._references = dict()
         self._internal_id: str = ""  # Internal ID from MITRE ATT&CK
         self._domain: str = ""  # ATT&CK Domain (enterprise, mobile or ICS)
@@ -55,7 +57,9 @@ class MITREObject:
         if "name" not in reference or "url" not in reference:
             raise ValueError("The parameter provided is not supported")
 
-        self._references[reference["name"].replace("/", "／").replace(":", ";")] = reference["url"]  # noqa: RUF001
+        self._references[reference["name"].replace("/", "／").replace(":", ";")] = (
+            reference["url"]
+        )  # noqa: RUF001
 
     @property
     def internal_id(self) -> str:

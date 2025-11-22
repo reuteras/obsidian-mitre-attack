@@ -68,7 +68,9 @@ def download_stix_data(test_config: dict[str, Any], cache_dir: Path) -> dict[str
 
 
 @pytest.fixture(scope="session")
-def stix_parser(test_config: dict[str, Any], download_stix_data: dict[str, Any]) -> StixParser:
+def stix_parser(
+    test_config: dict[str, Any], download_stix_data: dict[str, Any]
+) -> StixParser:
     """Provide a StixParser instance with real STIX data loaded.
 
     This fixture creates a StixParser and loads it with cached STIX data,
@@ -84,9 +86,15 @@ def stix_parser(test_config: dict[str, Any], download_stix_data: dict[str, Any])
     parser.mitigations = []
 
     # Load data from cache
-    parser.enterprise_attack = MemoryStore(stix_data=download_stix_data["enterprise-attack"]["objects"])
-    parser.mobile_attack = MemoryStore(stix_data=download_stix_data["mobile-attack"]["objects"])
-    parser.ics_attack = MemoryStore(stix_data=download_stix_data["ics-attack"]["objects"])
+    parser.enterprise_attack = MemoryStore(
+        stix_data=download_stix_data["enterprise-attack"]["objects"]
+    )
+    parser.mobile_attack = MemoryStore(
+        stix_data=download_stix_data["mobile-attack"]["objects"]
+    )
+    parser.ics_attack = MemoryStore(
+        stix_data=download_stix_data["ics-attack"]["objects"]
+    )
 
     return parser
 
@@ -119,7 +127,9 @@ def temp_output_dir(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def markdown_generator(parsed_stix_data: StixParser, temp_output_dir: Path) -> MarkdownGenerator:
+def markdown_generator(
+    parsed_stix_data: StixParser, temp_output_dir: Path
+) -> MarkdownGenerator:
     """Provide a MarkdownGenerator instance with parsed data."""
     args = argparse.Namespace(
         output=str(temp_output_dir),

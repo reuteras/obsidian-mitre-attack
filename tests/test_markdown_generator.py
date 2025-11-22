@@ -112,7 +112,9 @@ class TestMarkdownGeneratorTactics:
         markdown_generator.create_tactic_notes(domain="enterprise-attack")
 
         # Check that files were created
-        tactics_dir = Path(markdown_generator.output_dir) / "Tactics" / "Enterprise attack"
+        tactics_dir = (
+            Path(markdown_generator.output_dir) / "Tactics" / "Enterprise attack"
+        )
         assert tactics_dir.exists()
 
         # Check that at least one file was created
@@ -123,7 +125,9 @@ class TestMarkdownGeneratorTactics:
         """Test structure of generated tactic markdown."""
         markdown_generator.create_tactic_notes(domain="enterprise-attack")
 
-        tactics_dir = Path(markdown_generator.output_dir) / "Tactics" / "Enterprise attack"
+        tactics_dir = (
+            Path(markdown_generator.output_dir) / "Tactics" / "Enterprise attack"
+        )
         tactic_files = list(tactics_dir.glob("*.md"))
 
         # Read first tactic file
@@ -144,7 +148,9 @@ class TestMarkdownGeneratorTactics:
         """Test that MITRE URLs are properly replaced."""
         markdown_generator.create_tactic_notes(domain="enterprise-attack")
 
-        tactics_dir = Path(markdown_generator.output_dir) / "Tactics" / "Enterprise attack"
+        tactics_dir = (
+            Path(markdown_generator.output_dir) / "Tactics" / "Enterprise attack"
+        )
         tactic_files = list(tactics_dir.glob("*.md"))
 
         tactic_file = tactic_files[0]
@@ -164,7 +170,9 @@ class TestMarkdownGeneratorTechniques:
         markdown_generator.create_technique_notes(domain="enterprise-attack")
 
         # Check that files were created
-        techniques_dir = Path(markdown_generator.output_dir) / "Techniques" / "Enterprise attack"
+        techniques_dir = (
+            Path(markdown_generator.output_dir) / "Techniques" / "Enterprise attack"
+        )
         assert techniques_dir.exists()
 
         # Should have subdirectories for tactics
@@ -175,7 +183,9 @@ class TestMarkdownGeneratorTechniques:
         """Test structure of generated technique markdown."""
         markdown_generator.create_technique_notes(domain="enterprise-attack")
 
-        techniques_dir = Path(markdown_generator.output_dir) / "Techniques" / "Enterprise attack"
+        techniques_dir = (
+            Path(markdown_generator.output_dir) / "Techniques" / "Enterprise attack"
+        )
 
         # Find a technique file
         technique_files = list(techniques_dir.rglob("*.md"))
@@ -195,11 +205,15 @@ class TestMarkdownGeneratorTechniques:
         assert "### Mitigations" in content
         assert "### References" in content
 
-    def test_technique_subtechnique_handling(self, markdown_generator: MarkdownGenerator):
+    def test_technique_subtechnique_handling(
+        self, markdown_generator: MarkdownGenerator
+    ):
         """Test that subtechniques are properly handled."""
         markdown_generator.create_technique_notes(domain="enterprise-attack")
 
-        techniques_dir = Path(markdown_generator.output_dir) / "Techniques" / "Enterprise attack"
+        techniques_dir = (
+            Path(markdown_generator.output_dir) / "Techniques" / "Enterprise attack"
+        )
         technique_files = list(techniques_dir.rglob("*.md"))
 
         # Find a file with subtechnique ID (contains .00)
@@ -221,7 +235,12 @@ class TestMarkdownGeneratorMitigations:
         markdown_generator.create_mitigation_notes(domain="enterprise-attack")
 
         # Check that files were created
-        mitigations_dir = Path(markdown_generator.output_dir) / "Defenses" / "Mitigations" / "Enterprise attack"
+        mitigations_dir = (
+            Path(markdown_generator.output_dir)
+            / "Defenses"
+            / "Mitigations"
+            / "Enterprise attack"
+        )
         assert mitigations_dir.exists()
 
         mitigation_files = list(mitigations_dir.glob("*.md"))
@@ -231,7 +250,12 @@ class TestMarkdownGeneratorMitigations:
         """Test structure of generated mitigation markdown."""
         markdown_generator.create_mitigation_notes(domain="enterprise-attack")
 
-        mitigations_dir = Path(markdown_generator.output_dir) / "Defenses" / "Mitigations" / "Enterprise attack"
+        mitigations_dir = (
+            Path(markdown_generator.output_dir)
+            / "Defenses"
+            / "Mitigations"
+            / "Enterprise attack"
+        )
         mitigation_files = list(mitigations_dir.glob("*.md"))
 
         mitigation_file = mitigation_files[0]
@@ -351,17 +375,23 @@ class TestMarkdownGeneratorDataSources:
         """Test creating data source notes."""
         markdown_generator.create_data_source_notes()
 
-        data_sources_dir = Path(markdown_generator.output_dir) / "Defenses" / "Data_Sources"
+        data_sources_dir = (
+            Path(markdown_generator.output_dir) / "Defenses" / "Data_Sources"
+        )
         assert data_sources_dir.exists()
 
         data_source_files = list(data_sources_dir.glob("*.md"))
         assert len(data_source_files) > 0
 
-    def test_data_source_markdown_structure(self, markdown_generator: MarkdownGenerator):
+    def test_data_source_markdown_structure(
+        self, markdown_generator: MarkdownGenerator
+    ):
         """Test structure of generated data source markdown."""
         markdown_generator.create_data_source_notes()
 
-        data_sources_dir = Path(markdown_generator.output_dir) / "Defenses" / "Data_Sources"
+        data_sources_dir = (
+            Path(markdown_generator.output_dir) / "Defenses" / "Data_Sources"
+        )
         data_source_files = list(data_sources_dir.glob("*.md"))
 
         data_source_file = data_source_files[0]
@@ -382,7 +412,9 @@ class TestMarkdownGeneratorTags:
         """Test that custom tags are applied to tactics."""
         markdown_generator.create_tactic_notes(domain="enterprise-attack")
 
-        tactics_dir = Path(markdown_generator.output_dir) / "Tactics" / "Enterprise attack"
+        tactics_dir = (
+            Path(markdown_generator.output_dir) / "Tactics" / "Enterprise attack"
+        )
         tactic_files = list(tactics_dir.glob("*.md"))
 
         content = tactic_files[0].read_text(encoding="utf-8")
@@ -392,7 +424,9 @@ class TestMarkdownGeneratorTags:
         """Test that custom tags are applied to techniques."""
         markdown_generator.create_technique_notes(domain="enterprise-attack")
 
-        techniques_dir = Path(markdown_generator.output_dir) / "Techniques" / "Enterprise attack"
+        techniques_dir = (
+            Path(markdown_generator.output_dir) / "Techniques" / "Enterprise attack"
+        )
         technique_files = list(techniques_dir.rglob("*.md"))
 
         content = technique_files[0].read_text(encoding="utf-8")
@@ -408,18 +442,26 @@ class TestMarkdownGeneratorConsistency:
         """Test that no forward slashes appear in file names or content names."""
         markdown_generator.create_technique_notes(domain="enterprise-attack")
 
-        techniques_dir = Path(markdown_generator.output_dir) / "Techniques" / "Enterprise attack"
+        techniques_dir = (
+            Path(markdown_generator.output_dir) / "Techniques" / "Enterprise attack"
+        )
         technique_files = list(techniques_dir.rglob("*.md"))
 
         for file in technique_files:
             # Check filename
-            assert "/" not in file.name or file.name.count("/") == file.name.count(str(file.parent))
+            assert "/" not in file.name or file.name.count("/") == file.name.count(
+                str(file.parent)
+            )
 
-    def test_all_internal_links_have_closing_brackets(self, markdown_generator: MarkdownGenerator):
+    def test_all_internal_links_have_closing_brackets(
+        self, markdown_generator: MarkdownGenerator
+    ):
         """Test that all internal links are properly formed."""
         markdown_generator.create_technique_notes(domain="enterprise-attack")
 
-        techniques_dir = Path(markdown_generator.output_dir) / "Techniques" / "Enterprise attack"
+        techniques_dir = (
+            Path(markdown_generator.output_dir) / "Techniques" / "Enterprise attack"
+        )
         technique_files = list(techniques_dir.rglob("*.md"))
 
         for file in technique_files[:5]:  # Check first 5 files
