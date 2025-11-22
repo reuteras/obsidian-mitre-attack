@@ -18,22 +18,22 @@ jobs:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@eef61447b9ff4aafe5dcd72e0a28fef7ff2e8c5d # v5
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@f677139bbe7f9c59b41e3e62fd82a24c92bcccff # v6
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@4797f9b5031a38c4d1a1c5e59e932e9ebfde7055 # v7
 
     - name: Install dependencies
       run: |
         uv sync --group test
 
     - name: Cache STIX data
-      uses: actions/cache@v4
+      uses: actions/cache@ab5e6d0c402a82d5201f3f72d3dbb0590d9f3e5d # v4
       with:
         path: ~/.cache/obsidian-mitre-attack
         key: stix-data-${{ hashFiles('default-config.toml') }}
@@ -53,7 +53,7 @@ jobs:
         uv run pytest tests/ -m "not slow" --cov --cov-report=xml --cov-report=term-missing
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@97cc8d45fbaa25c0435f037b65cd347d45fa1f27 # v5
       with:
-        file: ./coverage.xml
+        files: ./coverage.xml
         fail_ci_if_error: false

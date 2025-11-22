@@ -16,13 +16,13 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@eef61447b9ff4aafe5dcd72e0a28fef7ff2e8c5d # v5
         with:
           persist-credentials: false
           fetch-depth: 0
 
       - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@4797f9b5031a38c4d1a1c5e59e932e9ebfde7055 # v7
         with:
           enable-cache: false
           python-version: 3.13
