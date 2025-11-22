@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@bc036c629ff353d607e16e221adf76d07d38fb47 # v7
+        uses: astral-sh/setup-uv@1e862dfacbd1d6d858c55d9b792c756523627244 # v7
         with:
           enable-cache: false
           python-version: 3.13
@@ -43,7 +43,7 @@ jobs:
           zip -r dist/mitre-attack-obsidian-embedded.zip MITRE README.md
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2
         with:
           files: |
             dist/mitre-attack-obsidian-standard.zip
