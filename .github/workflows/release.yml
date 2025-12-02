@@ -43,7 +43,7 @@ jobs:
           zip -r dist/mitre-attack-obsidian-embedded.zip MITRE README.md
 
       - name: Release
-        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2
+        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2.4.2
         with:
           files: |
             dist/mitre-attack-obsidian-standard.zip
