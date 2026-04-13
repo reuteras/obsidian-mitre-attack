@@ -43,8 +43,9 @@ jobs:
           zip -r dist/mitre-attack-obsidian-embedded.zip MITRE README.md
 
       - name: Release
-        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1
-        with:
-          files: |
-            dist/mitre-attack-obsidian-standard.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            dist/mitre-attack-obsidian-standard.zip \
             dist/mitre-attack-obsidian-embedded.zip
