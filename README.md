@@ -1,6 +1,6 @@
 # obsidian-mitre-attack
 
-Convert MITRE ATT&CK® knowledge base to Obsidian-compatible Markdown notes with advanced cross-linking and detection strategies for ATT&CK v18.0.
+Convert MITRE ATT&CK® knowledge base to Obsidian-compatible Markdown notes with advanced cross-linking and detection strategies for ATT&CK v19.0.
 
 [![Tests](https://github.com/reuteras/obsidian-mitre-attack/actions/workflows/tests.yml/badge.svg)](https://github.com/reuteras/obsidian-mitre-attack/actions/workflows/tests.yml)
 [![Linter](https://github.com/reuteras/obsidian-mitre-attack/actions/workflows/linter.yml/badge.svg)](https://github.com/reuteras/obsidian-mitre-attack/actions/workflows/linter.yml)
@@ -12,12 +12,11 @@ This project parses MITRE ATT&CK® STIX 2.1 data and converts it into beautifull
 **What's included:**
 - ✅ All three ATT&CK domains: Enterprise, Mobile, and ICS
 - ✅ Comprehensive coverage: Tactics, Techniques, Mitigations, Groups, Software, Campaigns, Assets, Data Sources
-- ✅ NEW in v18: Detection Strategies and Analytics with full cross-linking
 - ✅ Automatic internal linking using Obsidian's `[[wikilinks]]` syntax
 - ✅ YAML frontmatter with aliases and tags for advanced querying
 - ✅ Two output modes: standard (separate files) or embedded (requires plugin)
 
-This is an extended fork of [vincenzocaputo/obsidian-mitre-attack](https://github.com/vincenzocaputo/obsidian-mitre-attack) with significant enhancements including support for ATT&CK v18.0 detection strategies and analytics.
+This is an extended fork of [vincenzocaputo/obsidian-mitre-attack](https://github.com/vincenzocaputo/obsidian-mitre-attack) with significant enhancements including support for ATT&CK v19.0 detection strategies and analytics.
 
 ## Quick Start
 
@@ -54,19 +53,6 @@ uv run obsidian-mitre-attack --output $(pwd)/output --tags 'mitre/'
 ```
 
 ## Features
-
-### Detection Strategies (NEW in v18.0)
-
-Techniques now include a **Detection Strategy** section that links to analytics with detailed detection guidance:
-
-| ID | Name | Analytic ID | Analytic Description |
-| --- | --- | --- | --- |
-| [[Detection Strategy for X]] | Detection Strategy for X | [[AN0001]] | Detects behavior Y using... |
-
-Each Detection Strategy includes:
-- Links to all techniques it detects
-- Associated analytics with log sources and mutable elements
-- Platform-specific detection approaches (Windows, Linux, macOS)
 
 ### Comprehensive Cross-Linking
 
@@ -126,7 +112,7 @@ Create a `config.toml` file (copy from `default-config.toml`):
 ```toml
 repository_url = "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master"
 output_dir = "output"
-version = "18.0"
+version = "19.0"
 verbose = true
 
 # Embed Analytics within Detection Strategies
