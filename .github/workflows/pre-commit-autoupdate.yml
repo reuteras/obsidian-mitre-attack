@@ -17,11 +17,6 @@ jobs:
       pull-requests: write  # Required to create PR with autoupdate results
 
     steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
-        with:
-          egress-policy: audit
-
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -43,16 +38,22 @@ jobs:
         run: uv run pre-commit autoupdate
 
       - name: Create pull request
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: pre-commit autoupdate"
-          committer: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-          author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-          branch: chore/pre-commit-autoupdate
-          delete-branch: true
-          title: "chore: pre-commit autoupdate"
-          body: |
-            ## Summary
-            - automatically run `pre-commit autoupdate`
-            - keep hook revisions current
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git checkout -B chore/pre-commit-autoupdate
+          git add -A
+          git commit -m "chore: pre-commit autoupdate"
+          git push --force origin chore/pre-commit-autoupdate
+          gh pr create \
+            --title "chore: pre-commit autoupdate" \
+            --body "$(printf '## Summary\n- automatically run pre-commit autoupdate\n- keep hook revisions current')" \
+            --base main \
+            --head chore/pre-commit-autoupdate || echo "PR already exists"
