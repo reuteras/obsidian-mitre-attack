@@ -30,7 +30,7 @@ def create_main_readme(
     attack_file = Path(arguments.output, "MITRE ATT&CK.md")
     with open(file=attack_file, mode="w", encoding="utf-8") as fd:
         content: str = "---\n"
-        content += "alias:\n"
+        content += "aliases:\n"
         content += "  - MITRE ATT&CK®\n"
         content += "tags:\n"
         content += f"  - {arguments.tags}mitre_attack\n"
