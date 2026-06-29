@@ -78,7 +78,7 @@ dev = [
     "ruff>=0.15.17",
 ]
 test = [
-    "pytest>=9.1.0",
+    "pytest>=9.1.1",
     "pytest-cov>=6.0.0",
     "pytest-mock>=3.14.0",
     "pytest-timeout>=2.3.1",
