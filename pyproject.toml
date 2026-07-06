@@ -75,7 +75,7 @@ docstring-code-line-length = "dynamic"
 [dependency-groups]
 dev = [
     "pylint>=4.0.6",
-    "ruff>=0.15.18",
+    "ruff>=0.15.20",
 ]
 test = [
     "pytest>=9.1.1",
