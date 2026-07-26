@@ -45,6 +45,11 @@ lint.ignore = [
 ]
 fix = true
 
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "PLR2004",  # magic values (e.g. list length checks) are normal in test assertions
+]
+
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
 quote-style = "double"

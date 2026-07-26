@@ -210,7 +210,7 @@ class StixParser:
                                 tactic_obj.techniques_used = {
                                     "id": technique_id,
                                     "name": technique["name"]
-                                    .replace("/", "／")
+                                    .replace("/", "／")  # noqa: RUF001
                                     .replace(":", "："),  # noqa: RUF001
                                     "description": technique["description"],
                                 }
@@ -517,7 +517,7 @@ class StixParser:
                     description = relation.get("description", "")
                     item = {
                         "name": mitigation.get("name")
-                        .replace("/", "／")
+                        .replace("/", "／")  # noqa: RUF001
                         .replace(":", "："),  # noqa: RUF001
                         "description": description,
                         "id": mitigation_id,
@@ -614,7 +614,7 @@ class StixParser:
                                 {
                                     "id": sub_id,
                                     "name": subtechnique["name"]
-                                    .replace("/", "／")
+                                    .replace("/", "／")  # noqa: RUF001
                                     .replace(":", "："),  # noqa: RUF001
                                 }
                             )
@@ -672,9 +672,9 @@ class StixParser:
                                 technique_obj.external_references = item
                                 external_references_added.add(ext_ref["source_name"])
                     item = {
-                        "name": targeted_assets_name.replace("/", "／").replace(
-                            ":", "："
-                        ),  # noqa: RUF001
+                        "name": targeted_assets_name.replace(
+                            "/", "／"  # noqa: RUF001
+                        ).replace(":", "："),  # noqa: RUF001
                         "id": targeted_assets_id,
                         "description": targeted_assets_description,
                     }
@@ -780,7 +780,7 @@ class StixParser:
                         mitigation_obj.mitigates = {
                             "id": external_id,
                             "name": technique["name"]
-                            .replace("/", "／")
+                            .replace("/", "／")  # noqa: RUF001
                             .replace(":", "："),  # noqa: RUF001
                             "description": relationship.get("description", ""),
                             "domain": relationship.get("x_mitre_domains", domain),
@@ -2048,7 +2048,7 @@ class StixParser:
 
                             asset_obj.techniques_used = {
                                 "technique_name": technique.name.replace(
-                                    "/", "／"
+                                    "/", "／"  # noqa: RUF001
                                 ).replace(":", "："),  # noqa: RUF001
                                 "technique_id": technique_id,
                                 "domain": domain,
@@ -2287,7 +2287,9 @@ class StixParser:
                             # Get technique name and id (using cache)
                             target_ref = techniques_relationship["target_ref"]
                             if target_ref in technique_cache:
-                                technique, domain = technique_cache[target_ref]
+                                technique, technique_domain = technique_cache[
+                                    target_ref
+                                ]
                                 technique_name = technique["name"]
                                 ext_refs = technique.get("external_references", [])
                                 for ext_ref in ext_refs:
@@ -2296,11 +2298,11 @@ class StixParser:
 
                                 item = {
                                     "technique_name": technique_name.replace(
-                                        "/", "／"
+                                        "/", "／"  # noqa: RUF001
                                     ).replace(":", "："),  # noqa: RUF001
                                     "technique_id": technique_id,
                                     "description": technique_description,
-                                    "domain": domain,
+                                    "domain": technique_domain,
                                 }
                                 techniques_used.append(item)
                             else:
@@ -2490,9 +2492,9 @@ class StixParser:
                                 technique_id = ext_ref["external_id"]
 
                         item = {
-                            "technique_name": technique_name.replace("/", "／").replace(
-                                ":", "："
-                            ),  # noqa: RUF001
+                            "technique_name": technique_name.replace(
+                                "/", "／"  # noqa: RUF001
+                            ).replace(":", "："),  # noqa: RUF001
                             "technique_id": technique_id,
                             "description": technique_description,
                             "domain": tech_domain,
@@ -2643,7 +2645,7 @@ class StixParser:
                             ds_obj.techniques = {
                                 "technique_id": technique_id,
                                 "technique_name": technique["name"]
-                                .replace("/", "／")
+                                .replace("/", "／")  # noqa: RUF001
                                 .replace(":", "："),  # noqa: RUF001
                             }
 

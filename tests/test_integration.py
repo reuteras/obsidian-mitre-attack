@@ -61,7 +61,7 @@ class TestErrorHandling:
         monkeypatch.chdir(tmp_path)
 
         # Should raise FileNotFoundError
-        with pytest.raises(FileNotFoundError, match="config.toml"):
+        with pytest.raises(FileNotFoundError, match=r"config\.toml"):
             main([])
 
     def test_invalid_output_directory(

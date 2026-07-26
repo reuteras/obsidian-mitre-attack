@@ -13,6 +13,9 @@ MITRE_LINK_PATTERN = re.compile(
 )
 REFERENCE_PATTERN = re.compile(r"\[\^[^\]]+?\]")
 
+# Maximum description length for table readability
+MAX_TABLE_DESCRIPTION_LENGTH = 200
+
 # Utility functions
 
 
@@ -1233,6 +1236,23 @@ class MarkdownGenerator:
                 if not content.endswith("\n"):
                     fd.write("\n")
 
+    def _append_reference_footnotes(
+        self, content: str, external_references: list[dict[str, str]]
+    ) -> str:
+        """Append footnote-style references for citations actually used in content."""
+        if not external_references:
+            return content
+
+        cited_refs = {
+            match.group(0)[2:-1] for match in REFERENCE_PATTERN.finditer(content)
+        }
+        ref_lines = ["", "", "### References", ""]
+        for ref in external_references:
+            name: str = ref["name"].replace(" ", "_")
+            if "url" in ref and name in cited_refs:
+                ref_lines.append(f"[^{name}]: [{ref['description']}]({ref['url']})")
+        return content + "\n".join(ref_lines)
+
     def create_data_source_notes(self) -> None:
         """Function to create markdown notes for data sources in Defense folder."""
         data_sources_dir = Path(
@@ -1351,29 +1371,9 @@ class MarkdownGenerator:
 
                 content = "\n".join(lines)
                 content = convert_to_local_links(text=content)
-
-                # References - only include footnotes that are actually cited in the content
-                if (
-                    data_source.external_references
-                    and len(data_source.external_references) > 0
-                ):
-                    ref_lines = ["", "", "### References", ""]
-                    # Find all citation references in the content
-                    cited_refs = set()
-                    for match in REFERENCE_PATTERN.finditer(content):
-                        ref_text = match.group(0)
-                        ref_name = ref_text[2:-1]  # Remove [^ and ]
-                        cited_refs.add(ref_name)
-
-                    # Only add footnotes for citations that are actually used
-                    for ref in data_source.external_references:
-                        name: str = ref["name"].replace(" ", "_")
-                        if "url" in ref and name in cited_refs:
-                            ref_lines.append(
-                                f"[^{name}]: [{ref['description']}]({ref['url']})"
-                            )
-                    content = content + "\n".join(ref_lines)
-
+                content = self._append_reference_footnotes(
+                    content, data_source.external_references
+                )
                 content = content.replace("MITRE_URL", data_source.url)
 
                 fd.write(content)
@@ -1422,7 +1422,8 @@ class MarkdownGenerator:
                         f"  - {data_component.data_source_name}; {data_component.name}",
                     )
 
-                lines = aliases + [
+                lines = [
+                    *aliases,
                     "url: MITRE_URL",
                     "tags:",
                     f"  - {self.tags_prefix}data_component",
@@ -1495,29 +1496,9 @@ class MarkdownGenerator:
 
                 content = "\n".join(lines)
                 content = convert_to_local_links(text=content)
-
-                # References - only include footnotes that are actually cited in the content
-                if (
-                    data_component.external_references
-                    and len(data_component.external_references) > 0
-                ):
-                    ref_lines = ["", "", "### References", ""]
-                    # Find all citation references in the content
-                    cited_refs = set()
-                    for match in REFERENCE_PATTERN.finditer(content):
-                        ref_text = match.group(0)
-                        ref_name = ref_text[2:-1]  # Remove [^ and ]
-                        cited_refs.add(ref_name)
-
-                    # Only add footnotes for citations that are actually used
-                    for ref in data_component.external_references:
-                        name: str = ref["name"].replace(" ", "_")
-                        if "url" in ref and name in cited_refs:
-                            ref_lines.append(
-                                f"[^{name}]: [{ref['description']}]({ref['url']})"
-                            )
-                    content = content + "\n".join(ref_lines)
-
+                content = self._append_reference_footnotes(
+                    content, data_component.external_references
+                )
                 content = content.replace("MITRE_URL", data_component.url)
 
                 fd.write(content)
@@ -1752,7 +1733,16 @@ class MarkdownGenerator:
         analytics_dir = Path(self.output_dir, "Defenses", "Detections", "Analytics")
         analytics_dir.mkdir(parents=True, exist_ok=True)
 
-        # Always create Analytics.md index file
+        self._create_analytics_index(analytics_dir)
+
+        # Skip creating individual analytic files if they're embedded in detection strategies
+        if self.config.get("embed_analytics_in_detection_strategies", False):
+            return
+
+        self._create_analytic_files(analytics_dir)
+
+    def _create_analytics_index(self, analytics_dir: Path) -> None:
+        """Create the Analytics.md index file listing all analytics."""
         index_file = Path(analytics_dir, "Analytics.md")
         with open(file=index_file, mode="w", encoding="utf-8") as fd:
             lines = [
@@ -1831,8 +1821,8 @@ class MarkdownGenerator:
                 )
                 description = description.replace("\n", " ").strip()
                 # Limit description length for table readability
-                if len(description) > 200:
-                    description = description[:197] + "..."
+                if len(description) > MAX_TABLE_DESCRIPTION_LENGTH:
+                    description = description[: MAX_TABLE_DESCRIPTION_LENGTH - 3] + "..."
 
                 lines.append(
                     f"| {id_link} | {platforms_str} | {domain_str} | {ds_link} | {description} |"
@@ -1844,10 +1834,8 @@ class MarkdownGenerator:
             if not content.endswith("\n"):
                 fd.write("\n")
 
-        # Skip creating individual analytic files if they're embedded in detection strategies
-        if self.config.get("embed_analytics_in_detection_strategies", False):
-            return
-
+    def _create_analytic_files(self, analytics_dir: Path) -> None:
+        """Create individual markdown files for each analytic."""
         # Create all analytics in a flat structure (no domain subfolders)
         for analytic in self.analytics:
             analytic_file = Path(analytics_dir, f"{analytic.name} - {analytic.id}.md")

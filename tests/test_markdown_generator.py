@@ -57,7 +57,7 @@ class TestUtilityFunctions:
         text = "[OS/2](https://attack.mitre.org/software/S0001)"
         result = convert_to_local_links(text)
         assert "/" not in result
-        assert "／" in result  # Full-width slash
+        assert "／" in result  # Full-width slash  # noqa: RUF001
 
     def test_convert_to_local_links_with_colon(self):
         """Test that colons are replaced in link names for Obsidian compatibility."""
@@ -72,7 +72,7 @@ class TestUtilityFunctions:
         result = convert_to_local_links(text)
         assert "/" not in result
         assert ":" not in result
-        assert "／" in result  # Full-width slash
+        assert "／" in result  # Full-width slash  # noqa: RUF001
         assert ";" in result  # Semicolon
 
     def test_convert_to_local_links_exaramel_fix(self):

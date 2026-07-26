@@ -33,7 +33,7 @@ class TestMITREObject:
     def test_forward_slash_replacement(self):
         """Test that forward slashes are replaced with full-width slashes."""
         obj = MITREObject(name="Test/Object")
-        assert obj.name == "Test／Object"
+        assert obj.name == "Test／Object"  # noqa: RUF001
         assert "/" not in obj.name
 
     def test_colon_replacement(self):
@@ -45,7 +45,7 @@ class TestMITREObject:
     def test_combined_slash_and_colon_replacement(self):
         """Test that both slashes and colons are replaced."""
         obj = MITREObject(name="Test/Object:Name")
-        assert obj.name == "Test／Object;Name"
+        assert obj.name == "Test／Object;Name"  # noqa: RUF001
         assert "/" not in obj.name
         assert ":" not in obj.name
 
@@ -53,7 +53,7 @@ class TestMITREObject:
         """Test name property setter."""
         obj = MITREObject(name="Test")
         obj.name = "New/Name"
-        assert obj.name == "New／Name"
+        assert obj.name == "New／Name"  # noqa: RUF001
 
         obj.name = "New:Name"
         assert obj.name == "New;Name"
@@ -75,8 +75,8 @@ class TestMITREObject:
         obj = MITREObject(name="Test")
         ref = {"name": "Test/Reference", "url": "https://example.com"}
         obj.references = ref
-        assert "Test／Reference" in obj._references
-        assert obj._references["Test／Reference"] == "https://example.com"
+        assert "Test／Reference" in obj._references  # noqa: RUF001
+        assert obj._references["Test／Reference"] == "https://example.com"  # noqa: RUF001
 
         ref_colon = {"name": "Test:Reference", "url": "https://example.com"}
         obj.references = ref_colon
@@ -211,7 +211,7 @@ class TestMITRETechnique:
         """Test that parent name replaces forward slashes."""
         technique = MITRETechnique(name="Test")
         technique.parent_name = "Parent/Name"
-        assert technique.parent_name == "Parent／Name"
+        assert technique.parent_name == "Parent／Name"  # noqa: RUF001
 
         technique.parent_name = "Parent:Name"
         assert technique.parent_name == "Parent;Name"
