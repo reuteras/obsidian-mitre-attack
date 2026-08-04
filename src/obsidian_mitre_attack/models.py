@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 
 class MITREObject:
     """Define a tactic (x-mitre-tactic)."""
@@ -11,7 +13,7 @@ class MITREObject:
         self._name: str = name.replace("/", "／").replace(  # noqa: RUF001
             ":", ";"
         )  # Name of the object
-        self._references = dict()
+        self._references: dict[str, str] = {}
         self._internal_id: str = ""  # Internal ID from MITRE ATT&CK
         self._domain: str = ""  # ATT&CK Domain (enterprise, mobile or ICS)
         self._url: str = ""  # URL to page on MITRE
@@ -69,7 +71,7 @@ class MITREObject:
     @internal_id.setter
     def internal_id(self, internal_id: str) -> None:
         """Set the internal ID of the object."""
-        self._internal_id: str = internal_id
+        self._internal_id = internal_id
 
     @property
     def domain(self) -> str:
@@ -78,7 +80,7 @@ class MITREObject:
 
     @domain.setter
     def domain(self, domain) -> None:
-        self._domain: str = domain
+        self._domain = domain
 
     @property
     def url(self) -> str:
@@ -88,7 +90,7 @@ class MITREObject:
     @url.setter
     def url(self, url: str) -> None:
         """Set the URL of the object."""
-        self._url: str = url
+        self._url = url
 
 
 class MITRETactic(MITREObject):
@@ -101,8 +103,8 @@ class MITRETactic(MITREObject):
         self._created = ""
         self._modified = ""
         self._shortname = ""
-        self._external_references = list()
-        self._techniques_used = list()
+        self._external_references: list[dict[str, Any]] = []
+        self._techniques_used: list[dict[str, Any]] = []
 
     @property
     def version(self) -> str:
@@ -111,7 +113,7 @@ class MITRETactic(MITREObject):
 
     @version.setter
     def version(self, version: str) -> None:
-        self._version: str = version
+        self._version = version
 
     @property
     def created(self) -> str:
@@ -121,7 +123,7 @@ class MITRETactic(MITREObject):
     @created.setter
     def created(self, created: str) -> None:
         """Set the created date of the object."""
-        self._created: str = created
+        self._created = created
 
     @property
     def modified(self) -> str:
@@ -131,7 +133,7 @@ class MITRETactic(MITREObject):
     @modified.setter
     def modified(self, modified: str) -> None:
         """Set the modified date of the object."""
-        self._modified: str = modified
+        self._modified = modified
 
     @property
     def shortname(self) -> str:
@@ -141,7 +143,7 @@ class MITRETactic(MITREObject):
     @shortname.setter
     def shortname(self, shortname: str) -> None:
         """Set the shortname of the object."""
-        self._shortname: str = shortname
+        self._shortname = shortname
 
     @property
     def external_references(self):
@@ -170,37 +172,39 @@ class MITRETechnique(MITREObject):
     def __init__(self, name) -> None:
         """Initialize the MITRETechnique class."""
         MITREObject.__init__(self=self, name=name)
-        self._mitigations = list()
-        self._groups = list()
+        self._mitigations: list[dict[str, Any]] = []
+        self._groups: list[dict[str, Any]] = []
         self._version: str = ""  # Version of the object, e.g. 1.0
         self._created: str = ""  # Date of creation, datetime object
         self._modified: str = ""  # Date of last modification, datetime object
         self._shortname: str = ""
-        self._external_references = list()  # External references, list of dictionaries
+        self._external_references: list[
+            dict[str, Any]
+        ] = []  # External references, list of dictionaries
         self._description: str = ""  # Description of the object, string
         self._parent_name: str = ""  # Parent technique name, string
         self._is_subtechnique: bool = (
             False  # Boolean value to indicate if the object is a subtechnique
         )
-        self._subtechniques = list()  # List of subtechniques
+        self._subtechniques: list[dict[str, Any]] = []  # List of subtechniques
         self._main_id: str = ""  # Main technique ID. Same as id for techniques, and parent id for subtechniques
-        self._platforms = list()
-        self._permissions_required = list()
-        self._effective_permissions = list()
-        self._defense_bypassed = list()
-        self._techniques_used = list()
+        self._platforms: list[str] = []
+        self._permissions_required: list[str] = []
+        self._effective_permissions: list[str] = []
+        self._defense_bypassed: list[str] = []
+        self._techniques_used: list[dict[str, Any]] = []
         self._tactic: str = ""
-        self._data_sources = list()
+        self._data_sources: list[str] = []
         self._detection: str = ""
         self._tactic_name = ""
         self._tactic_id: str = ""
         self._supports_remote = False
-        self._system_requirements = list()
-        self._contributors = list()
-        self._procedure_examples = list()
-        self._detections = list()
-        self._targeted_assets = list()
-        self._detection_strategies = list()
+        self._system_requirements: list[str] = []
+        self._contributors: list[str] = []
+        self._procedure_examples: list[dict[str, Any]] = []
+        self._detections: list[dict[str, Any]] = []
+        self._targeted_assets: list[dict[str, Any]] = []
+        self._detection_strategies: list[dict[str, Any]] = []
 
     @property
     def version(self) -> str:
@@ -210,7 +214,7 @@ class MITRETechnique(MITREObject):
     @version.setter
     def version(self, version: str) -> None:
         """Set the version of the object."""
-        self._version: str = version
+        self._version = version
 
     @property
     def created(self) -> str:
@@ -220,7 +224,7 @@ class MITRETechnique(MITREObject):
     @created.setter
     def created(self, created: str) -> None:
         """Set the created date of the object."""
-        self._created: str = created
+        self._created = created
 
     @property
     def modified(self) -> str:
@@ -230,7 +234,7 @@ class MITRETechnique(MITREObject):
     @modified.setter
     def modified(self, modified) -> None:
         """Set the modified date of the object."""
-        self._modified: str = modified
+        self._modified = modified
 
     @property
     def shortname(self) -> str:
@@ -240,7 +244,7 @@ class MITRETechnique(MITREObject):
     @shortname.setter
     def shortname(self, shortname) -> None:
         """Set the shortname of the object."""
-        self._shortname: str = shortname.replace("/", "／").replace(":", ";")  # noqa: RUF001
+        self._shortname = shortname.replace("/", "／").replace(":", ";")  # noqa: RUF001
 
     @property
     def external_references(self):
@@ -270,7 +274,7 @@ class MITRETechnique(MITREObject):
     @is_subtechnique.setter
     def is_subtechnique(self, is_subtechnique: bool) -> None:
         """Set the subtechnique status of the object."""
-        self._is_subtechnique: bool = is_subtechnique
+        self._is_subtechnique = is_subtechnique
 
     @property
     def platforms(self):
@@ -310,7 +314,7 @@ class MITRETechnique(MITREObject):
     @tactic.setter
     def tactic(self, tactic) -> None:
         """Set the tactic of the object."""
-        self._tactic: str = tactic
+        self._tactic = tactic
 
     @property
     def data_sources(self):
@@ -340,7 +344,7 @@ class MITRETechnique(MITREObject):
     @tactic_name.setter
     def tactic_name(self, tactic_name) -> None:
         """Set the tactic name of the object."""
-        self._tactic_name: str = tactic_name.replace("/", "／").replace(":", ";")  # noqa: RUF001
+        self._tactic_name = tactic_name.replace("/", "／").replace(":", ";")  # noqa: RUF001
 
     @property
     def tactic_id(self):
@@ -379,7 +383,7 @@ class MITRETechnique(MITREObject):
 
     @supports_remote.setter
     def supports_remote(self, supports_remote: bool) -> None:
-        self._supports_remote: bool = supports_remote
+        self._supports_remote = supports_remote
 
     @property
     def system_requirements(self):
@@ -495,11 +499,11 @@ class MITREMitigation(MITREObject):
     def __init__(self, name) -> None:
         """Initialize the MITREMitigation class."""
         MITREObject.__init__(self=self, name=name)
-        self._mitigates = list()
+        self._mitigates: list[dict[str, Any]] = []
         self._version: str = ""
         self._created: str = ""
         self._modified: str = ""
-        self._external_references = list()
+        self._external_references: list[dict[str, Any]] = []
 
     @property
     def is_deprecated(self) -> bool:
@@ -529,7 +533,7 @@ class MITREMitigation(MITREObject):
     @version.setter
     def version(self, version: str) -> None:
         """Set the version of the object."""
-        self._version: str = version
+        self._version = version
 
     @property
     def created(self) -> str:
@@ -539,7 +543,7 @@ class MITREMitigation(MITREObject):
     @created.setter
     def created(self, created: str) -> None:
         """Set the created date of the object."""
-        self._created: str = created
+        self._created = created
 
     @property
     def modified(self):
@@ -549,7 +553,7 @@ class MITREMitigation(MITREObject):
     @modified.setter
     def modified(self, modified: str) -> None:
         """Set the modified date of the object."""
-        self._modified: str = modified
+        self._modified = modified
 
     @property
     def external_references(self):
@@ -567,11 +571,11 @@ class MITREGroup(MITREObject):
     def __init__(self, name) -> None:
         """Initialize the MITREGroup class."""
         MITREObject.__init__(self=self, name=name)
-        self._aliases = list()
-        self._aliases_references = list()
-        self._external_references = list()
-        self._software_used = list()
-        self._techniques_used = list()
+        self._aliases: list[str] = []
+        self._aliases_references: list[dict[str, Any]] = []
+        self._external_references: list[dict[str, Any]] = []
+        self._software_used: list[dict[str, Any]] = []
+        self._techniques_used: list[dict[str, Any]] = []
         self._contributors = None  # Not implemented yet
         self._version: str = ""
         self._created: str = ""
@@ -644,7 +648,7 @@ class MITREGroup(MITREObject):
     @version.setter
     def version(self, version: str) -> None:
         """Set the version of the object."""
-        self._version: str = version
+        self._version = version
 
     @property
     def created(self) -> str:
@@ -654,7 +658,7 @@ class MITREGroup(MITREObject):
     @created.setter
     def created(self, created: str) -> None:
         """Set the created date of the object."""
-        self._created: str = created
+        self._created = created
 
     @property
     def modified(self) -> str:
@@ -664,7 +668,7 @@ class MITREGroup(MITREObject):
     @modified.setter
     def modified(self, modified: str) -> None:
         """Set the modified date of the object."""
-        self._modified: str = modified
+        self._modified = modified
 
 
 class MITRESoftware(MITREObject):
@@ -673,17 +677,17 @@ class MITRESoftware(MITREObject):
     def __init__(self, name) -> None:
         """Initialize the MITRESoftware class."""
         MITREObject.__init__(self=self, name=name)
-        self._platforms = list()
-        self._aliases = list()
-        self._groups_using = list()
+        self._platforms: list[list[str]] = []
+        self._aliases: list[str] = []
+        self._groups_using: list[dict[str, Any]] = []
         self._type = None
-        self._contributors = list()
+        self._contributors: list[str] = []
         self._version = ""
         self._created = ""
         self._modified = ""
-        self._techniques_used = list()
-        self._external_references = list()
-        self._campaigns_using = list()
+        self._techniques_used: list[dict[str, Any]] = []
+        self._external_references: list[dict[str, Any]] = []
+        self._campaigns_using: list[dict[str, Any]] = []
 
     @property
     def platforms(self):
@@ -753,7 +757,7 @@ class MITRESoftware(MITREObject):
     @version.setter
     def version(self, version: str) -> None:
         """Set the version of the object."""
-        self._version: str = version
+        self._version = version
 
     @property
     def created(self) -> str:
@@ -763,7 +767,7 @@ class MITRESoftware(MITREObject):
     @created.setter
     def created(self, created: str) -> None:
         """Set the created date of the object."""
-        self._created: str = created
+        self._created = created
 
     @property
     def modified(self):
@@ -773,7 +777,7 @@ class MITRESoftware(MITREObject):
     @modified.setter
     def modified(self, modified: str) -> None:
         """Set the modified date of the object."""
-        self._modified: str = modified
+        self._modified = modified
 
     @property
     def external_references(self):
@@ -801,18 +805,17 @@ class MITRECampaign(MITREObject):
     def __init__(self, name) -> None:
         """Initialize the MITRECampaign class."""
         MITREObject.__init__(self=self, name=name)
-        self._aliases = list()
-        self._groups = list()
-        self._external_references = list()
-        self._software_used = list()
-        self._techniques_used = list()
+        self._aliases: list[str] = []
+        self._groups: list[dict[str, Any]] = []
+        self._external_references: list[dict[str, Any]] = []
+        self._software_used: list[dict[str, Any]] = []
+        self._techniques_used: list[dict[str, Any]] = []
         self._first_seen = None
         self._last_seen = None
         self._created = ""
         self._modified = ""
         self._version = ""
-        self._contributors = list()
-        self._groups = list()
+        self._contributors: list[str] = []
 
     @property
     def aliases(self):
@@ -852,7 +855,7 @@ class MITRECampaign(MITREObject):
     @version.setter
     def version(self, version: str) -> None:
         """Set the version of the object."""
-        self._version: str = version
+        self._version = version
 
     @property
     def created(self):
@@ -861,7 +864,7 @@ class MITRECampaign(MITREObject):
 
     @created.setter
     def created(self, created: str) -> None:
-        self._created: str = created
+        self._created = created
 
     @property
     def modified(self):
@@ -870,7 +873,7 @@ class MITRECampaign(MITREObject):
 
     @modified.setter
     def modified(self, modified) -> None:
-        self._modified: str = modified
+        self._modified = modified
 
     @property
     def groups(self):
@@ -929,14 +932,14 @@ class MITREAsset(MITREObject):
     def __init__(self, name) -> None:
         """Initialize the MITREAsset class."""
         MITREObject.__init__(self=self, name=name)
-        self._external_references = list()
-        self._related_assets = list()
-        self._techniques_used = list()
+        self._external_references: list[dict[str, Any]] = []
+        self._related_assets: list[dict[str, Any]] = []
+        self._techniques_used: list[dict[str, Any]] = []
         self._created = ""
         self._modified = ""
         self._version = ""
-        self._platforms = list()
-        self._sectors = list()
+        self._platforms: list[list[str]] = []
+        self._sectors: list[str] = []
 
     @property
     def version(self) -> str:
@@ -945,7 +948,7 @@ class MITREAsset(MITREObject):
 
     @version.setter
     def version(self, version: str) -> None:
-        self._version: str = version
+        self._version = version
 
     @property
     def created(self) -> str:
@@ -954,7 +957,7 @@ class MITREAsset(MITREObject):
 
     @created.setter
     def created(self, created: str) -> None:
-        self._created: str = created
+        self._created = created
 
     @property
     def modified(self) -> str:
@@ -964,7 +967,7 @@ class MITREAsset(MITREObject):
     @modified.setter
     def modified(self, modified: str) -> None:
         """Set the modified date of the object."""
-        self._modified: str = modified
+        self._modified = modified
 
     @property
     def external_references(self):
@@ -1001,7 +1004,7 @@ class MITREAsset(MITREObject):
         return self._platforms
 
     @platforms.setter
-    def platforms(self, platform: str) -> None:
+    def platforms(self, platform: list[str]) -> None:
         self._platforms.append(platform)
 
     @property
@@ -1020,18 +1023,17 @@ class MITREDataSource(MITREObject):
     def __init__(self, name) -> None:
         """Initialize the MITREDataSource class."""
         MITREObject.__init__(self=self, name=name)
-        self._external_references = list()
+        self._external_references: list[dict[str, Any]] = []
         self._description: str = ""
         self._version: str = ""
         self._created: str = ""
         self._modified: str = ""
         self._domain: str = ""
-        self._external_references = list()
-        self._techniques_used = list()
-        self._contributors = list()
-        self._data_components = list()
-        self._platforms = list()
-        self._collection_layers = list()
+        self._techniques_used: list[dict[str, Any]] = []
+        self._contributors: list[str] = []
+        self._data_components: list[list[dict[str, Any]]] = []
+        self._platforms: list[list[str]] = []
+        self._collection_layers: list[list[str]] = []
 
     @property
     def description(self) -> str:
@@ -1138,7 +1140,7 @@ class MITREDataSource(MITREObject):
         return self._collection_layers
 
     @collection_layers.setter
-    def collection_layers(self, collection_layer: dict) -> None:
+    def collection_layers(self, collection_layer: list[str]) -> None:
         """Set the collection layers of the object."""
         self._collection_layers.append(collection_layer)
 
@@ -1154,10 +1156,10 @@ class MITREDataComponent(MITREObject):
         self._created: str = ""
         self._modified: str = ""
         self._domain: str = ""
-        self._external_references = list()
+        self._external_references: list[dict[str, Any]] = []
         self._data_source_name: str = ""
         self._data_source_id: str = ""
-        self._techniques_used = list()
+        self._techniques_used: list[dict[str, Any]] = []
 
     @property
     def description(self) -> str:
@@ -1259,9 +1261,9 @@ class MITREDetectionStrategy(MITREObject):
         self._version: str = ""
         self._created: str = ""
         self._modified: str = ""
-        self._external_references = list()
-        self._analytic_refs = list()  # References to analytics
-        self._techniques = list()  # Techniques this strategy detects
+        self._external_references: list[dict[str, Any]] = []
+        self._analytic_refs: list[str] = []  # References to analytics
+        self._techniques: list[dict[str, Any]] = []  # Techniques this strategy detects
 
     @property
     def version(self) -> str:
@@ -1271,7 +1273,7 @@ class MITREDetectionStrategy(MITREObject):
     @version.setter
     def version(self, version: str) -> None:
         """Set the version of the object."""
-        self._version: str = version
+        self._version = version
 
     @property
     def created(self) -> str:
@@ -1281,7 +1283,7 @@ class MITREDetectionStrategy(MITREObject):
     @created.setter
     def created(self, created: str) -> None:
         """Set the created date of the object."""
-        self._created: str = created
+        self._created = created
 
     @property
     def modified(self) -> str:
@@ -1291,7 +1293,7 @@ class MITREDetectionStrategy(MITREObject):
     @modified.setter
     def modified(self, modified: str) -> None:
         """Set the modified date of the object."""
-        self._modified: str = modified
+        self._modified = modified
 
     @property
     def external_references(self):
@@ -1333,10 +1335,10 @@ class MITREAnalytic(MITREObject):
         self._version: str = ""
         self._created: str = ""
         self._modified: str = ""
-        self._external_references = list()
-        self._platforms = list()
-        self._log_source_references = list()
-        self._mutable_elements = list()
+        self._external_references: list[dict[str, Any]] = []
+        self._platforms: list[str] = []
+        self._log_source_references: list[dict[str, Any]] = []
+        self._mutable_elements: list[dict[str, Any]] = []
         self._description: str = ""
 
     @property
@@ -1347,7 +1349,7 @@ class MITREAnalytic(MITREObject):
     @version.setter
     def version(self, version: str) -> None:
         """Set the version of the object."""
-        self._version: str = version
+        self._version = version
 
     @property
     def created(self) -> str:
@@ -1357,7 +1359,7 @@ class MITREAnalytic(MITREObject):
     @created.setter
     def created(self, created: str) -> None:
         """Set the created date of the object."""
-        self._created: str = created
+        self._created = created
 
     @property
     def modified(self) -> str:
@@ -1367,7 +1369,7 @@ class MITREAnalytic(MITREObject):
     @modified.setter
     def modified(self, modified: str) -> None:
         """Set the modified date of the object."""
-        self._modified: str = modified
+        self._modified = modified
 
     @property
     def description(self) -> str:
@@ -1377,7 +1379,7 @@ class MITREAnalytic(MITREObject):
     @description.setter
     def description(self, description: str) -> None:
         """Set the description of the object."""
-        self._description: str = description
+        self._description = description
 
     @property
     def external_references(self):

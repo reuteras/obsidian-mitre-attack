@@ -177,10 +177,10 @@ def main(argv: list[str] | None = None) -> None:  # noqa: PLR0915
             ): "detection_strategies",
             executor.submit(markdown_generator.create_analytic_notes): "analytics",
         }
-        for future in as_completed(cti_futures):
-            entity_type = cti_futures[future]
+        for cti_future in as_completed(cti_futures):
+            entity_type = cti_futures[cti_future]
             try:
-                future.result()
+                cti_future.result()
                 if args.verbose:
                     print(f"Completed {entity_type}")
             except Exception as e:

@@ -122,3 +122,8 @@ omit = ["*/tests/*", "*/__pycache__/*"]
 precision = 2
 show_missing = true
 skip_covered = false
+
+[tool.mypy]
+[[tool.mypy.overrides]]
+module = ["stix2.*", "toml.*"]
+ignore_missing_imports = true

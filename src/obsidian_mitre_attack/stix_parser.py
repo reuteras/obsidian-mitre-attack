@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 import time as time_module
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any
 
 import requests
 from stix2 import Filter, MemoryStore
@@ -37,12 +38,12 @@ class StixParser:
         self.version: str = version
         self.verbose: bool = verbose
 
-        self.techniques = list()
-        self.tactics = list()
-        self.mitigations = list()
-        self.data_components = list()
-        self.detection_strategies = list()
-        self.analytics = list()
+        self.techniques: list[MITRETechnique] = []
+        self.tactics: list[MITRETactic] = []
+        self.mitigations: list[MITREMitigation] = []
+        self.data_components: list[MITREDataComponent] = []
+        self.detection_strategies: list[MITREDetectionStrategy] = []
+        self.analytics: list[MITREAnalytic] = []
 
         self.verbose_log(
             message=f"Getting STIX data from {self.url} for version {self.version}"
@@ -257,7 +258,7 @@ class StixParser:
                 Filter(prop="relationship_type", op="=", value="uses"),
             ]
         )
-        uses_by_target = {}
+        uses_by_target: dict[str, list[Any]] = {}
         for rel in all_uses_relationships:
             target = rel.get("target_ref")
             if target:
@@ -673,7 +674,8 @@ class StixParser:
                                 external_references_added.add(ext_ref["source_name"])
                     item = {
                         "name": targeted_assets_name.replace(
-                            "/", "／"  # noqa: RUF001
+                            "/",
+                            "／",  # noqa: RUF001
                         ).replace(":", "："),  # noqa: RUF001
                         "id": targeted_assets_id,
                         "description": targeted_assets_description,
@@ -818,7 +820,7 @@ class StixParser:
         )
 
         # Build a dict mapping source_ref -> list of relationships
-        tech_relationships_by_source = {}
+        tech_relationships_by_source: dict[str, list[Any]] = {}
         for rel in (
             all_tech_relationships_enterprise
             + all_tech_relationships_mobile
@@ -908,7 +910,7 @@ class StixParser:
             ]
         )
 
-        soft_relationships_by_source = {}
+        soft_relationships_by_source: dict[str, list[Any]] = {}
         for rel in (
             all_soft_relationships_enterprise_malware
             + all_soft_relationships_enterprise_tool
@@ -1109,21 +1111,16 @@ class StixParser:
                                 if not technique_id:
                                     continue
 
+                                technique_parent_id = ""
+                                technique_parent_name = ""
                                 if technique.get("x_mitre_is_subtechnique"):
-                                    technique_parent_id: str = technique_id.split(".")[
-                                        0
-                                    ]
+                                    technique_parent_id = technique_id.split(".")[0]
                                     # Use cache instead of querying all three domains
                                     parent_tech = technique_by_external_id.get(
                                         technique_parent_id
                                     )
                                     if parent_tech:
                                         technique_parent_name = parent_tech["name"]
-                                    else:
-                                        technique_parent_name: str = ""
-                                else:
-                                    technique_parent_id: str = ""
-                                    technique_parent_name: str = ""
                                 if technique_parent_name:
                                     markdown_link: str = f"[[{technique_parent_name.replace('/', '／').replace(':', '：')} - {technique_parent_id} \\| {technique_parent_name.replace('/', '／').replace(':', '：')}]]: [[{technique_name.replace('/', '／').replace(':', '：')} - {technique_id} \\| {technique_name.replace('/', '／').replace(':', '：')}]]"  # noqa: RUF001
                                 else:
@@ -1213,8 +1210,8 @@ class StixParser:
         )
 
         # Build dictionaries: source_ref -> list of relationships
-        uses_by_source = {}
-        uses_by_target = {}
+        uses_by_source: dict[str, list[Any]] = {}
+        uses_by_target: dict[str, list[Any]] = {}
         for rel in (
             all_uses_relationships_enterprise
             + all_uses_relationships_mobile
@@ -2048,7 +2045,8 @@ class StixParser:
 
                             asset_obj.techniques_used = {
                                 "technique_name": technique.name.replace(
-                                    "/", "／"  # noqa: RUF001
+                                    "/",
+                                    "／",  # noqa: RUF001
                                 ).replace(":", "："),  # noqa: RUF001
                                 "technique_id": technique_id,
                                 "domain": domain,
@@ -2109,7 +2107,7 @@ class StixParser:
             ]
         )
 
-        data_components_by_source = {}
+        data_components_by_source: dict[str, list[Any]] = {}
         for dc in (
             all_data_components_enterprise
             + all_data_components_mobile
@@ -2141,7 +2139,7 @@ class StixParser:
             ]
         )
 
-        detects_by_source = {}
+        detects_by_source: dict[str, list[Any]] = {}
         for rel in all_detects_enterprise + all_detects_mobile + all_detects_ics:
             source = rel.get("source_ref")
             if source:
@@ -2298,7 +2296,8 @@ class StixParser:
 
                                 item = {
                                     "technique_name": technique_name.replace(
-                                        "/", "／"  # noqa: RUF001
+                                        "/",
+                                        "／",  # noqa: RUF001
                                     ).replace(":", "："),  # noqa: RUF001
                                     "technique_id": technique_id,
                                     "description": technique_description,
@@ -2382,7 +2381,7 @@ class StixParser:
             ]
         )
 
-        detects_by_source = {}
+        detects_by_source: dict[str, list[Any]] = {}
         for rel in all_detects_enterprise + all_detects_mobile + all_detects_ics:
             source = rel.get("source_ref")
             if source:
@@ -2493,7 +2492,8 @@ class StixParser:
 
                         item = {
                             "technique_name": technique_name.replace(
-                                "/", "／"  # noqa: RUF001
+                                "/",
+                                "／",  # noqa: RUF001
                             ).replace(":", "："),  # noqa: RUF001
                             "technique_id": technique_id,
                             "description": technique_description,
@@ -2582,7 +2582,7 @@ class StixParser:
             ]
         )
 
-        detects_by_source = {}
+        detects_by_source: dict[str, list[Any]] = {}
         for rel in (
             all_detects_relationships_enterprise
             + all_detects_relationships_mobile

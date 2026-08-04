@@ -747,7 +747,7 @@ class MarkdownGenerator:
             if group.aliases_references:
                 for alias in group.aliases_references:
                     if "url" in alias:
-                        name: str = alias["name"].replace(" ", "_")
+                        name = alias["name"].replace(" ", "_")
                         if name in cited_refs:
                             ref_lines.append(
                                 f"[^{name}]: [{alias['description']}]({alias['url']})"
@@ -1269,7 +1269,7 @@ class MarkdownGenerator:
 
         # Group data sources by domain
         for data_source in self.data_sources:
-            dirname: str = (
+            dirname = (
                 data_source.domain.replace("-", " ")
                 .capitalize()
                 .replace("Ics ", "ICS ")
@@ -1396,7 +1396,7 @@ class MarkdownGenerator:
 
         # Group data components by domain
         for data_component in self.data_components:
-            dirname: str = (
+            dirname = (
                 data_component.domain.replace("-", " ")
                 .capitalize()
                 .replace("Ics ", "ICS ")
@@ -1822,7 +1822,9 @@ class MarkdownGenerator:
                 description = description.replace("\n", " ").strip()
                 # Limit description length for table readability
                 if len(description) > MAX_TABLE_DESCRIPTION_LENGTH:
-                    description = description[: MAX_TABLE_DESCRIPTION_LENGTH - 3] + "..."
+                    description = (
+                        description[: MAX_TABLE_DESCRIPTION_LENGTH - 3] + "..."
+                    )
 
                 lines.append(
                     f"| {id_link} | {platforms_str} | {domain_str} | {ds_link} | {description} |"
