@@ -81,7 +81,7 @@ docstring-code-line-length = "dynamic"
 dev = [
     "mypy>=2.3.0",
     "pylint>=4.0.6",
-    "ruff>=0.16.0",
+    "ruff>=0.16.1",
 ]
 test = [
     "pytest>=9.1.1",
