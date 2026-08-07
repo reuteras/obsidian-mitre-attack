@@ -10,6 +10,7 @@ Convert MITRE ATT&CK® knowledge base to Obsidian-compatible Markdown notes with
 This project parses MITRE ATT&CK® STIX 2.1 data and converts it into beautifully structured Markdown files optimized for [Obsidian](https://obsidian.md/). The generated notes include cross-references, tags, and metadata that leverage Obsidian's powerful linking, graph view, and query capabilities.
 
 **What's included:**
+
 - ✅ All three ATT&CK domains: Enterprise, Mobile, and ICS
 - ✅ Comprehensive coverage: Tactics, Techniques, Mitigations, Groups, Software, Campaigns, Assets, Data Sources
 - ✅ Automatic internal linking using Obsidian's `[[wikilinks]]` syntax
@@ -57,6 +58,7 @@ uv run obsidian-mitre-attack --output $(pwd)/output --tags 'mitre/'
 ### Comprehensive Cross-Linking
 
 All entities are automatically linked:
+
 - Techniques → Tactics, Mitigations, Detection Strategies, Groups, Software
 - Groups → Techniques, Software, Campaigns
 - Software → Techniques, Groups, Campaigns
@@ -65,6 +67,7 @@ All entities are automatically linked:
 ### Obsidian Integration
 
 Generated notes include:
+
 - **YAML frontmatter** with aliases and tags
 - **Callouts** for metadata and summaries
 - **Tables** for procedures, mitigations, and detections
@@ -99,6 +102,7 @@ WHERE contains(file.inlinks, this.file.link)
 ### Graph View Navigation
 
 The interconnected structure creates a rich graph visualization:
+
 - See relationships between groups, techniques, and mitigations
 - Identify coverage gaps in detection strategies
 - Explore campaign attribution paths
@@ -126,21 +130,25 @@ embed_analytics_in_detection_strategies = false
 When `embed_analytics_in_detection_strategies = true`:
 
 **Pros:**
+
 - View all analytics in one file (like MITRE website)
 - Reduced file count
 - Better for overview and comparison
 
 **Cons:**
+
 - Requires [obsidian-tab-panels](https://github.com/GnoxNahte/obsidian-tab-panels) plugin
 - Larger individual files
 - Less modular
 
 **Technique files link to sections:**
+
 ```markdown
 | [[Detection Strategy - DET0324#Analytic 0919 | AN0919]] | Identifies self-modifying executables... |
 ```
 
 **Detection Strategy files contain:**
+
 ```markdown
 ### Associated Analytics
 
@@ -234,6 +242,7 @@ pre-commit run --all-files
 ```
 
 Configured hooks:
+
 - **Ruff** - Python linting and formatting
 - **Markdownlint** - Markdown formatting
 - **Checkov** - GitHub Actions security scanning
@@ -242,6 +251,7 @@ Configured hooks:
 ### Code Quality
 
 This project uses:
+
 - **Ruff** for linting and formatting
 - **Pylint** for additional checks
 - **pytest** for testing
@@ -254,6 +264,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for complete history.
 ## Contributing
 
 Contributions are welcome! Please:
+
 1. Fork the repository
 2. Create a feature branch
 3. Add tests for new features

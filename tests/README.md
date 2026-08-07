@@ -110,6 +110,7 @@ Tests are marked with the following pytest markers:
 ## Coverage
 
 Test coverage reports are generated in:
+
 - Terminal output (with `--cov`)
 - HTML report in `htmlcov/` directory
 
@@ -124,6 +125,7 @@ xdg-open htmlcov/index.html  # On Linux
 ## Continuous Integration
 
 Tests run automatically on GitHub Actions for:
+
 - Pull requests
 - Pushes to main branch
 - Manual workflow dispatch
@@ -160,6 +162,7 @@ class TestMyFeature:
 ### Tests Fail on First Run
 
 First-time test runs download STIX data from MITRE's repository. If downloads fail:
+
 1. Check internet connectivity
 2. Verify the MITRE repository URL is accessible
 3. Try running with `--timeout=600` to allow more time for downloads
@@ -167,6 +170,7 @@ First-time test runs download STIX data from MITRE's repository. If downloads fa
 ### Cache Directory Issues
 
 If you encounter issues with cached data:
+
 ```bash
 # Clear cache and try again
 rm -rf tests/fixtures/cache/
@@ -176,6 +180,7 @@ uv run pytest
 ### Import Errors
 
 Make sure dependencies are installed:
+
 ```bash
 uv sync --group test
 ```

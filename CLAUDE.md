@@ -9,6 +9,7 @@ This is a Python tool that parses MITRE ATT&CK STIX data and converts it into Ob
 ## Key Commands
 
 ### Development Environment
+
 ```bash
 # Setup virtual environment using uv
 uv venv
@@ -19,6 +20,7 @@ uv sync
 ```
 
 ### Running the Application
+
 ```bash
 # Basic run with default config
 uv run obsidian-mitre-attack
@@ -31,6 +33,7 @@ uv run obsidian-mitre-attack --verbose
 ```
 
 ### Code Quality
+
 ```bash
 # Format and lint code
 uv run ruff format src/
@@ -71,6 +74,7 @@ uv run pylint src/
 ## Configuration
 
 The `config.toml` file contains:
+
 - `repository_url`: MITRE STIX data repository URL
 - `output_dir`: Default output directory
 - `version`: ATT&CK version to download (currently 16.1)
@@ -87,6 +91,7 @@ The `config.toml` file contains:
 ## Output Structure
 
 Generated Markdown files include:
+
 - Proper YAML frontmatter with aliases and tags
 - Cross-referenced internal links using Obsidian `[[link]]` syntax
 - MITRE ATT&CK ID references and external URLs

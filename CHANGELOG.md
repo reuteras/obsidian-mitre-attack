@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Support for MITRE ATT&CK v18.0
 - Detection Strategies with full cross-linking to techniques
 - Analytics with detailed log sources and mutable elements
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions badges in README
 
 ### Changed
+
 - Updated to ATT&CK STIX data version 18.0
 - Rewrote README with comprehensive documentation
 - Improved markdown generator for detection strategies
@@ -31,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test workflow now caches STIX data for faster CI runs
 
 ### Fixed
+
 - All Ruff linting errors resolved with appropriate noqa comments
 - Unused variable warnings (RUF059, F841)
 - Complex function warnings (PLR0915, PLR0912) with noqa annotations
@@ -39,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parsing order to ensure analytics are available before linking
 
 ### Performance
+
 - Added caching for technique lookups in groups parsing
 - Pre-cache relationships and objects for faster detection strategy parsing
 - Optimized software parsing with relationship caching
@@ -47,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [16.1.0] - 2024-10-15
 
 ### Added
+
 - Support for MITRE ATT&CK v16.1
 - Assets and targeted assets support
 - Data sources with data components
@@ -54,11 +59,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved external reference handling
 
 ### Changed
+
 - Updated to use `uv` for dependency management
 - Improved test coverage
 - Enhanced markdown formatting
 
 ### Fixed
+
 - Various markdown output issues
 - External reference filtering to only include cited footnotes
 - Procedure example formatting
@@ -66,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [15.1.0] - 2024-06-20
 
 ### Added
+
 - Initial support for three ATT&CK domains (Enterprise, Mobile, ICS)
 - Tactics, Techniques, Mitigations, Groups, Software
 - Obsidian wikilink formatting
@@ -73,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Graph view support through cross-linking
 
 ### Changed
+
 - Fork from original vincenzocaputo/obsidian-mitre-attack
 - Removed canvas generation feature
 - Added full domain coverage (not just enterprise)
