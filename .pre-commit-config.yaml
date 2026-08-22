@@ -13,12 +13,12 @@ repos:
       - id: mixed-line-ending
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.2
+    rev: v0.16.4
     hooks:
       # Run the linter
       - id: ruff
   - repo: https://github.com/editorconfig-checker/editorconfig-checker.python
-    rev: 3.8.0
+    rev: 3.11.1
     hooks:
       - id: editorconfig-checker
         alias: ec
