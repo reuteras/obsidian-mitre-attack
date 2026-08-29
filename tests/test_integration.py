@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-import toml
 
 from obsidian_mitre_attack import create_main_readme, main
 
@@ -74,7 +73,13 @@ class TestErrorHandling:
 
         config_file = tmp_path / "config.toml"
         with open(config_file, "w", encoding="utf-8") as f:
-            toml.dump(config, f)
+            for key, value in config.items():
+                if isinstance(value, bool):
+                    f.write(f"{key} = {str(value).lower()}\n")
+                elif isinstance(value, str):
+                    f.write(f'{key} = "{value}"\n')
+                else:
+                    f.write(f"{key} = {value}\n")
 
         monkeypatch.chdir(tmp_path)
 

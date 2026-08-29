@@ -15,7 +15,6 @@ requires-python = ">=3.11"
 dependencies = [
     "requests>=2.34.2",
     "stix2>=3.0.1",
-    "toml>=0.10.2",
 ]
 
 [build-system]
@@ -125,5 +124,5 @@ skip_covered = false
 
 [tool.mypy]
 [[tool.mypy.overrides]]
-module = ["stix2.*", "toml.*"]
+module = ["stix2.*"]
 ignore_missing_imports = true

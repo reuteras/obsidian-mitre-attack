@@ -5,11 +5,10 @@ from __future__ import annotations
 import argparse
 import datetime
 import time
+import tomllib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
-
-import toml
 
 from .markdown_generator import MarkdownGenerator
 from .stix_parser import StixParser
@@ -88,8 +87,8 @@ def main(argv: list[str] | None = None) -> None:  # noqa: PLR0915
     args: argparse.Namespace = parser.parse_args(argv)
 
     try:
-        with open(file="config.toml", encoding="utf8") as fd:
-            config: dict[str, Any] = toml.load(f=fd)
+        with open(file="config.toml", mode="rb") as fd:
+            config: dict[str, Any] = tomllib.load(fd)
     except FileNotFoundError as error:
         raise FileNotFoundError("You need to create a 'config.toml' file.") from error
 
