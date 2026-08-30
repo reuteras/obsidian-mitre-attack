@@ -208,15 +208,10 @@ output/
 
 ### Setup
 
+Clone and install as in "Quick Start → Option 2" above, then:
+
 ```bash
-# Clone repository
-git clone https://github.com/reuteras/obsidian-mitre-attack.git
-cd obsidian-mitre-attack
-
-# Install dependencies
-uv sync
-
-# Install pre-commit hooks (recommended)
+# Install pre-commit hooks
 pip install pre-commit
 pre-commit install
 
@@ -228,20 +223,7 @@ uv run ruff check src/
 uv run ruff format src/
 ```
 
-### Pre-commit Hooks
-
-Pre-commit hooks are configured to automatically check code quality before commits:
-
-```bash
-# Install hooks
-pip install pre-commit
-pre-commit install
-
-# Run manually on all files
-pre-commit run --all-files
-```
-
-Configured hooks:
+Configured pre-commit hooks:
 
 - **Ruff** - Python linting and formatting
 - **Markdownlint** - Markdown formatting

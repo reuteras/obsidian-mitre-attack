@@ -8,41 +8,7 @@ This is a Python tool that parses MITRE ATT&CK STIX data and converts it into Ob
 
 ## Key Commands
 
-### Development Environment
-
-```bash
-# Setup virtual environment using uv
-uv venv
-source .venv/bin/activate
-
-# Install dependencies
-uv sync
-```
-
-### Running the Application
-
-```bash
-# Basic run with default config
-uv run obsidian-mitre-attack
-
-# Custom output directory and tags
-uv run obsidian-mitre-attack --output $(pwd)/output --tags 'mitre/'
-
-# Verbose mode
-uv run obsidian-mitre-attack --verbose
-```
-
-### Code Quality
-
-```bash
-# Format and lint code
-uv run ruff format src/
-uv run ruff check src/
-uv run ruff check --fix src/
-
-# Run pylint
-uv run pylint src/
-```
+Setup, running, and code-quality commands are in [README.md](README.md) ("Quick Start" and "Development"); test commands are in [tests/README.md](tests/README.md). This section only covers what's specific to working on the codebase itself.
 
 ## Architecture
 
@@ -77,7 +43,7 @@ The `config.toml` file contains:
 
 - `repository_url`: MITRE STIX data repository URL
 - `output_dir`: Default output directory
-- `version`: ATT&CK version to download (currently 16.1)
+- `version`: ATT&CK version to download (see `default-config.toml` for the current default)
 - `verbose`: Enable verbose logging
 
 ## Code Quality Standards
