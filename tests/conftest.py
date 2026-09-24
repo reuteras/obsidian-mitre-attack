@@ -9,8 +9,11 @@ from typing import Any
 
 import pytest
 import requests
+import yaml
 from stix2 import MemoryStore
 
+from obsidian_mitre_attack.atlas_markdown_generator import AtlasMarkdownGenerator
+from obsidian_mitre_attack.atlas_parser import AtlasParser
 from obsidian_mitre_attack.markdown_generator import MarkdownGenerator
 from obsidian_mitre_attack.stix_parser import StixParser
 
@@ -116,6 +119,92 @@ def parsed_stix_data(stix_parser: StixParser) -> StixParser:
     stix_parser.get_cti_data()
 
     return stix_parser
+
+
+@pytest.fixture(scope="session")
+def atlas_test_config() -> dict[str, Any]:
+    """Provide test configuration for ATLAS."""
+    return {
+        "atlas_repository_url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main",
+        "atlas_version": "2026.05",  # Use a stable, fixed release for testing
+        "verbose": False,
+    }
+
+
+@pytest.fixture(scope="session")
+def download_atlas_data(
+    atlas_test_config: dict[str, Any], cache_dir: Path
+) -> dict[str, Any]:
+    """Download and cache ATLAS data.
+
+    This fixture downloads the real ATLAS YAML once per test session and caches
+    it, avoiding repeated downloads and any manifest.yaml drift in "latest".
+    """
+    cache_file = cache_dir / f"atlas-{atlas_test_config['atlas_version']}.yaml"
+
+    if cache_file.exists():
+        with open(cache_file, encoding="utf-8") as f:
+            return yaml.safe_load(f)
+
+    parser = AtlasParser(
+        repo_url=atlas_test_config["atlas_repository_url"],
+        version=atlas_test_config["atlas_version"],
+        verbose=False,
+    )
+    parser.get_data()
+
+    with open(cache_file, "w", encoding="utf-8") as f:
+        yaml.safe_dump(parser.data, f)
+
+    return parser.data
+
+
+@pytest.fixture(scope="session")
+def atlas_parser(
+    atlas_test_config: dict[str, Any], download_atlas_data: dict[str, Any]
+) -> AtlasParser:
+    """Provide an AtlasParser instance with real ATLAS data loaded.
+
+    This fixture creates an AtlasParser and injects cached data directly,
+    avoiding network calls during tests.
+    """
+    parser = AtlasParser.__new__(AtlasParser)
+    parser.url = atlas_test_config["atlas_repository_url"]
+    parser.version = atlas_test_config["atlas_version"]
+    parser.verbose = atlas_test_config["verbose"]
+    parser.tactics = []
+    parser.techniques = []
+    parser.mitigations = []
+    parser.case_studies = []
+    parser.resolved_version = atlas_test_config["atlas_version"]
+    parser.data = download_atlas_data
+
+    return parser
+
+
+@pytest.fixture
+def parsed_atlas_data(atlas_parser: AtlasParser) -> AtlasParser:
+    """Provide a fully parsed AtlasParser instance."""
+    atlas_parser.parse()
+    return atlas_parser
+
+
+@pytest.fixture
+def atlas_markdown_generator(
+    parsed_atlas_data: AtlasParser, temp_output_dir: Path
+) -> AtlasMarkdownGenerator:
+    """Provide an AtlasMarkdownGenerator instance with parsed data."""
+    args = argparse.Namespace(
+        output=str(temp_output_dir),
+        tags="test/",
+        verbose=False,
+    )
+
+    return AtlasMarkdownGenerator(
+        output_dir=str(temp_output_dir),
+        atlas_data=parsed_atlas_data,
+        arguments=args,
+    )
 
 
 @pytest.fixture

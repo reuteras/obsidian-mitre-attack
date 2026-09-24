@@ -13,6 +13,7 @@ This project parses MITRE ATT&CK® STIX 2.1 data and converts it into beautifull
 
 - ✅ All three ATT&CK domains: Enterprise, Mobile, and ICS
 - ✅ Comprehensive coverage: Tactics, Techniques, Mitigations, Groups, Software, Campaigns, Assets, Data Sources
+- ✅ [MITRE ATLAS™](https://atlas.mitre.org/) coverage (Tactics, Techniques, Mitigations, Case Studies), on by default
 - ✅ Automatic internal linking using Obsidian's `[[wikilinks]]` syntax
 - ✅ YAML frontmatter with aliases and tags for advanced querying
 - ✅ Two output modes: standard (separate files) or embedded (requires plugin)
@@ -123,7 +124,31 @@ verbose = true
 # When true: Analytics embedded as tabs (requires obsidian-tab-panels plugin)
 # When false: Analytics as separate linked files (default)
 embed_analytics_in_detection_strategies = false
+
+# Also download MITRE ATLAS (Adversarial Threat Landscape for AI Systems) data
+# and generate notes for it under output/ATLAS/. On by default.
+atlas_enabled = true
+atlas_repository_url = "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main"
+# Pinned to a specific release string for reproducible output. Set to
+# "latest" instead to always resolve to the newest monthly release.
+atlas_version = "2026.09"
 ```
+
+### MITRE ATLAS
+
+By default (`atlas_enabled = true`), [MITRE ATLAS™](https://atlas.mitre.org/) — a
+knowledge base of adversary tactics and techniques against AI systems, modeled
+after ATT&CK — is downloaded from
+[mitre-atlas/atlas-data](https://github.com/mitre-atlas/atlas-data) and rendered
+as Obsidian notes under `output/ATLAS/`: Tactics, Techniques, Mitigations and Case
+Studies, cross-linked the same way as the ATT&CK notes. Set `atlas_enabled = false`
+to skip it. ATLAS has no domain split (one matrix), so its tags are namespaced
+(`atlas`, `atlas_tactic`, `atlas_technique`, `atlas_mitigation`,
+`atlas_case_study`) to keep them distinct from the ATT&CK tags in Dataview
+queries. `atlas_version` is pinned to a specific monthly release by default
+(matching the `atlas_data` release used to write this doc); set it to `"latest"`
+to always follow the newest release instead, or bump the pinned string yourself
+when you want to pick up new ATLAS content.
 
 ### Embedded Analytics Mode
 
@@ -193,10 +218,16 @@ output/
 │   ├── Data_Sources/
 │   ├── Detection_Strategies/  # NEW in v18
 │   └── Analytics/             # Separate files when embed=false
-└── CTI/
-    ├── Groups/
-    ├── Software/
-    └── Campaigns/
+├── CTI/
+│   ├── Groups/
+│   ├── Software/
+│   └── Campaigns/
+└── ATLAS/
+    ├── Tactics/
+    ├── Techniques/
+    ├── Defenses/
+    │   └── Mitigations/
+    └── Case Studies/
 ```
 
 ## Development
@@ -263,10 +294,12 @@ MIT License - see [LICENSE](./LICENSE) file.
 - Original project by [Vincenzo Caputo](https://github.com/vincenzocaputo/obsidian-mitre-attack)
 - MITRE ATT&CK® framework by [MITRE Corporation](https://attack.mitre.org/)
 - STIX data from [mitre-attack/attack-stix-data](https://github.com/mitre-attack/attack-stix-data)
+- MITRE ATLAS™ data from [mitre-atlas/atlas-data](https://github.com/mitre-atlas/atlas-data) (Apache-2.0 licensed)
 
 ## Resources
 
 - [MITRE ATT&CK®](https://attack.mitre.org/)
+- [MITRE ATLAS™](https://atlas.mitre.org/)
 - [Obsidian](https://obsidian.md/)
 - [Dataview Plugin](https://github.com/blacksmithgu/obsidian-dataview)
 - [Tab Panels Plugin](https://github.com/GnoxNahte/obsidian-tab-panels)
@@ -274,3 +307,4 @@ MIT License - see [LICENSE](./LICENSE) file.
 ---
 
 MITRE ATT&CK® is a registered trademark of The MITRE Corporation.
+MITRE ATLAS™ is a trademark of The MITRE Corporation.

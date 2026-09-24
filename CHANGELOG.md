@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- MITRE ATLAS support (`atlas_enabled` in `config.toml`, on by default): downloads
+  [mitre-atlas/atlas-data](https://github.com/mitre-atlas/atlas-data) and
+  generates Obsidian notes for ATLAS Tactics, Techniques, Mitigations, and Case
+  Studies under `output/ATLAS/`, cross-linked in the same style as the existing
+  ATT&CK notes. `atlas_version` is pinned to a specific monthly release by
+  default for reproducible output; set it to `"latest"` to always follow the
+  newest release.
 - Support for MITRE ATT&CK v18.0
 - Detection Strategies with full cross-linking to techniques
 - Analytics with detailed log sources and mutable elements

@@ -10,8 +10,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
+from .atlas_markdown_generator import AtlasMarkdownGenerator
+from .atlas_parser import AtlasParser
 from .markdown_generator import MarkdownGenerator
 from .stix_parser import StixParser
+
+DEFAULT_ATLAS_REPOSITORY_URL = (
+    "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main"
+)
 
 
 def generate_domain_markdown(markdown_generator: MarkdownGenerator, domain: str) -> str:
@@ -23,7 +29,10 @@ def generate_domain_markdown(markdown_generator: MarkdownGenerator, domain: str)
 
 
 def create_main_readme(
-    arguments: argparse.Namespace, domains: list[str], config: dict[str, Any]
+    arguments: argparse.Namespace,
+    domains: list[str],
+    config: dict[str, Any],
+    atlas_version: str = "",
 ) -> None:
     """Create the main README file for the MITRE ATT&CK collection."""
     attack_file = Path(arguments.output, "MITRE ATT&CK.md")
@@ -48,12 +57,19 @@ def create_main_readme(
             content += (
                 "- " + domain + " version " + str(object=config["version"]) + ".\n"
             )
+        if atlas_version:
+            content += (
+                f"\nAlso includes MITRE ATLAS[^atlas] data (release {atlas_version}) "
+                "under `ATLAS/`.\n"
+            )
         content += "\n[^obsidian-mitre-attack]: [https://github.com/reuteras/obsidian-mitre-attack](https://github.com/reuteras/obsidian-mitre-attack)\n"
         content += "[^mitre]: [MITRE ATT&CK®](https://attack.mitre.org/)\n"
+        if atlas_version:
+            content += "[^atlas]: [MITRE ATLAS™](https://atlas.mitre.org/)\n"
         fd.write(content)
 
 
-def main(argv: list[str] | None = None) -> None:  # noqa: PLR0915
+def main(argv: list[str] | None = None) -> None:  # noqa: PLR0912, PLR0915
     """Main function for obsidian-mitre-attack.
 
     Args:
@@ -188,9 +204,43 @@ def main(argv: list[str] | None = None) -> None:  # noqa: PLR0915
     print(f"✓ CTI markdown generated ({time.time() - cti_gen_start:.2f}s)")
     print(f"✓ Total markdown generation time: {time.time() - markdown_start:.2f}s")
 
+    # Generate MITRE ATLAS markdown, if enabled
+    atlas_resolved_version = ""
+    if config.get("atlas_enabled", False):
+        atlas_start = time.time()
+        atlas_version: str = config.get("atlas_version", "latest")
+        print(f"\nDownloading MITRE ATLAS data (version: {atlas_version})...")
+
+        atlas_data = AtlasParser(
+            repo_url=config.get("atlas_repository_url", DEFAULT_ATLAS_REPOSITORY_URL),
+            version=atlas_version,
+            verbose=args.verbose,
+        )
+        atlas_data.get_data()
+        atlas_data.parse()
+        atlas_resolved_version = atlas_data.resolved_version
+        print(f"✓ ATLAS data parsed ({time.time() - atlas_start:.2f}s)")
+
+        atlas_markdown_generator = AtlasMarkdownGenerator(
+            output_dir=output_dir,
+            atlas_data=atlas_data,
+            arguments=args,
+            config=config,
+        )
+        atlas_markdown_generator.create_tactic_notes()
+        atlas_markdown_generator.create_technique_notes()
+        atlas_markdown_generator.create_mitigation_notes()
+        atlas_markdown_generator.create_case_study_notes()
+        print(f"✓ ATLAS markdown generated ({time.time() - atlas_start:.2f}s)")
+
     # Generate Main README file
     readme_start = time.time()
-    create_main_readme(arguments=args, domains=domains, config=config)
+    create_main_readme(
+        arguments=args,
+        domains=domains,
+        config=config,
+        atlas_version=atlas_resolved_version,
+    )
     print(f"✓ README generated ({time.time() - readme_start:.2f}s)")
 
     print(f"\n{'=' * 60}")
