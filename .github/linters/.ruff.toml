@@ -1,0 +1,3 @@
+# Super-linter passes this file to Ruff with --config, so reuse the
+# project settings from pyproject.toml instead of super-linter defaults.
+extend = "../../pyproject.toml"
