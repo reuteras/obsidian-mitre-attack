@@ -275,6 +275,22 @@ class TestStixParserCampaigns:
             assert campaign.id is not None
             assert campaign.internal_id is not None
 
+    def test_campaign_technique_domains(self, stix_parser: StixParser):
+        """Test that cross-domain campaigns label techniques with their own domain."""
+        stix_parser._get_groups()
+        stix_parser._get_campaigns()
+
+        domains = {
+            technique["domain"][0]
+            for campaign in stix_parser.campaigns
+            for technique in campaign.techniques_used
+        }
+        assert {"enterprise-attack", "ics-attack"} <= domains
+        for campaign in stix_parser.campaigns:
+            for technique in campaign.techniques_used:
+                if technique["technique_id"].startswith("T0"):
+                    assert technique["domain"] == ["ics-attack"]
+
 
 @pytest.mark.integration
 @pytest.mark.slow

@@ -323,7 +323,7 @@ class MarkdownGenerator:
             ]
             for asset in sorted(technique.targeted_assets, key=lambda x: x["id"]):
                 lines.append(
-                    f"| [[{asset['name']} - {asset['id']} \\| {asset['id']}]] | [[{asset['name']} - {asset['id']} \\| {asset['name']}]] |"
+                    f"| [[{asset['name']} \\| {asset['id']}]] | [[{asset['name']} \\| {asset['name']}]] |"
                 )
             return content + "\n".join(lines)
         return content
@@ -1649,6 +1649,25 @@ class MarkdownGenerator:
                     ):
                         lines.append(
                             f"| [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_id']}]] | [[{technique['technique_name']} - {technique['technique_id']} \\| {technique['technique_name']}]] |"
+                        )
+
+                # Assets targeted by the detected techniques (ICS)
+                if detection_strategy.assets:
+                    lines.extend(
+                        [
+                            "",
+                            "",
+                            "### Targeted Assets",
+                            "",
+                            "| ID | Asset |",
+                            "| --- | --- |",
+                        ]
+                    )
+                    for asset in sorted(
+                        detection_strategy.assets, key=lambda x: x["id"]
+                    ):
+                        lines.append(
+                            f"| [[{asset['name']} \\| {asset['id']}]] | [[{asset['name']} \\| {asset['name']}]] |"
                         )
 
                 # Analytics associated with this strategy

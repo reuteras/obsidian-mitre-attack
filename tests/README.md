@@ -147,6 +147,7 @@ When adding new features, please add corresponding tests:
 import pytest
 from obsidian_mitre_attack.models import MITREObject
 
+
 @pytest.mark.unit
 class TestMyFeature:
     """Test my new feature."""
