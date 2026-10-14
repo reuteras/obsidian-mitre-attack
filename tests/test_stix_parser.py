@@ -58,12 +58,10 @@ class TestStixParserInitialization:
 class TestStixParserTactics:
     """Test tactic parsing with real data."""
 
-    def test_get_tactics_enterprise(self, stix_parser: StixParser):
+    def test_get_tactics_enterprise(self, parsed_stix_data: StixParser):
         """Test parsing tactics from enterprise domain."""
-        stix_parser._get_tactics(domain="enterprise-attack")
-
         enterprise_tactics = [
-            t for t in stix_parser.tactics if t.domain == "enterprise-attack"
+            t for t in parsed_stix_data.tactics if t.domain == "enterprise-attack"
         ]
         assert len(enterprise_tactics) > 0
 
@@ -75,11 +73,9 @@ class TestStixParserTactics:
         assert tactic.domain == "enterprise-attack"
         assert tactic.url != ""
 
-    def test_tactics_have_required_fields(self, stix_parser: StixParser):
+    def test_tactics_have_required_fields(self, parsed_stix_data: StixParser):
         """Test that parsed tactics have all required fields."""
-        stix_parser._get_tactics(domain="enterprise-attack")
-
-        for tactic in stix_parser.tactics:
+        for tactic in parsed_stix_data.tactics:
             assert tactic.name is not None
             assert tactic.id is not None
             assert tactic.description is not None
@@ -88,19 +84,15 @@ class TestStixParserTactics:
             assert tactic.created is not None
             assert tactic.modified is not None
 
-    def test_tactic_no_forward_slashes(self, stix_parser: StixParser):
+    def test_tactic_no_forward_slashes(self, parsed_stix_data: StixParser):
         """Test that tactic names don't contain forward slashes."""
-        stix_parser._get_tactics(domain="enterprise-attack")
-
-        for tactic in stix_parser.tactics:
+        for tactic in parsed_stix_data.tactics:
             assert "/" not in tactic.name
 
-    def test_tactics_not_deprecated_or_revoked(self, stix_parser: StixParser):
+    def test_tactics_not_deprecated_or_revoked(self, parsed_stix_data: StixParser):
         """Test that deprecated/revoked tactics are filtered out."""
-        stix_parser._get_tactics(domain="enterprise-attack")
-
         # All parsed tactics should be valid (not deprecated or revoked)
-        assert len(stix_parser.tactics) > 0
+        assert len(parsed_stix_data.tactics) > 0
 
 
 @pytest.mark.integration
@@ -108,23 +100,16 @@ class TestStixParserTactics:
 class TestStixParserTechniques:
     """Test technique parsing with real data."""
 
-    def test_get_techniques_enterprise(self, stix_parser: StixParser):
+    def test_get_techniques_enterprise(self, parsed_stix_data: StixParser):
         """Test parsing techniques from enterprise domain."""
-        # Need tactics first for relationships
-        stix_parser._get_tactics(domain="enterprise-attack")
-        stix_parser._get_techniques(domain="enterprise-attack")
-
         enterprise_techniques = [
-            t for t in stix_parser.techniques if t.domain == "enterprise-attack"
+            t for t in parsed_stix_data.techniques if t.domain == "enterprise-attack"
         ]
         assert len(enterprise_techniques) > 0
 
-    def test_techniques_have_required_fields(self, stix_parser: StixParser):
+    def test_techniques_have_required_fields(self, parsed_stix_data: StixParser):
         """Test that parsed techniques have all required fields."""
-        stix_parser._get_tactics(domain="enterprise-attack")
-        stix_parser._get_techniques(domain="enterprise-attack")
-
-        for technique in stix_parser.techniques[:10]:  # Check first 10
+        for technique in parsed_stix_data.techniques[:10]:  # Check first 10
             assert technique.name is not None
             assert technique.id is not None
             assert technique.description is not None
@@ -132,13 +117,10 @@ class TestStixParserTechniques:
             assert isinstance(technique.is_subtechnique, bool)
             assert technique.main_id is not None
 
-    def test_technique_subtechnique_relationship(self, stix_parser: StixParser):
+    def test_technique_subtechnique_relationship(self, parsed_stix_data: StixParser):
         """Test that subtechniques are properly linked to parent techniques."""
-        stix_parser._get_tactics(domain="enterprise-attack")
-        stix_parser._get_techniques(domain="enterprise-attack")
-
         # Find a subtechnique
-        subtechniques = [t for t in stix_parser.techniques if t.is_subtechnique]
+        subtechniques = [t for t in parsed_stix_data.techniques if t.is_subtechnique]
         assert len(subtechniques) > 0
 
         # Check subtechnique has parent info
@@ -146,12 +128,9 @@ class TestStixParserTechniques:
         assert subtechnique.parent_name != ""
         assert "." in subtechnique.id  # Subtechniques have format T1234.001
 
-    def test_technique_main_id(self, stix_parser: StixParser):
+    def test_technique_main_id(self, parsed_stix_data: StixParser):
         """Test that main_id is correctly set for techniques and subtechniques."""
-        stix_parser._get_tactics(domain="enterprise-attack")
-        stix_parser._get_techniques(domain="enterprise-attack")
-
-        for technique in stix_parser.techniques[:20]:
+        for technique in parsed_stix_data.techniques[:20]:
             if technique.is_subtechnique:
                 # Subtechnique main_id should be the parent ID
                 assert "." not in technique.main_id
@@ -166,20 +145,16 @@ class TestStixParserTechniques:
 class TestStixParserMitigations:
     """Test mitigation parsing with real data."""
 
-    def test_get_mitigations_enterprise(self, stix_parser: StixParser):
+    def test_get_mitigations_enterprise(self, parsed_stix_data: StixParser):
         """Test parsing mitigations from enterprise domain."""
-        stix_parser._get_mitigations(domain="enterprise-attack")
-
         enterprise_mitigations = [
-            m for m in stix_parser.mitigations if m.domain == "enterprise-attack"
+            m for m in parsed_stix_data.mitigations if m.domain == "enterprise-attack"
         ]
         assert len(enterprise_mitigations) > 0
 
-    def test_mitigations_have_required_fields(self, stix_parser: StixParser):
+    def test_mitigations_have_required_fields(self, parsed_stix_data: StixParser):
         """Test that parsed mitigations have all required fields."""
-        stix_parser._get_mitigations(domain="enterprise-attack")
-
-        for mitigation in stix_parser.mitigations[:10]:
+        for mitigation in parsed_stix_data.mitigations[:10]:
             assert mitigation.name is not None
             assert mitigation.id is not None
             assert mitigation.description is not None
@@ -192,29 +167,23 @@ class TestStixParserMitigations:
 class TestStixParserGroups:
     """Test group parsing with real data."""
 
-    def test_get_groups(self, stix_parser: StixParser):
+    def test_get_groups(self, parsed_stix_data: StixParser):
         """Test parsing groups from all domains."""
-        stix_parser._get_groups()
+        assert len(parsed_stix_data.groups) > 0
 
-        assert len(stix_parser.groups) > 0
-
-    def test_groups_have_required_fields(self, stix_parser: StixParser):
+    def test_groups_have_required_fields(self, parsed_stix_data: StixParser):
         """Test that parsed groups have all required fields."""
-        stix_parser._get_groups()
-
-        for group in stix_parser.groups[:10]:
+        for group in parsed_stix_data.groups[:10]:
             assert isinstance(group, MITREGroup)
             assert group.name is not None
             assert group.id is not None
             assert group.internal_id is not None
             assert isinstance(group.aliases, list)
 
-    def test_group_aliases(self, stix_parser: StixParser):
+    def test_group_aliases(self, parsed_stix_data: StixParser):
         """Test that groups have aliases."""
-        stix_parser._get_groups()
-
         # Most groups should have at least their name in aliases
-        groups_with_aliases = [g for g in stix_parser.groups if len(g.aliases) > 0]
+        groups_with_aliases = [g for g in parsed_stix_data.groups if len(g.aliases) > 0]
         assert len(groups_with_aliases) > 0
 
 
@@ -223,29 +192,23 @@ class TestStixParserGroups:
 class TestStixParserSoftware:
     """Test software parsing with real data."""
 
-    def test_get_software(self, stix_parser: StixParser):
+    def test_get_software(self, parsed_stix_data: StixParser):
         """Test parsing software from all domains."""
-        stix_parser._get_software()
+        assert len(parsed_stix_data.software) > 0
 
-        assert len(stix_parser.software) > 0
-
-    def test_software_have_required_fields(self, stix_parser: StixParser):
+    def test_software_have_required_fields(self, parsed_stix_data: StixParser):
         """Test that parsed software have all required fields."""
-        stix_parser._get_software()
-
-        for software in stix_parser.software[:10]:
+        for software in parsed_stix_data.software[:10]:
             assert isinstance(software, MITRESoftware)
             assert software.name is not None
             assert software.id is not None
             assert software.internal_id is not None
             assert software.type in ["malware", "tool"]
 
-    def test_software_types(self, stix_parser: StixParser):
+    def test_software_types(self, parsed_stix_data: StixParser):
         """Test that software includes both malware and tools."""
-        stix_parser._get_software()
-
-        malware = [s for s in stix_parser.software if s.type == "malware"]
-        tools = [s for s in stix_parser.software if s.type == "tool"]
+        malware = [s for s in parsed_stix_data.software if s.type == "malware"]
+        tools = [s for s in parsed_stix_data.software if s.type == "tool"]
 
         assert len(malware) > 0
         assert len(tools) > 0
@@ -256,37 +219,27 @@ class TestStixParserSoftware:
 class TestStixParserCampaigns:
     """Test campaign parsing with real data."""
 
-    def test_get_campaigns(self, stix_parser: StixParser):
+    def test_get_campaigns(self, parsed_stix_data: StixParser):
         """Test parsing campaigns from all domains."""
-        # Groups needed for campaign relationships
-        stix_parser._get_groups()
-        stix_parser._get_campaigns()
+        assert len(parsed_stix_data.campaigns) > 0
 
-        assert len(stix_parser.campaigns) > 0
-
-    def test_campaigns_have_required_fields(self, stix_parser: StixParser):
+    def test_campaigns_have_required_fields(self, parsed_stix_data: StixParser):
         """Test that parsed campaigns have all required fields."""
-        stix_parser._get_groups()
-        stix_parser._get_campaigns()
-
-        for campaign in stix_parser.campaigns[:10]:
+        for campaign in parsed_stix_data.campaigns[:10]:
             assert isinstance(campaign, MITRECampaign)
             assert campaign.name is not None
             assert campaign.id is not None
             assert campaign.internal_id is not None
 
-    def test_campaign_technique_domains(self, stix_parser: StixParser):
+    def test_campaign_technique_domains(self, parsed_stix_data: StixParser):
         """Test that cross-domain campaigns label techniques with their own domain."""
-        stix_parser._get_groups()
-        stix_parser._get_campaigns()
-
         domains = {
             technique["domain"][0]
-            for campaign in stix_parser.campaigns
+            for campaign in parsed_stix_data.campaigns
             for technique in campaign.techniques_used
         }
         assert {"enterprise-attack", "ics-attack"} <= domains
-        for campaign in stix_parser.campaigns:
+        for campaign in parsed_stix_data.campaigns:
             for technique in campaign.techniques_used:
                 if technique["technique_id"].startswith("T0"):
                     assert technique["domain"] == ["ics-attack"]
@@ -297,19 +250,15 @@ class TestStixParserCampaigns:
 class TestStixParserAssets:
     """Test asset parsing with real data."""
 
-    def test_get_assets(self, stix_parser: StixParser):
+    def test_get_assets(self, parsed_stix_data: StixParser):
         """Test parsing assets from all domains."""
-        stix_parser._get_assets()
-
         # Assets might not exist in all versions
-        assert isinstance(stix_parser.assets, list)
+        assert isinstance(parsed_stix_data.assets, list)
 
-    def test_assets_have_required_fields(self, stix_parser: StixParser):
+    def test_assets_have_required_fields(self, parsed_stix_data: StixParser):
         """Test that parsed assets have all required fields."""
-        stix_parser._get_assets()
-
-        if len(stix_parser.assets) > 0:
-            for asset in stix_parser.assets[:5]:
+        if len(parsed_stix_data.assets) > 0:
+            for asset in parsed_stix_data.assets[:5]:
                 assert isinstance(asset, MITREAsset)
                 assert asset.name is not None
                 assert asset.id is not None
@@ -321,17 +270,13 @@ class TestStixParserAssets:
 class TestStixParserDataSources:
     """Test data source parsing with real data."""
 
-    def test_get_data_sources(self, stix_parser: StixParser):
+    def test_get_data_sources(self, parsed_stix_data: StixParser):
         """Test parsing data sources from all domains."""
-        stix_parser._get_data_sources()
+        assert len(parsed_stix_data.data_sources) > 0
 
-        assert len(stix_parser.data_sources) > 0
-
-    def test_data_sources_have_required_fields(self, stix_parser: StixParser):
+    def test_data_sources_have_required_fields(self, parsed_stix_data: StixParser):
         """Test that parsed data sources have all required fields."""
-        stix_parser._get_data_sources()
-
-        for data_source in stix_parser.data_sources[:10]:
+        for data_source in parsed_stix_data.data_sources[:10]:
             assert isinstance(data_source, MITREDataSource)
             assert data_source.name is not None
             assert data_source.id is not None
@@ -344,53 +289,42 @@ class TestStixParserDataSources:
 class TestStixParserFullWorkflow:
     """Test complete parsing workflow with real data."""
 
-    def test_get_domain_data(self, stix_parser: StixParser):
+    def test_get_domain_data(self, parsed_stix_data: StixParser):
         """Test parsing complete domain data."""
-        stix_parser.get_domain_data(domain="enterprise-attack")
-
         # Check that all data types were parsed
         enterprise_tactics = [
-            t for t in stix_parser.tactics if t.domain == "enterprise-attack"
+            t for t in parsed_stix_data.tactics if t.domain == "enterprise-attack"
         ]
         enterprise_techniques = [
-            t for t in stix_parser.techniques if t.domain == "enterprise-attack"
+            t for t in parsed_stix_data.techniques if t.domain == "enterprise-attack"
         ]
         enterprise_mitigations = [
-            m for m in stix_parser.mitigations if m.domain == "enterprise-attack"
+            m for m in parsed_stix_data.mitigations if m.domain == "enterprise-attack"
         ]
 
         assert len(enterprise_tactics) > 0
         assert len(enterprise_techniques) > 0
         assert len(enterprise_mitigations) > 0
 
-    def test_get_cti_data(self, stix_parser: StixParser):
+    def test_get_cti_data(self, parsed_stix_data: StixParser):
         """Test parsing complete CTI data."""
-        stix_parser.get_cti_data()
-
         # Check that all CTI data types were parsed
-        assert len(stix_parser.data_sources) > 0
-        assert len(stix_parser.groups) > 0
-        assert len(stix_parser.software) > 0
+        assert len(parsed_stix_data.data_sources) > 0
+        assert len(parsed_stix_data.groups) > 0
+        assert len(parsed_stix_data.software) > 0
         # Assets and campaigns might be empty in some versions
-        assert isinstance(stix_parser.assets, list)
-        assert isinstance(stix_parser.campaigns, list)
+        assert isinstance(parsed_stix_data.assets, list)
+        assert isinstance(parsed_stix_data.campaigns, list)
 
-    def test_full_parse_all_domains(self, stix_parser: StixParser):
+    def test_full_parse_all_domains(self, parsed_stix_data: StixParser):
         """Test parsing all domains and CTI data."""
-        domains = ["enterprise-attack", "mobile-attack", "ics-attack"]
-
-        for domain in domains:
-            stix_parser.get_domain_data(domain=domain)
-
-        stix_parser.get_cti_data()
-
         # Verify we have data from all domains
-        assert len(stix_parser.tactics) > 0
-        assert len(stix_parser.techniques) > 0
-        assert len(stix_parser.mitigations) > 0
-        assert len(stix_parser.groups) > 0
-        assert len(stix_parser.software) > 0
-        assert len(stix_parser.data_sources) > 0
+        assert len(parsed_stix_data.tactics) > 0
+        assert len(parsed_stix_data.techniques) > 0
+        assert len(parsed_stix_data.mitigations) > 0
+        assert len(parsed_stix_data.groups) > 0
+        assert len(parsed_stix_data.software) > 0
+        assert len(parsed_stix_data.data_sources) > 0
 
     def test_parsed_data_integrity(self, parsed_stix_data: StixParser):
         """Test that fully parsed data maintains integrity."""

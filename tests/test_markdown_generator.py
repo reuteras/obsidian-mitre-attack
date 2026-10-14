@@ -434,11 +434,14 @@ class TestMarkdownGeneratorDataSources:
         markdown_generator.create_data_source_notes()
 
         data_sources_dir = (
-            Path(markdown_generator.output_dir) / "Defenses" / "Data_Sources"
+            Path(markdown_generator.output_dir)
+            / "Defenses"
+            / "Detections"
+            / "Data Components"
         )
         assert data_sources_dir.exists()
 
-        data_source_files = list(data_sources_dir.glob("*.md"))
+        data_source_files = list(data_sources_dir.glob("*/*.md"))
         assert len(data_source_files) > 0
 
     def test_data_source_markdown_structure(
@@ -448,9 +451,12 @@ class TestMarkdownGeneratorDataSources:
         markdown_generator.create_data_source_notes()
 
         data_sources_dir = (
-            Path(markdown_generator.output_dir) / "Defenses" / "Data_Sources"
+            Path(markdown_generator.output_dir)
+            / "Defenses"
+            / "Detections"
+            / "Data Components"
         )
-        data_source_files = list(data_sources_dir.glob("*.md"))
+        data_source_files = list(data_sources_dir.glob("*/*.md"))
 
         data_source_file = data_source_files[0]
         content = data_source_file.read_text(encoding="utf-8")
