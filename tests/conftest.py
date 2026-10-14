@@ -71,14 +71,18 @@ def download_stix_data(test_config: dict[str, Any], cache_dir: Path) -> dict[str
 
 
 @pytest.fixture(scope="session")
-def stix_parser(
-    test_config: dict[str, Any], download_stix_data: dict[str, Any]
-) -> StixParser:
-    """Provide a StixParser instance with real STIX data loaded.
+def stix_memory_stores(download_stix_data: dict[str, Any]) -> dict[str, MemoryStore]:
+    """Build the read-only STIX MemoryStores once per test session."""
+    return {
+        domain: MemoryStore(stix_data=data["objects"])
+        for domain, data in download_stix_data.items()
+    }
 
-    This fixture creates a StixParser and loads it with cached STIX data,
-    avoiding network calls during tests.
-    """
+
+def _new_stix_parser(
+    test_config: dict[str, Any], stores: dict[str, MemoryStore]
+) -> StixParser:
+    """Create a StixParser with empty results that reuses the shared stores."""
     # Create parser with network disabled (we'll inject data)
     parser = StixParser.__new__(StixParser)
     parser.url = test_config["repository_url"]
@@ -87,38 +91,43 @@ def stix_parser(
     parser.techniques = []
     parser.tactics = []
     parser.mitigations = []
-
-    # Load data from cache
-    parser.enterprise_attack = MemoryStore(
-        stix_data=download_stix_data["enterprise-attack"]["objects"]
-    )
-    parser.mobile_attack = MemoryStore(
-        stix_data=download_stix_data["mobile-attack"]["objects"]
-    )
-    parser.ics_attack = MemoryStore(
-        stix_data=download_stix_data["ics-attack"]["objects"]
-    )
-
+    parser.enterprise_attack = stores["enterprise-attack"]
+    parser.mobile_attack = stores["mobile-attack"]
+    parser.ics_attack = stores["ics-attack"]
     return parser
 
 
 @pytest.fixture
-def parsed_stix_data(stix_parser: StixParser) -> StixParser:
-    """Provide a fully parsed StixParser instance.
+def stix_parser(
+    test_config: dict[str, Any], stix_memory_stores: dict[str, MemoryStore]
+) -> StixParser:
+    """Provide a fresh StixParser loaded with cached STIX data.
+
+    Each test gets its own parser so parsed results never accumulate between
+    tests, while the expensive MemoryStores are shared for the session.
+    """
+    return _new_stix_parser(test_config, stix_memory_stores)
+
+
+@pytest.fixture(scope="session")
+def parsed_stix_data(
+    test_config: dict[str, Any], stix_memory_stores: dict[str, MemoryStore]
+) -> StixParser:
+    """Provide a fully parsed StixParser instance, parsed once per session.
 
     This fixture processes all domains and CTI data, providing a complete
     dataset for testing markdown generation and other operations.
     """
-    domains = ["enterprise-attack", "mobile-attack", "ics-attack"]
+    parser = _new_stix_parser(test_config, stix_memory_stores)
 
     # Parse all domain data
-    for domain in domains:
-        stix_parser.get_domain_data(domain=domain)
+    for domain in ("enterprise-attack", "mobile-attack", "ics-attack"):
+        parser.get_domain_data(domain=domain)
 
     # Parse CTI data
-    stix_parser.get_cti_data()
+    parser.get_cti_data()
 
-    return stix_parser
+    return parser
 
 
 @pytest.fixture(scope="session")
@@ -159,15 +168,10 @@ def download_atlas_data(
     return parser.data
 
 
-@pytest.fixture(scope="session")
-def atlas_parser(
-    atlas_test_config: dict[str, Any], download_atlas_data: dict[str, Any]
+def _new_atlas_parser(
+    atlas_test_config: dict[str, Any], data: dict[str, Any]
 ) -> AtlasParser:
-    """Provide an AtlasParser instance with real ATLAS data loaded.
-
-    This fixture creates an AtlasParser and injects cached data directly,
-    avoiding network calls during tests.
-    """
+    """Create an AtlasParser with empty results and injected cached data."""
     parser = AtlasParser.__new__(AtlasParser)
     parser.url = atlas_test_config["atlas_repository_url"]
     parser.version = atlas_test_config["atlas_version"]
@@ -177,16 +181,30 @@ def atlas_parser(
     parser.mitigations = []
     parser.case_studies = []
     parser.resolved_version = atlas_test_config["atlas_version"]
-    parser.data = download_atlas_data
-
+    parser.data = data
     return parser
 
 
 @pytest.fixture
-def parsed_atlas_data(atlas_parser: AtlasParser) -> AtlasParser:
-    """Provide a fully parsed AtlasParser instance."""
-    atlas_parser.parse()
-    return atlas_parser
+def atlas_parser(
+    atlas_test_config: dict[str, Any], download_atlas_data: dict[str, Any]
+) -> AtlasParser:
+    """Provide a fresh AtlasParser instance with real ATLAS data loaded.
+
+    This fixture creates an AtlasParser and injects cached data directly,
+    avoiding network calls during tests.
+    """
+    return _new_atlas_parser(atlas_test_config, download_atlas_data)
+
+
+@pytest.fixture(scope="session")
+def parsed_atlas_data(
+    atlas_test_config: dict[str, Any], download_atlas_data: dict[str, Any]
+) -> AtlasParser:
+    """Provide a fully parsed AtlasParser instance, parsed once per session."""
+    parser = _new_atlas_parser(atlas_test_config, download_atlas_data)
+    parser.parse()
+    return parser
 
 
 @pytest.fixture

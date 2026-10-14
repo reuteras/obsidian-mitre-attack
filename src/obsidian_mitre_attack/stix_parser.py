@@ -1884,7 +1884,9 @@ class StixParser:
                                     "technique_name": technique["name"],
                                     "technique_id": technique_id,
                                     "description": relationship.get("description", ""),
-                                    "domain": domain,
+                                    "domain": technique.get(
+                                        "x_mitre_domains", [domain]
+                                    ),
                                 }
 
                         if "external_references" in relationship:
@@ -2594,6 +2596,27 @@ class StixParser:
                     detects_by_source[source] = []
                 detects_by_source[source].append(rel)
 
+        # Cache assets targeted by each technique (assets only exist in ICS)
+        assets_cache = {
+            asset["id"]: asset
+            for asset in self.ics_attack.query(
+                [Filter(prop="type", op="=", value="x-mitre-asset")]
+            )
+            if self.is_valid_stix_object(asset)
+        }
+        targets_relationships = self.ics_attack.query(
+            [
+                Filter(prop="type", op="=", value="relationship"),
+                Filter(prop="relationship_type", op="=", value="targets"),
+            ]
+        )
+        assets_by_technique: dict[str, list[Any]] = {}
+        for rel in targets_relationships:
+            if self.is_valid_stix_object(rel) and rel["target_ref"] in assets_cache:
+                assets_by_technique.setdefault(rel["source_ref"], []).append(
+                    assets_cache[rel["target_ref"]]
+                )
+
         self.detection_strategies = list()
 
         for detection_strategy in detection_strategies_stix:
@@ -2629,6 +2652,7 @@ class StixParser:
                 technique_relationships = detects_by_source.get(
                     detection_strategy["id"], []
                 )
+                assets_added: set[str] = set()
 
                 for relationship in technique_relationships:
                     target_ref = relationship.get("target_ref")
@@ -2648,6 +2672,22 @@ class StixParser:
                                 .replace("/", "／")  # noqa: RUF001
                                 .replace(":", "："),  # noqa: RUF001
                             }
+
+                        # Assets targeted by the detected technique
+                        for asset in assets_by_technique.get(target_ref, []):
+                            asset_id = ""
+                            for ext_ref in asset.get("external_references", []):
+                                if ext_ref["source_name"] == "mitre-attack":
+                                    asset_id = ext_ref["external_id"]
+                                    break
+                            if asset_id and asset_id not in assets_added:
+                                ds_obj.assets = {
+                                    "id": asset_id,
+                                    "name": asset["name"]
+                                    .replace("/", "／")  # noqa: RUF001
+                                    .replace(":", "："),  # noqa: RUF001
+                                }
+                                assets_added.add(asset_id)
 
                 self.detection_strategies.append(ds_obj)
 

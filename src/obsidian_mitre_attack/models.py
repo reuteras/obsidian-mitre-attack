@@ -1264,6 +1264,7 @@ class MITREDetectionStrategy(MITREObject):
         self._external_references: list[dict[str, Any]] = []
         self._analytic_refs: list[str] = []  # References to analytics
         self._techniques: list[dict[str, Any]] = []  # Techniques this strategy detects
+        self._assets: list[dict[str, Any]] = []  # Assets targeted by those techniques
 
     @property
     def version(self) -> str:
@@ -1324,6 +1325,16 @@ class MITREDetectionStrategy(MITREObject):
     def techniques(self, technique: dict) -> None:
         """Set the techniques detected by the object."""
         self._techniques.append(technique)
+
+    @property
+    def assets(self):
+        """Return the assets targeted by the techniques the object detects."""
+        return self._assets
+
+    @assets.setter
+    def assets(self, asset: dict) -> None:
+        """Set the assets targeted by the techniques the object detects."""
+        self._assets.append(asset)
 
 
 class MITREAnalytic(MITREObject):

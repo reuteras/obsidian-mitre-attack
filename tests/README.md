@@ -40,6 +40,23 @@ uv run pytest -v
 uv run pytest --cov
 ```
 
+### Expected Run Time
+
+Measured on an Apple Silicon Mac with cached STIX data (October 2026):
+
+| Command | Tests | Time |
+| --- | --- | --- |
+| `uv run pytest -m unit` | 73 | ~8 s |
+| `uv run pytest` (full suite) | 140 | ~1.5 min |
+
+Almost all of the full-suite time is a single parse of all ATT&CK domains
+(~90 s), done once per session by the `parsed_stix_data` fixture. If the full
+suite takes much longer than a few minutes, check that no test re-parses data
+per test: tests that only read parsed results should use the session-scoped
+`parsed_stix_data` fixture, and tests that call parser methods themselves
+should use the function-scoped `stix_parser` fixture (a fresh parser that
+shares the session's read-only MemoryStores).
+
 ### Run Specific Test Categories
 
 ```bash
@@ -146,6 +163,7 @@ When adding new features, please add corresponding tests:
 ```python
 import pytest
 from obsidian_mitre_attack.models import MITREObject
+
 
 @pytest.mark.unit
 class TestMyFeature:

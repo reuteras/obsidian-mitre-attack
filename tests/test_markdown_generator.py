@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import argparse
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -12,6 +14,7 @@ from obsidian_mitre_attack.markdown_generator import (
     fix_description,
     remove_references,
 )
+from obsidian_mitre_attack.models import MITREDetectionStrategy
 
 
 @pytest.mark.unit
@@ -366,6 +369,61 @@ class TestMarkdownGeneratorAssets:
             assert len(asset_files) >= 0
 
 
+@pytest.mark.unit
+class TestMarkdownGeneratorDetectionStrategies:
+    """Test detection strategy markdown generation."""
+
+    def test_targeted_assets_section(self, tmp_path: Path):
+        """Test that targeted assets are listed and link to the asset notes."""
+        detection_strategy = MITREDetectionStrategy(name="Detection of Rootkit")
+        detection_strategy.id = "DET0780"
+        detection_strategy.url = "https://attack.mitre.org/detectionstrategies/DET0780"
+        detection_strategy.domain = "ics-attack"
+        detection_strategy.techniques = {
+            "technique_id": "T0851",
+            "technique_name": "Rootkit",
+        }
+        detection_strategy.assets = {
+            "id": "A0003",
+            "name": "Programmable Logic Controller (PLC)",
+        }
+        detection_strategy.assets = {"id": "A0001", "name": "Workstation"}
+        stix_data = SimpleNamespace(
+            tactics=[],
+            techniques=[],
+            mitigations=[],
+            groups=[],
+            software=[],
+            campaigns=[],
+            assets=[],
+            data_sources=[],
+            data_components=[],
+            detection_strategies=[detection_strategy],
+            analytics=[],
+        )
+        generator = MarkdownGenerator(
+            output_dir=str(tmp_path),
+            stix_data=stix_data,
+            arguments=argparse.Namespace(tags="test/"),
+        )
+
+        generator.create_detection_strategy_notes()
+
+        content = (
+            tmp_path
+            / "Defenses"
+            / "Detections"
+            / "Detection Strategies"
+            / "ICS attack"
+            / "Detection of Rootkit - DET0780.md"
+        ).read_text(encoding="utf-8")
+        assert "### Targeted Assets" in content
+        assert (
+            "| [[Workstation \\| A0001]] | [[Workstation \\| Workstation]] |" in content
+        )
+        assert content.index("A0001") < content.index("A0003")
+
+
 @pytest.mark.integration
 @pytest.mark.slow
 class TestMarkdownGeneratorDataSources:
@@ -376,11 +434,14 @@ class TestMarkdownGeneratorDataSources:
         markdown_generator.create_data_source_notes()
 
         data_sources_dir = (
-            Path(markdown_generator.output_dir) / "Defenses" / "Data_Sources"
+            Path(markdown_generator.output_dir)
+            / "Defenses"
+            / "Detections"
+            / "Data Components"
         )
         assert data_sources_dir.exists()
 
-        data_source_files = list(data_sources_dir.glob("*.md"))
+        data_source_files = list(data_sources_dir.glob("*/*.md"))
         assert len(data_source_files) > 0
 
     def test_data_source_markdown_structure(
@@ -390,9 +451,12 @@ class TestMarkdownGeneratorDataSources:
         markdown_generator.create_data_source_notes()
 
         data_sources_dir = (
-            Path(markdown_generator.output_dir) / "Defenses" / "Data_Sources"
+            Path(markdown_generator.output_dir)
+            / "Defenses"
+            / "Detections"
+            / "Data Components"
         )
-        data_source_files = list(data_sources_dir.glob("*.md"))
+        data_source_files = list(data_sources_dir.glob("*/*.md"))
 
         data_source_file = data_source_files[0]
         content = data_source_file.read_text(encoding="utf-8")

@@ -8,6 +8,7 @@ from obsidian_mitre_attack.models import (
     MITREAsset,
     MITRECampaign,
     MITREDataSource,
+    MITREDetectionStrategy,
     MITREGroup,
     MITREMitigation,
     MITREObject,
@@ -393,3 +394,16 @@ class TestMITREDataSource:
         data_source.collection_layers = layer1
         data_source.collection_layers = layer2
         assert len(data_source.collection_layers) == 2
+
+
+@pytest.mark.unit
+class TestMITREDetectionStrategy:
+    """Test the MITREDetectionStrategy class."""
+
+    def test_assets_append(self):
+        """Test that targeted assets are appended."""
+        detection_strategy = MITREDetectionStrategy(name="Test")
+        assert detection_strategy.assets == []
+        detection_strategy.assets = {"id": "A0001", "name": "Workstation"}
+        detection_strategy.assets = {"id": "A0003", "name": "PLC"}
+        assert len(detection_strategy.assets) == 2
