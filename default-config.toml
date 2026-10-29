@@ -14,4 +14,4 @@ atlas_enabled = true
 atlas_repository_url = "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main"
 # Pinned to a specific release string (e.g. "2026.09") for reproducible output.
 # "latest" resolves to the newest monthly release via dist/manifest.yaml instead.
-atlas_version = "2026.09"
+atlas_version = "2026.10"
