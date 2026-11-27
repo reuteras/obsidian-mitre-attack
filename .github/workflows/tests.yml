@@ -53,3 +53,22 @@ jobs:
     - name: Run all tests with coverage
       run: |
         uv run pytest tests/ -m "not slow" --cov --cov-report=xml --cov-report=term-missing
+
+  # The required check (ruleset required-checks); see dev-docs docs/github.md.
+  tests-passed:
+    name: Tests passed
+    if: always()
+    needs: [test]
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Check job results
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            if [ "$result" != "success" ]; then
+              echo "A job ended with: $result"
+              exit 1
+            fi
+          done

@@ -8,7 +8,14 @@ updates:
     cooldown:
       default-days: 7
     groups:
+      # [dependency-groups] dev; auto-merged
+      package-dev-deps:
+        dependency-type: "development"
+        patterns:
+          - "*"
+      # [project] dependencies; reviewed by hand
       package-deps:
+        dependency-type: "production"
         patterns:
           - "*"
 
