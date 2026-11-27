@@ -20,10 +20,10 @@ jobs:
     # Branch names are dependabot/<ecosystem>/<group>-<hash>; the groups come
     # from templates/github/dependabot.yml.
     if: >-
-      github.event.pull_request.user.login == 'dependabot[bot]' &&
-      (startsWith(github.head_ref, 'dependabot/github_actions/') ||
-       startsWith(github.head_ref, 'dependabot/pre_commit/') ||
-       startsWith(github.head_ref, 'dependabot/uv/package-dev-deps-'))
+      github.event.pull_request.user.login == 'dependabot[bot]' && (
+      startsWith(github.head_ref, 'dependabot/github_actions/') ||
+      startsWith(github.head_ref, 'dependabot/pre_commit/') ||
+      startsWith(github.head_ref, 'dependabot/uv/package-dev-deps-'))
     permissions:
       contents: write # the merge itself
       pull-requests: write # enabling auto-merge on the PR
