@@ -3,7 +3,7 @@
 # Turns on auto-merge for Dependabot PRs that update GitHub Actions,
 # pre-commit hooks or the uv dev group (package-dev-deps). GitHub merges once
 # the required checks pass. Before adding it, the repo needs the required
-# check "Tests passed" and allow_auto_merge / delete_branch_on_merge; see
+# check "Checks passed" and allow_auto_merge / delete_branch_on_merge; see
 # docs/github.md.
 name: Dependabot auto-merge
 
