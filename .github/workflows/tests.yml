@@ -56,7 +56,7 @@ jobs:
 
   # The required check (ruleset required-checks); see dev-docs docs/github.md.
   tests-passed:
-    name: Tests passed
+    name: Checks passed
     if: always()
     needs: [test]
     runs-on: ubuntu-latest
